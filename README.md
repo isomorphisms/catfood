@@ -1,30 +1,25 @@
-# dogfood
+# cat food
 
-Provisional bootstrap repository for using our own tools in fresh development environments.
+Feed current copies of our own tools into a fresh development environment, then let those tools build and update one another.
 
-The repository name is provisional. Its job is to get from a stock container to current copies of the toolchain without pretending the container itself is durable.
+Cat Food is deliberately small. It is not a monorepo: working repositories live under `/opt` by default, not inside this checkout.
 
-## Bootstrap
-
-The unavoidable stage zero is deliberately small and uses POSIX `sh`, not Bash. It needs only `git` plus whatever the current Grease implementation itself needs.
+## First feed
 
 ```sh
-sh bootstrap.sh
+./bootstrap.sh
 ```
 
-`bootstrap.sh` fetches or fast-forwards `tools/grease`, initializes Grease's pinned source submodule, and then immediately hands control to Grease/YSH for the rest of the updates.
+If `/opt` is not writable or you want a different workspace:
 
-`update-tools.ysh` reads `tools.tsv` and fetches or fast-forwards the remaining tool repositories under `tools/`.
+```sh
+CATFOOD_ROOT="$HOME/opt" ./bootstrap.sh
+```
 
-Current manifest:
+`bootstrap.sh` is POSIX `sh` because a stock environment has to be able to run stage zero before Grease exists. It fetches Grease first and preserves Grease's pinned Oils source submodule. If a runnable YSH is already available, Cat Food uses it for the rest of the feed. Otherwise the same updater is deliberately valid POSIX shell and completes the first feed with `sh`; later runs can use Grease/YSH once one is runnable.
 
-- ICK
-- Icky
-- Idriç (`Idric` on GitHub)
-- Ithon
+New clones use shallow history, 12 commits by default. Set `CATFOOD_DEPTH` to change that. Existing checkouts are fetched without rewriting their history.
 
-Grease is not listed in `tools.tsv` because it is the bootstrap interpreter and is updated first by `bootstrap.sh`.
+`tools.tsv` currently tracks Oils (`grease/main`), IR, IRK, Ithon, Icky, ICK, Idriç, and the programmer's keyboard. Grease itself is handled first by `bootstrap.sh`. Project names that do not currently resolve to repositories are not guessed into URLs.
 
-The nested checkouts are ignored by this repository. The scripts use `git -C` rather than a directory stack, so stage zero does not require Bash-only `pushd`/`popd` behavior.
-
-Updates are intentionally non-destructive: existing tool checkouts must fast-forward. A divergent local branch causes the update to stop instead of resetting or deleting local work.
+Updates are intentionally non-destructive: Cat Food fast-forwards clean checkouts, fetches but does not move dirty ones, refuses an unexpected `origin`, and refuses to rewrite diverged local history.

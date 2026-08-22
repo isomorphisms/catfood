@@ -7,7 +7,14 @@ on:
 jobs:
   bootstrap:
     runs-on: ubuntu-latest
+    env:
+      CATFOOD_ROOT: ${{ runner.temp }}/cat-food
+      CATFOOD_DEPTH: 1
     steps:
       - uses: actions/checkout@v4
-      - name: Fetch toolchain through Grease
+      - name: Check stage-zero syntax
+        run: |
+          dash -n bootstrap.sh
+          dash -n update-tools.ysh
+      - name: Feed toolchain
         run: ./bootstrap.sh
