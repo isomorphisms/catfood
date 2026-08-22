@@ -13,8 +13,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check stage-zero syntax
+        shell: sh
         run: |
           dash -n bootstrap.sh
           dash -n update-tools.ysh
-      - name: Feed toolchain
-        run: ./bootstrap.sh
+      - name: Feed toolchain with POSIX sh
+        shell: sh
+        run: sh ./bootstrap.sh
