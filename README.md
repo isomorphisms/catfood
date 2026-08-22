@@ -1,4 +1,4 @@
-# cat food
+# Cat Food
 
 Feed current copies of our own tools into a fresh development environment, then let those tools build and update one another.
 
