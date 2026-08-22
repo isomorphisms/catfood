@@ -1,0 +1,13 @@
+name: bootstrap
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch toolchain through Grease
+        run: ./bootstrap.sh
