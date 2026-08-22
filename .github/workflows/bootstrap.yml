@@ -1,0 +1,22 @@
+name: bootstrap
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    env:
+      CATFOOD_ROOT: ${{ runner.temp }}/cat-food
+      CATFOOD_DEPTH: 1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check stage-zero syntax
+        shell: sh
+        run: |
+          dash -n bootstrap.sh
+          dash -n update-tools.ysh
+      - name: Feed toolchain with POSIX sh
+        shell: sh
+        run: sh ./bootstrap.sh

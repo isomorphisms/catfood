@@ -1,0 +1,9 @@
+# name repository branch submodules
+oils https://github.com/isomorphisms/oils.git grease/main none
+ir https://github.com/isomorphisms/ir.git trunk none
+irk https://github.com/isomorphisms/irk.git main none
+ithon https://github.com/isomorphisms/ithon.git main none
+icky https://github.com/isomorphisms/icky.git main none
+ick https://github.com/isomorphisms/ick.git main none
+Idric https://github.com/isomorphisms/Idric.git main none
+programmers-keyboard https://github.com/isomorphisms/programmers-keyboard.git main none
