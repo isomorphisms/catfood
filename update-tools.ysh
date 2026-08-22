@@ -1,0 +1,31 @@
+#!/usr/bin/env ysh
+set -eu
+
+ROOT=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+TOOLS="$ROOT/tools"
+MANIFEST="$ROOT/tools.tsv"
+
+mkdir -p "$TOOLS"
+
+while read -r name url branch submodules
+do
+  [ -n "$name" ] || continue
+
+  target="$TOOLS/$name"
+  printf '%s\n' "==> $name"
+
+  if [ -d "$target/.git" ]; then
+    git -C "$target" fetch --prune origin "$branch"
+    git -C "$target" checkout "$branch"
+    git -C "$target" merge --ff-only "origin/$branch"
+  else
+    git clone --branch "$branch" --single-branch "$url" "$target"
+  fi
+
+  if [ "$submodules" = recursive ]; then
+    git -C "$target" submodule sync --recursive
+    git -C "$target" submodule update --init --recursive
+  fi
+done < "$MANIFEST"
+
+printf '%s\n' 'tool checkouts are current'
