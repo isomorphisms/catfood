@@ -28,14 +28,15 @@ update_grease() {
 
         if [ -n "$(git -C "$grease" status --porcelain)" ]; then
             printf 'grease has local changes; fetched but did not move it\n'
-        else
-            if git -C "$grease" show-ref --verify --quiet "refs/heads/$grease_branch"; then
-                git -C "$grease" checkout "$grease_branch"
-            else
-                git -C "$grease" checkout -b "$grease_branch" --track "origin/$grease_branch"
-            fi
-            git -C "$grease" merge --ff-only "origin/$grease_branch"
+            return 0
         fi
+
+        if git -C "$grease" show-ref --verify --quiet "refs/heads/$grease_branch"; then
+            git -C "$grease" checkout "$grease_branch"
+        else
+            git -C "$grease" checkout -b "$grease_branch" --track "origin/$grease_branch"
+        fi
+        git -C "$grease" merge --ff-only "origin/$grease_branch"
     elif [ -e "$grease" ]; then
         printf '%s exists but is not a git checkout; leaving it alone\n' "$grease" >&2
         return 1
