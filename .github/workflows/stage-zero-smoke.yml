@@ -1,0 +1,21 @@
+name: stage-zero-smoke
+
+on:
+  pull_request:
+
+jobs:
+  stage-zero:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check POSIX stage zero
+        shell: sh
+        run: |
+          if [ -f bootstrap.sh ] && [ -f update-tools.ysh ]; then
+            dash -n bootstrap.sh
+            dash -n update-tools.ysh
+            sh -n bootstrap.sh
+            sh -n update-tools.ysh
+          else
+            echo 'bootstrap files are not present on this branch; nothing to check yet'
+          fi
