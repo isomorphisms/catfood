@@ -1,6 +1,13 @@
 #!/bin/sh
 set -eu
 
+# Root consoles and sudo may start in the ASCII C locale.  The toolchain
+# sources and generated documentation contain Unicode syntax, so make the
+# Debian/Ubuntu-provided UTF-8 locale explicit for every provisioning step.
+LANG=C.UTF-8
+LC_ALL=C.UTF-8
+export LANG LC_ALL
+
 root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=${CATFOOD_ROOT:-/opt}
 cache=${CATFOOD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/catfood}
