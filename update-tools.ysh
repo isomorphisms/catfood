@@ -94,7 +94,7 @@ link_shell() {
     # Provisioning may deliberately point the stable shell name at a released
     # native Oils install outside the source checkout. Keep that link as long
     # as it is still runnable instead of regressing to an older source launcher.
-    if [ -L "$link" ] && [ -x "$link" ] && "$link" -c ':' >/dev/null 2>&1; then
+    if [ -L "$link" ] && [ -x "$link" ] && "$link" -c 'echo' >/dev/null 2>&1; then
         return 0
     fi
 
@@ -128,7 +128,7 @@ workspace=$(dirname -- "$bin_dir")
 name=$(basename -- "$0")
 script=$workspace/az/bin/$name
 
-if [ -x "$bin_dir/ysh" ] && "$bin_dir/ysh" -c ':' >/dev/null 2>&1; then
+if [ -x "$bin_dir/ysh" ] && "$bin_dir/ysh" -c 'echo' >/dev/null 2>&1; then
     exec "$bin_dir/ysh" "$script" "$@"
 fi
 
