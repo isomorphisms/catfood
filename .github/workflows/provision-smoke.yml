@@ -1,0 +1,29 @@
+name: provision-smoke
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  fresh-ubuntu-workbench:
+    runs-on: ubuntu-latest
+    env:
+      CATFOOD_ROOT: ${{ runner.temp }}/cat-food
+      CATFOOD_PREFIX: ${{ runner.temp }}/prefix
+      CATFOOD_CACHE: ${{ runner.temp }}/cache
+      CATFOOD_DEPTH: 1
+      CATFOOD_NO_PROFILE: 1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Provision workbench
+        shell: sh
+        run: sh ./provision.sh
+      - name: Verify commands
+        shell: sh
+        run: |
+          PATH="$CATFOOD_PREFIX/bin:$CATFOOD_ROOT/bin:$PATH"
+          export PATH
+          ysh -c ':'
+          az link B000000000 >/dev/null
+          abe link 'https://www.abebooks.com/servlet/BookDetailsPL?bi=1' >/dev/null
+          catfood-doctor
