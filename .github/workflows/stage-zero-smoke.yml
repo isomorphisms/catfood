@@ -1,7 +1,6 @@
 name: stage-zero-smoke
 
 on:
-  push:
   pull_request:
 
 jobs:
@@ -74,19 +73,24 @@ jobs:
   fresh-ubuntu-workbench:
     runs-on: ubuntu-latest
     env:
-      CATFOOD_ROOT: ${{ runner.temp }}/cat-food
-      CATFOOD_PREFIX: ${{ runner.temp }}/prefix
-      CATFOOD_CACHE: ${{ runner.temp }}/cache
       CATFOOD_DEPTH: 1
       CATFOOD_NO_PROFILE: 1
     steps:
       - uses: actions/checkout@v4
       - name: Provision workbench
         if: ${{ hashFiles('provision.sh') != '' }}
+        env:
+          CATFOOD_ROOT: ${{ runner.temp }}/cat-food
+          CATFOOD_PREFIX: ${{ runner.temp }}/prefix
+          CATFOOD_CACHE: ${{ runner.temp }}/cache
         shell: sh
         run: sh ./provision.sh
       - name: Verify commands
         if: ${{ hashFiles('provision.sh') != '' }}
+        env:
+          CATFOOD_ROOT: ${{ runner.temp }}/cat-food
+          CATFOOD_PREFIX: ${{ runner.temp }}/prefix
+          CATFOOD_CACHE: ${{ runner.temp }}/cache
         shell: sh
         run: |
           PATH="$CATFOOD_PREFIX/bin:$CATFOOD_ROOT/bin:$PATH"
