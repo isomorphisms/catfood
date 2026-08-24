@@ -26,12 +26,30 @@ check_command() {
     fi
 }
 
-for command_name in git curl jq ysh az abe catfood-update catfood-doctor; do
+check_stable() {
+    name=$1
+    if [ -x "$workspace/bin/$name" ]; then
+        printf '%-22s stable\n' "$name"
+    else
+        printf '%-22s missing stable command\n' "$name" >&2
+        failures=1
+    fi
+}
+
+for command_name in git curl jq osh ysh az abe catfood-update catfood-doctor; do
     check_command "$command_name"
 done
 
-if command -v ysh >/dev/null 2>&1 && ! ysh -c ':' >/dev/null 2>&1; then
-    printf '%-22s not runnable\n' ysh >&2
+for stable_name in osh ysh az abe catfood-update catfood-doctor; do
+    check_stable "$stable_name"
+done
+
+if [ -x "$workspace/bin/osh" ] && ! "$workspace/bin/osh" -c ':' >/dev/null 2>&1; then
+    printf '%-22s stable command not runnable\n' osh >&2
+    failures=1
+fi
+if [ -x "$workspace/bin/ysh" ] && ! "$workspace/bin/ysh" -c ':' >/dev/null 2>&1; then
+    printf '%-22s stable command not runnable\n' ysh >&2
     failures=1
 fi
 
@@ -48,15 +66,15 @@ while read -r name repository branch submodules || [ -n "${name:-}" ]; do
     fi
 done < "$manifest"
 
-if command -v az >/dev/null 2>&1; then
-    if ! az link B000000000 >/dev/null 2>&1; then
+if [ -x "$workspace/bin/az" ]; then
+    if ! "$workspace/bin/az" link B000000000 >/dev/null 2>&1; then
         printf '%-22s public link smoke failed\n' az >&2
         failures=1
     fi
 fi
 
-if command -v abe >/dev/null 2>&1; then
-    if ! abe link 'https://www.abebooks.com/servlet/BookDetailsPL?bi=1' >/dev/null 2>&1; then
+if [ -x "$workspace/bin/abe" ]; then
+    if ! "$workspace/bin/abe" link 'https://www.abebooks.com/servlet/BookDetailsPL?bi=1' >/dev/null 2>&1; then
         printf '%-22s public link smoke failed\n' abe >&2
         failures=1
     fi
