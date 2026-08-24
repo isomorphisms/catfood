@@ -117,7 +117,8 @@ build_ithon() {
 
 build_ir() {
     repo=$workspace/ir
-    build=$build_root/ir
+    source=$build_root/ir-source
+    build=$source/code
     runtime=$workspace/r
     output=$runtime/bin/R
     library=$build_root/r-library
@@ -125,28 +126,26 @@ build_ir() {
 
     if [ ! -x "$output" ] || needs_build ir "$repo"; then
         printf '%s\n' 'building IR'
-        rm -rf "$build" "$runtime"
-        mkdir -p "$build"
+        rm -rf "$source" "$runtime"
+        mkdir -p "$source"
+
+        # Build a committed snapshot in place.  IR's configured base-package
+        # DESCRIPTION files declare UTF-8; keeping them beside the Rd sources
+        # lets the bootstrap documentation parser honor that declaration while
+        # leaving the live checkout clean for future refreshes.
+        git -C "$repo" archive HEAD code |
+            tar --no-same-owner -x -C "$source"
+
         (
             cd "$build"
-            sh "$repo/code/configure" \
+            sh ./configure \
                 --prefix="$runtime" \
                 --with-x=no \
                 --without-tcltk \
                 --without-recommended-packages \
                 --disable-java
-
-            # IR's Unicode operators also occur in base Rd pages.  Its
-            # bootstrap parser treats those pages as native ASCII, so
-            # declare their encoding in the generated build makefile.
-            # Keep the upstream checkout clean for the next refresh.
-            rd_makefile=src/library/Makefile
-            rd_makefile_patched=$rd_makefile.catfood
-            sed '/install_package_Rd_objects/{n;s/)" |/, encoding = \\"UTF-8\\")" |/;}' \
-                "$rd_makefile" > "$rd_makefile_patched"
-            grep -F 'encoding = \"UTF-8\"' "$rd_makefile_patched" >/dev/null
-            mv "$rd_makefile_patched" "$rd_makefile"
-
+            grep -Fx 'Encoding: UTF-8' src/library/base/DESCRIPTION >/dev/null
+            grep -Fx 'Encoding: UTF-8' src/library/stats/DESCRIPTION >/dev/null
             make -j"$jobs"
             make install
         )
