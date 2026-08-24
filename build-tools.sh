@@ -135,6 +135,18 @@ build_ir() {
                 --without-tcltk \
                 --without-recommended-packages \
                 --disable-java
+
+            # IR's Unicode operators also occur in base Rd pages.  Its
+            # bootstrap parser treats those pages as native ASCII, so
+            # declare their encoding in the generated build makefile.
+            # Keep the upstream checkout clean for the next refresh.
+            rd_makefile=src/library/Makefile
+            rd_makefile_patched=$rd_makefile.catfood
+            sed '/install_package_Rd_objects/{n;s/)" |/, encoding = \\"UTF-8\\")" |/;}' \
+                "$rd_makefile" > "$rd_makefile_patched"
+            grep -F 'encoding = \"UTF-8\"' "$rd_makefile_patched" >/dev/null
+            mv "$rd_makefile_patched" "$rd_makefile"
+
             make -j"$jobs"
             make install
         )
