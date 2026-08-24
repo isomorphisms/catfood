@@ -18,9 +18,17 @@ cd /opt/catfood
 ./provision.sh
 ```
 
-`provision.sh` installs the ordinary console/build dependencies used across the current projects, installs the released native YSH if a runnable one is not already present, feeds the repositories, exposes stable commands, and runs `catfood-doctor` before returning success.
+`provision.sh` installs the ordinary console/build dependencies used across the current projects, installs a released native YSH when a runnable one is not already present, feeds the repositories, builds the current core toolchain, exposes stable commands, and runs `catfood-doctor` before returning success.
 
 The native YSH release is downloaded from Oils, verified by SHA-256, built, and installed under `/usr/local` when provisioning as root. Override `CATFOOD_PREFIX` for another prefix. The source checkout under `grease/source` remains pinned separately for Grease development; the released YSH is the runnable stage-one shell.
+
+The core build currently exercises the repositories that need a real build before they are useful:
+
+- Idriç runs its checked-in `./edric all` bootstrap and focused handoff tests, including its pinned threaded Chez Scheme toolchain.
+- Ithon is configured and built out of tree under `/opt/.build/ithon`, then runs `test_ithon_syntax`.
+- IR is built out of tree and installed under `/opt/r`, then smoke-tests the arrow/division/equality syntax.
+
+Build stamps are keyed to each repository commit. `catfood-update` fetches the repositories, rebuilds only core tools whose source commit changed, refreshes aliases, and reruns the doctor. Build output stays outside the IR and Ithon checkouts so routine builds do not make those repositories look locally modified.
 
 Amazon and AbeBooks credentials stay outside Git. Public `az link` and `abe link` work before secrets are configured; Amazon Creators search/price calls and AbeBooks search use the provider configuration under `~/.config/az`.
 
@@ -32,13 +40,16 @@ New clones use shallow history, 12 commits by default. Set `CATFOOD_DEPTH` to ch
 
 ## Stable commands
 
-After feeding, Cat Food keeps short command names under `$CATFOOD_ROOT/bin` (`/opt/bin` by default). Provisioning adds both the installed native YSH prefix and that command directory to `PATH`.
+After provisioning, Cat Food keeps short command names under `$CATFOOD_ROOT/bin` (`/opt/bin` by default). Provisioning adds both the installed native YSH prefix and that command directory to `PATH`.
 
-The feed restores existing stable names when their targets are present: `R`, `Rscript`, `idris2`, `ick`, `ithon`, `osh`, `ysh`, and `grease`. It also installs `az` and `abe` wrappers from the `az` checkout. Those price wrappers prefer a runnable YSH and fall back to Bash, so stage zero remains usable even before native YSH has been installed.
+Current stable names include `R`, `Rscript`, `edric`, `idris2`, `ithon`, `osh`, `ysh`, `grease`, `az`, and `abe` when their targets are present. The `az` and `abe` wrappers prefer the stable runnable YSH and fall back to Bash during stage zero.
 
 For example:
 
 ```sh
+ithon
+idris2 --version
+R --vanilla
 az search 'K&R C programming'
 abe find 'Sven Nordqvist'
 catfood-update
@@ -51,7 +62,7 @@ Updates are intentionally non-destructive: Cat Food fast-forwards clean checkout
 
 ## Stage zero only
 
-If the machine already has what you need and you only want to fetch/update repositories:
+If the machine already has what you need and you only want to fetch/update repositories without building the core tools:
 
 ```sh
 ./bootstrap.sh

@@ -144,15 +144,16 @@ install_command_links() {
         "$workspace/r/bin/R"
     link_first Rscript \
         "$workspace/r/bin/Rscript"
+    link_first edric \
+        "$workspace/Idric/edric"
     link_first idris2 \
-        "$workspace/idris2/bin/idris2" \
-        "$workspace/idris2/idris2" \
         "$workspace/Idric/build/exec/idris2" \
         "$workspace/Idric/idris2"
     link_first ick \
         "$workspace/ick-runtime/bin/ick" \
         "$workspace/ick-runtime/bin/gcc"
     link_first ithon \
+        "$workspace/.build/ithon/python" \
         "$workspace/ithon/ithon" \
         "$workspace/ithon/bin/ithon"
     link_shell osh \
@@ -180,15 +181,17 @@ command -v git >/dev/null 2>&1 || {
 }
 mkdir -p "$workspace"
 
-while read -r name repository branch submodules || [ -n "${name:-}" ]; do
-    case ${name:-} in
-        ''|'#'*) continue ;;
-    esac
+if [ "${CATFOOD_LINKS_ONLY:-0}" != 1 ]; then
+    while read -r name repository branch submodules || [ -n "${name:-}" ]; do
+        case ${name:-} in
+            ''|'#'*) continue ;;
+        esac
 
-    if ! feed_repository "$name" "$repository" "$branch" "$submodules"; then
-        failures=1
-    fi
-done < "$manifest"
+        if ! feed_repository "$name" "$repository" "$branch" "$submodules"; then
+            failures=1
+        fi
+    done < "$manifest"
+fi
 
 if ! install_command_links; then
     failures=1
@@ -199,5 +202,9 @@ if [ "$failures" -ne 0 ]; then
     exit 1
 fi
 
-printf 'cat food is current under %s\n' "$workspace"
-printf 'commands are under %s/bin\n' "$workspace"
+if [ "${CATFOOD_LINKS_ONLY:-0}" = 1 ]; then
+    printf 'cat food links are current under %s/bin\n' "$workspace"
+else
+    printf 'cat food is current under %s\n' "$workspace"
+    printf 'commands are under %s/bin\n' "$workspace"
+fi

@@ -66,7 +66,7 @@ write_wrapper() {
 # only its osh/ysh symlinks with the verified native Oils installation.
 install_native_shell_link osh
 install_native_shell_link ysh
-write_wrapper catfood-update "$root/bootstrap.sh"
+write_wrapper catfood-update "$root/refresh.sh"
 write_wrapper catfood-doctor "$root/doctor.sh"
 
 profile=${CATFOOD_PROFILE:-$HOME/.profile}
