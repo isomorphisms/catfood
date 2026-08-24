@@ -100,26 +100,5 @@ install_ysh
 PATH=$prefix/bin:$workspace/bin:$PATH
 export PATH
 
-CATFOOD_ROOT=$workspace CATFOOD_DEPTH=${CATFOOD_DEPTH:-12} \
-    sh "$root/bootstrap.sh"
-
-# Repair the source-tree shell aliases before any project build uses them.
 CATFOOD_ROOT=$workspace CATFOOD_PREFIX=$prefix \
-    sh "$root/activate.sh"
-
-if [ "${CATFOOD_BUILD_TOOLS:-1}" != 0 ]; then
-    CATFOOD_ROOT=$workspace CATFOOD_JOBS=${CATFOOD_JOBS:-2} \
-        sh "$root/build-tools.sh"
-fi
-
-# Newly built R, Ithon, and Idriç executables can now be linked without a
-# second network fetch of the manifest.
-CATFOOD_ROOT=$workspace CATFOOD_LINKS_ONLY=1 \
-    sh "$root/update-tools.ysh"
-
-CATFOOD_ROOT=$workspace CATFOOD_PREFIX=$prefix \
-    sh "$root/activate.sh"
-
-PATH=$prefix/bin:$workspace/bin:$PATH \
-CATFOOD_ROOT=$workspace CATFOOD_PREFIX=$prefix \
-    sh "$root/doctor.sh"
+    sh "$root/refresh.sh"
