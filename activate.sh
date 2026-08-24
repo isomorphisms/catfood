@@ -68,6 +68,7 @@ install_native_shell_link osh
 install_native_shell_link ysh
 write_wrapper catfood-update "$root/refresh.sh"
 write_wrapper catfood-doctor "$root/doctor.sh"
+write_wrapper catfood-import-config "$root/import-config.sh"
 
 profile=${CATFOOD_PROFILE:-$HOME/.profile}
 marker='# catfood workbench path'
@@ -83,4 +84,4 @@ if [ "${CATFOOD_NO_PROFILE:-0}" != 1 ]; then
 fi
 
 printf 'cat food commands are in %s\n' "$bindir"
-printf '%s\n' 'management: catfood-update catfood-doctor'
+printf '%s\n' 'management: catfood-update catfood-doctor catfood-import-config'
