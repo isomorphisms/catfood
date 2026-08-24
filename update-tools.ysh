@@ -1,7 +1,7 @@
 #!/usr/bin/env ysh
 set -eu
 
-root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=${CATFOOD_ROOT:-/opt}
 history_depth=${CATFOOD_DEPTH:-12}
 manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
@@ -86,6 +86,21 @@ link_first() {
     return 0
 }
 
+link_shell() {
+    name=$1
+    shift
+    link=$workspace/bin/$name
+
+    # Provisioning may deliberately point the stable shell name at a released
+    # native Oils install outside the source checkout. Keep that link as long
+    # as it is still runnable instead of regressing to an older source launcher.
+    if [ -L "$link" ] && [ -x "$link" ] && "$link" -c 'echo' >/dev/null 2>&1; then
+        return 0
+    fi
+
+    link_first "$name" "$@"
+}
+
 install_az_wrapper() {
     name=$1
     script=$workspace/az/bin/$name
@@ -104,19 +119,17 @@ install_az_wrapper() {
         fi
     fi
 
-    cat > "$wrapper" <<'EOF'
+cat > "$wrapper" <<'EOF'
 #!/bin/sh
 # catfood az wrapper
 set -eu
-bin_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+bin_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=$(dirname -- "$bin_dir")
 name=$(basename -- "$0")
 script=$workspace/az/bin/$name
 
-if [ -x "$bin_dir/ysh" ] && "$bin_dir/ysh" -c ':' >/dev/null 2>&1; then
-    exec "$bin_dir/ysh" "$script" "$@"
-fi
-
+# az's checked-in test suite and shell features target Bash.  Keep the stable
+# command on that tested interpreter until the repository adds a YSH gate.
 exec bash "$script" "$@"
 EOF
     chmod 0755 "$wrapper"
@@ -129,22 +142,25 @@ install_command_links() {
         "$workspace/r/bin/R"
     link_first Rscript \
         "$workspace/r/bin/Rscript"
+    link_first edric \
+        "$workspace/Idric/edric"
     link_first idris2 \
-        "$workspace/idris2/bin/idris2" \
-        "$workspace/idris2/idris2" \
         "$workspace/Idric/build/exec/idris2" \
         "$workspace/Idric/idris2"
+    link_first fieldmouse \
+        "$workspace/fieldmouse/build/exec/fieldmouse"
     link_first ick \
         "$workspace/ick-runtime/bin/ick" \
         "$workspace/ick-runtime/bin/gcc"
     link_first ithon \
+        "$workspace/.build/ithon/python" \
         "$workspace/ithon/ithon" \
         "$workspace/ithon/bin/ithon"
-    link_first osh \
+    link_shell osh \
         "$workspace/oils/_bin/cxx-sh/osh" \
         "$workspace/oils/bin/osh" \
         "$workspace/oils/osh"
-    link_first ysh \
+    link_shell ysh \
         "$workspace/oils/_bin/cxx-sh/ysh" \
         "$workspace/oils/bin/ysh" \
         "$workspace/oils/ysh"
@@ -165,15 +181,17 @@ command -v git >/dev/null 2>&1 || {
 }
 mkdir -p "$workspace"
 
-while read -r name repository branch submodules || [ -n "${name:-}" ]; do
-    case ${name:-} in
-        ''|'#'*) continue ;;
-    esac
+if [ "${CATFOOD_LINKS_ONLY:-0}" != 1 ]; then
+    while read -r name repository branch submodules || [ -n "${name:-}" ]; do
+        case ${name:-} in
+            ''|'#'*) continue ;;
+        esac
 
-    if ! feed_repository "$name" "$repository" "$branch" "$submodules"; then
-        failures=1
-    fi
-done < "$manifest"
+        if ! feed_repository "$name" "$repository" "$branch" "$submodules"; then
+            failures=1
+        fi
+    done < "$manifest"
+fi
 
 if ! install_command_links; then
     failures=1
@@ -184,5 +202,9 @@ if [ "$failures" -ne 0 ]; then
     exit 1
 fi
 
-printf 'cat food is current under %s\n' "$workspace"
-printf 'commands are under %s/bin\n' "$workspace"
+if [ "${CATFOOD_LINKS_ONLY:-0}" = 1 ]; then
+    printf 'cat food links are current under %s/bin\n' "$workspace"
+else
+    printf 'cat food is current under %s\n' "$workspace"
+    printf 'commands are under %s/bin\n' "$workspace"
+fi

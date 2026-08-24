@@ -1,0 +1,268 @@
+#!/usr/bin/env ysh
+set -eu
+
+GITLAB_HOST=${GITLAB_HOST:-https://gitlab.com}
+GITLAB_API=${GITLAB_API:-$GITLAB_HOST/api/v4}
+GITLAB_GROUP=${GITLAB_GROUP:-black-ballers}
+GITLAB_FORK=${GITLAB_FORK:-black-ballers/share-freely}
+GITLAB_UPSTREAM=${GITLAB_UPSTREAM:-fdroid/fdroiddata}
+GITLAB_UPSTREAM_BRANCH=${GITLAB_UPSTREAM_BRANCH:-master}
+FDROID_GITLAB_WORKDIR=${FDROID_GITLAB_WORKDIR:-${XDG_CACHE_HOME:-$HOME/.cache}/fdroid-gitlab/fdroiddata}
+FDROID_GITLAB_TOKEN_FILE=${FDROID_GITLAB_TOKEN_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/fdroid-gitlab/token}
+
+usage() {
+    cat <<'USAGE'
+usage: fdroid-deploy METADATA.yml [--app-id APP_ID] [--branch BRANCH] [--title TITLE]
+
+Submit one F-Droid metadata file through the configured GitLab fork.
+Defaults: black-ballers/share-freely -> fdroid/fdroiddata:master.
+
+Authentication: set GITLAB_TOKEN or save the token in
+~/.config/fdroid-gitlab/token.
+USAGE
+}
+
+need() {
+    command -v "$1" >/dev/null 2>&1 || {
+        printf 'fdroid-deploy needs %s\n' "$1" >&2
+        exit 127
+    }
+}
+
+uri() {
+    jq -rn --arg value "$1" '$value | @uri'
+}
+
+load_token() {
+    if [ -n "${GITLAB_TOKEN:-}" ]; then
+        printf '%s\n' "$GITLAB_TOKEN"
+        return 0
+    fi
+    if [ -f "$FDROID_GITLAB_TOKEN_FILE" ]; then
+        tr -d '\r\n' < "$FDROID_GITLAB_TOKEN_FILE"
+        return 0
+    fi
+    printf '%s\n' 'fdroid-deploy: no GitLab token; set GITLAB_TOKEN or save ~/.config/fdroid-gitlab/token' >&2
+    exit 2
+}
+
+api_get() {
+    curl -fsS \
+        --header "PRIVATE-TOKEN: $token" \
+        --header 'Accept: application/json' \
+        "$GITLAB_API$1"
+}
+
+api_post() {
+    path=$1
+    shift
+    curl -fsS --request POST \
+        --header "PRIVATE-TOKEN: $token" \
+        --header 'Accept: application/json' \
+        "$@" \
+        "$GITLAB_API$path"
+}
+
+api_put() {
+    path=$1
+    shift
+    curl -fsS --request PUT \
+        --header "PRIVATE-TOKEN: $token" \
+        --header 'Accept: application/json' \
+        "$@" \
+        "$GITLAB_API$path"
+}
+
+project_json() {
+    api_get "/projects/$(uri "$1")"
+}
+
+ensure_public() {
+    group_json=$(api_get "/groups/$(uri "$GITLAB_GROUP")")
+    if [ "$(printf '%s' "$group_json" | jq -r '.visibility')" != public ]; then
+        group_id=$(printf '%s' "$group_json" | jq -r '.id')
+        printf 'making GitLab group %s public\n' "$GITLAB_GROUP"
+        api_put "/groups/$group_id" --form-string visibility=public >/dev/null
+    fi
+
+    fork_json=$(project_json "$GITLAB_FORK")
+    if [ "$(printf '%s' "$fork_json" | jq -r '.visibility')" != public ]; then
+        fork_id=$(printf '%s' "$fork_json" | jq -r '.id')
+        printf 'making GitLab project %s public\n' "$GITLAB_FORK"
+        api_put "/projects/$fork_id" --form-string visibility=public >/dev/null
+    fi
+}
+
+repo_url() {
+    printf '%s/%s.git\n' "$GITLAB_HOST" "$1"
+}
+
+ensure_checkout() {
+    mkdir -p "$(dirname -- "$FDROID_GITLAB_WORKDIR")"
+    if [ ! -d "$FDROID_GITLAB_WORKDIR/.git" ]; then
+        if [ -e "$FDROID_GITLAB_WORKDIR" ] && [ -n "$(find "$FDROID_GITLAB_WORKDIR" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null)" ]; then
+            printf 'fdroid-deploy: %s exists but is not a Git checkout\n' "$FDROID_GITLAB_WORKDIR" >&2
+            exit 1
+        fi
+        git clone "$(repo_url "$GITLAB_FORK")" "$FDROID_GITLAB_WORKDIR"
+    fi
+
+    desired_origin=$(repo_url "$GITLAB_FORK")
+    desired_upstream=$(repo_url "$GITLAB_UPSTREAM")
+
+    if git -C "$FDROID_GITLAB_WORKDIR" remote get-url origin >/dev/null 2>&1; then
+        git -C "$FDROID_GITLAB_WORKDIR" remote set-url origin "$desired_origin"
+    else
+        git -C "$FDROID_GITLAB_WORKDIR" remote add origin "$desired_origin"
+    fi
+
+    if git -C "$FDROID_GITLAB_WORKDIR" remote get-url upstream >/dev/null 2>&1; then
+        git -C "$FDROID_GITLAB_WORKDIR" remote set-url upstream "$desired_upstream"
+    else
+        git -C "$FDROID_GITLAB_WORKDIR" remote add upstream "$desired_upstream"
+    fi
+
+    if [ -n "$(git -C "$FDROID_GITLAB_WORKDIR" status --porcelain)" ]; then
+        printf 'fdroid-deploy: cached fdroiddata checkout has local changes: %s\n' "$FDROID_GITLAB_WORKDIR" >&2
+        exit 1
+    fi
+
+    git -C "$FDROID_GITLAB_WORKDIR" fetch upstream "$GITLAB_UPSTREAM_BRANCH"
+    git -C "$FDROID_GITLAB_WORKDIR" fetch origin '+refs/heads/*:refs/remotes/origin/*'
+}
+
+push_branch() {
+    askpass_dir=$(mktemp -d)
+    askpass=$askpass_dir/askpass
+    cat > "$askpass" <<'ASKPASS'
+#!/bin/sh
+case "$1" in
+    *sername*) printf '%s\n' oauth2 ;;
+    *) printf '%s\n' "$GITLAB_TOKEN" ;;
+esac
+ASKPASS
+    chmod 0700 "$askpass"
+    GITLAB_TOKEN=$token GIT_ASKPASS=$askpass GIT_TERMINAL_PROMPT=0 \
+        git -C "$FDROID_GITLAB_WORKDIR" push --force-with-lease origin "$branch:$branch"
+    rm -rf "$askpass_dir"
+}
+
+find_or_create_mr() {
+    fork_json=$(project_json "$GITLAB_FORK")
+    upstream_json=$(project_json "$GITLAB_UPSTREAM")
+    fork_id=$(printf '%s' "$fork_json" | jq -r '.id')
+    upstream_id=$(printf '%s' "$upstream_json" | jq -r '.id')
+
+    branch_q=$(uri "$branch")
+    target_q=$(uri "$GITLAB_UPSTREAM_BRANCH")
+    mrs=$(api_get "/projects/$upstream_id/merge_requests?scope=all&state=opened&source_branch=$branch_q&target_branch=$target_q&per_page=100")
+    mr=$(printf '%s' "$mrs" | jq -c --argjson fork "$fork_id" '[.[] | select(.source_project_id == $fork)] | first // empty')
+
+    if [ -z "$mr" ]; then
+        printf 'opening merge request: %s\n' "$title"
+        mr=$(api_post "/projects/$fork_id/merge_requests" \
+            --form-string "source_branch=$branch" \
+            --form-string "target_branch=$GITLAB_UPSTREAM_BRANCH" \
+            --form-string "target_project_id=$upstream_id" \
+            --form-string "title=$title" \
+            --form-string allow_collaboration=true \
+            --form-string remove_source_branch=false)
+    fi
+
+    iid=$(printf '%s' "$mr" | jq -r '.iid')
+    full=$(api_get "/projects/$upstream_id/merge_requests/$iid")
+    printf 'MR:       %s\n' "$(printf '%s' "$full" | jq -r '.web_url')"
+    printf 'State:    %s\n' "$(printf '%s' "$full" | jq -r '.state')"
+    printf 'Merge:    %s\n' "$(printf '%s' "$full" | jq -r '.detailed_merge_status // .merge_status // "unknown"')"
+    printf 'Pipeline: %s\n' "$(printf '%s' "$full" | jq -r '.head_pipeline.status // "not reported yet"')"
+}
+
+if [ "${1:-}" = --help ] || [ "${1:-}" = -h ]; then
+    usage
+    exit 0
+fi
+
+[ "$#" -ge 1 ] || {
+    usage >&2
+    exit 2
+}
+
+need git
+need curl
+need jq
+
+token=$(load_token)
+metadata=$1
+shift
+app_id=
+branch=
+title=
+
+while [ "$#" -gt 0 ]; do
+    case $1 in
+        --app-id)
+            [ "$#" -ge 2 ] || { printf '%s\n' 'fdroid-deploy: --app-id needs a value' >&2; exit 2; }
+            app_id=$2
+            shift 2
+            ;;
+        --branch)
+            [ "$#" -ge 2 ] || { printf '%s\n' 'fdroid-deploy: --branch needs a value' >&2; exit 2; }
+            branch=$2
+            shift 2
+            ;;
+        --title)
+            [ "$#" -ge 2 ] || { printf '%s\n' 'fdroid-deploy: --title needs a value' >&2; exit 2; }
+            title=$2
+            shift 2
+            ;;
+        *)
+            printf 'fdroid-deploy: unknown argument: %s\n' "$1" >&2
+            exit 2
+            ;;
+    esac
+done
+
+[ -f "$metadata" ] || {
+    printf 'fdroid-deploy: metadata file not found: %s\n' "$metadata" >&2
+    exit 1
+}
+
+case $metadata in
+    *.yml|*.yaml) ;;
+    *) printf '%s\n' 'fdroid-deploy: metadata must be .yml or .yaml' >&2; exit 2 ;;
+esac
+
+if [ -z "$app_id" ]; then
+    base=$(basename -- "$metadata")
+    app_id=${base%.yml}
+    app_id=${app_id%.yaml}
+fi
+
+if [ -z "$branch" ]; then
+    safe=$(printf '%s' "$app_id" | sed 's/[^A-Za-z0-9._-]/-/g; s/^[.-]*//; s/[.-]*$//')
+    [ -n "$safe" ] || { printf 'fdroid-deploy: cannot derive branch from app id: %s\n' "$app_id" >&2; exit 2; }
+    branch=submit/$safe
+fi
+
+if [ -z "$title" ]; then
+    title="New App: $app_id"
+fi
+
+ensure_public
+ensure_checkout
+
+git -C "$FDROID_GITLAB_WORKDIR" checkout -B "$branch" "upstream/$GITLAB_UPSTREAM_BRANCH"
+destination=$FDROID_GITLAB_WORKDIR/metadata/$app_id.yml
+cp "$metadata" "$destination"
+git -C "$FDROID_GITLAB_WORKDIR" add "metadata/$app_id.yml"
+
+if git -C "$FDROID_GITLAB_WORKDIR" diff --cached --quiet; then
+    printf '%s\n' 'metadata is already identical to upstream; nothing to submit'
+    exit 0
+else
+    git -C "$FDROID_GITLAB_WORKDIR" commit -m "$title"
+    printf 'pushing %s:%s\n' "$GITLAB_FORK" "$branch"
+    push_branch
+fi
+
+find_or_create_mr
