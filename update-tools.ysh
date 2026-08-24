@@ -86,6 +86,21 @@ link_first() {
     return 0
 }
 
+link_shell() {
+    name=$1
+    shift
+    link=$workspace/bin/$name
+
+    # Provisioning may deliberately point the stable shell name at a released
+    # native Oils install outside the source checkout. Keep that link as long
+    # as it is still runnable instead of regressing to an older source launcher.
+    if [ -L "$link" ] && [ -x "$link" ] && "$link" -c ':' >/dev/null 2>&1; then
+        return 0
+    fi
+
+    link_first "$name" "$@"
+}
+
 install_az_wrapper() {
     name=$1
     script=$workspace/az/bin/$name
@@ -140,11 +155,11 @@ install_command_links() {
     link_first ithon \
         "$workspace/ithon/ithon" \
         "$workspace/ithon/bin/ithon"
-    link_first osh \
+    link_shell osh \
         "$workspace/oils/_bin/cxx-sh/osh" \
         "$workspace/oils/bin/osh" \
         "$workspace/oils/osh"
-    link_first ysh \
+    link_shell ysh \
         "$workspace/oils/_bin/cxx-sh/ysh" \
         "$workspace/oils/bin/ysh" \
         "$workspace/oils/ysh"
