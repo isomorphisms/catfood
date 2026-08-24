@@ -36,7 +36,7 @@ For example:
 
 ```sh
 az search 'K&R C programming'
-abe search 'Sven Nordqvist'
+abe find 'Sven Nordqvist'
 ```
 
 `az search` still needs the Amazon Creators credentials described by the `az` repository. AbeBooks/Impact configuration stays in the `az` user config rather than Cat Food.
