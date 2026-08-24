@@ -67,6 +67,7 @@ build_ir() {
     repo=$workspace/ir
     build=$build_root/ir
     runtime=$workspace/r
+    library=$build_root/r-library
     [ -d "$repo/.git" ] || return 0
 
     if needs_build ir "$repo"; then
@@ -87,7 +88,8 @@ build_ir() {
         mark_built ir "$repo"
     fi
 
-    R_LIBS_USER="$build_root/r-library" \
+    mkdir -p "$library"
+    R_LIBS_USER="$library" \
         "$runtime/bin/R" --vanilla --slave \
         -e 'answer ← 8 ÷ 2; stopifnot((answer = 4))'
 }
