@@ -28,9 +28,10 @@ mark_built() {
 
 build_idric() {
     repo=$workspace/Idric
+    output=$repo/build/exec/idris2
     [ -d "$repo/.git" ] || return 0
 
-    if needs_build idric "$repo"; then
+    if [ ! -x "$output" ] || needs_build idric "$repo"; then
         printf '%s\n' 'building Idriç'
         (
             cd "$repo"
@@ -39,15 +40,16 @@ build_idric() {
         mark_built idric "$repo"
     fi
 
-    "$repo/build/exec/idris2" --version >/dev/null
+    "$output" --version >/dev/null
 }
 
 build_ithon() {
     repo=$workspace/ithon
     build=$build_root/ithon
+    output=$build/python
     [ -d "$repo/.git" ] || return 0
 
-    if needs_build ithon "$repo"; then
+    if [ ! -x "$output" ] || needs_build ithon "$repo"; then
         printf '%s\n' 'building Ithon'
         rm -rf "$build"
         mkdir -p "$build"
@@ -60,17 +62,18 @@ build_ithon() {
         mark_built ithon "$repo"
     fi
 
-    "$build/python" -c 'x ← 42; assert x == 42'
+    "$output" -c 'x ← 42; assert x == 42'
 }
 
 build_ir() {
     repo=$workspace/ir
     build=$build_root/ir
     runtime=$workspace/r
+    output=$runtime/bin/R
     library=$build_root/r-library
     [ -d "$repo/.git" ] || return 0
 
-    if needs_build ir "$repo"; then
+    if [ ! -x "$output" ] || needs_build ir "$repo"; then
         printf '%s\n' 'building IR'
         rm -rf "$build" "$runtime"
         mkdir -p "$build"
@@ -90,7 +93,7 @@ build_ir() {
 
     mkdir -p "$library"
     R_LIBS_USER="$library" \
-        "$runtime/bin/R" --vanilla --slave \
+        "$output" --vanilla --slave \
         -e 'answer ← 8 ÷ 2; stopifnot((answer = 4))'
 }
 
