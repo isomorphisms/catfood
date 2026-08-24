@@ -36,11 +36,11 @@ check_stable() {
     fi
 }
 
-for command_name in git curl jq R Rscript edric idris2 ithon osh ysh az abe catfood-update catfood-doctor; do
+for command_name in git curl jq R Rscript edric idris2 ithon osh ysh az abe catfood-update catfood-doctor catfood-import-config; do
     check_command "$command_name"
 done
 
-for stable_name in R Rscript edric idris2 ithon osh ysh az abe catfood-update catfood-doctor; do
+for stable_name in R Rscript edric idris2 ithon osh ysh az abe catfood-update catfood-doctor catfood-import-config; do
     check_stable "$stable_name"
 done
 
@@ -83,9 +83,17 @@ while read -r name repository branch submodules || [ -n "${name:-}" ]; do
     fi
 done < "$manifest"
 
+config_home=${XDG_CONFIG_HOME:-$HOME/.config}
+amazon_secret=$config_home/az/amazon-secret
+abebooks_secret=$config_home/az/abebooks-impact
+
 if [ -x "$workspace/bin/az" ]; then
     if ! "$workspace/bin/az" link B000000000 >/dev/null 2>&1; then
         printf '%-22s public link smoke failed\n' az >&2
+        failures=1
+    fi
+    if ! "$workspace/bin/az" doctor >/dev/null 2>&1; then
+        printf '%-22s dependency doctor failed\n' az >&2
         failures=1
     fi
 fi
@@ -95,13 +103,20 @@ if [ -x "$workspace/bin/abe" ]; then
         printf '%-22s public link smoke failed\n' abe >&2
         failures=1
     fi
+    if [ -f "$abebooks_secret" ] && ! "$workspace/bin/abe" doctor >/dev/null 2>&1; then
+        printf '%-22s configured provider doctor failed\n' abe >&2
+        failures=1
+    fi
 fi
 
-config_home=${XDG_CONFIG_HOME:-$HOME/.config}
-if [ ! -f "$config_home/az/amazon-secret" ]; then
-    printf '%s\n' 'amazon Creators credentials: not configured (public az link still works)'
+if [ -f "$amazon_secret" ]; then
+    printf '%-22s configured\n' 'Amazon Creators'
+else
+    printf '%s\n' 'Amazon Creators credentials: not configured (public az link still works)'
 fi
-if [ ! -f "$config_home/az/abebooks-impact" ]; then
+if [ -f "$abebooks_secret" ]; then
+    printf '%-22s configured\n' 'AbeBooks search'
+else
     printf '%s\n' 'AbeBooks client key: not configured (abe link still works)'
 fi
 
