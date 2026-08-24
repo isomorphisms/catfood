@@ -84,6 +84,7 @@ choose_shell() {
 }
 
 need git
+CATFOOD_MANIFEST=$manifest sh "$root/check-manifest.sh"
 mkdir -p "$workspace"
 update_grease
 

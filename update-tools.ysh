@@ -149,6 +149,8 @@ install_command_links() {
     link_first idris2 \
         "$workspace/Idric/build/exec/idris2" \
         "$workspace/Idric/idris2"
+    link_first fieldmouse \
+        "$workspace/fieldmouse/build/exec/fieldmouse"
     link_first ick \
         "$workspace/ick-runtime/bin/ick" \
         "$workspace/ick-runtime/bin/gcc"

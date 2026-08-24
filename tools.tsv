@@ -1,5 +1,9 @@
 # name repository branch submodules
-# Core language/toolchain
+#
+# This is the current workbench, not an archive of every historical fork.
+# Grease is fed separately by bootstrap.sh because it supplies stage one.
+
+# Core languages, compilers, and machine-facing tools
 oils https://github.com/isomorphisms/oils.git grease/main none
 ir https://github.com/isomorphisms/ir.git trunk none
 irk https://github.com/isomorphisms/irk.git main none
@@ -7,13 +11,46 @@ ithon https://github.com/isomorphisms/ithon.git main none
 icky https://github.com/isomorphisms/icky.git main none
 ick https://github.com/isomorphisms/ick.git main none
 Idric https://github.com/isomorphisms/Idric.git main none
+fieldmouse https://github.com/isomorphisms/fieldmouse.git edric-rewrite none
+idris-arm-backend https://github.com/isomorphisms/idris-arm-backend.git main none
+idris-shader-backend https://github.com/isomorphisms/idris-shader-backend.git main none
+sent.idr https://github.com/isomorphisms/sent.idr.git main none
 programmers-keyboard https://github.com/isomorphisms/programmers-keyboard.git main none
 icu https://github.com/isomorphisms/icu.git master none
 
-# Cross-thread workbench tools and active projects
+# Workbench, browser, publication, and shared-CI repositories
 az https://github.com/isomorphisms/az.git main none
-ib https://github.com/isomorphisms/ib.git main recursive
-internetarchive https://github.com/isomorphisms/internetarchive.git master recursive
-manimi https://github.com/isomorphisms/manimi.git master recursive
-wegert https://github.com/isomorphisms/wegert.git main recursive
-yt-shorts https://github.com/isomorphisms/yt-shorts.git main recursive
+ib https://github.com/isomorphisms/ib.git main none
+internetarchive https://github.com/isomorphisms/internetarchive.git master none
+bookreader https://github.com/isomorphisms/bookreader.git master none
+harvest-images-from-pdf https://github.com/isomorphisms/harvest-images-from-pdf.git main none
+ddg https://github.com/isomorphisms/ddg.git develop recursive
+chawan https://github.com/isomorphisms/chawan.git master recursive
+manimi https://github.com/isomorphisms/manimi.git master none
+wegert https://github.com/isomorphisms/wegert.git main none
+yt-shorts https://github.com/isomorphisms/yt-shorts.git main none
+ai-ci https://github.com/isomorphisms/ai-ci.git main none
+computer-science https://github.com/isomorphisms/computer-science.git main none
+utilities-android-phone-user https://github.com/isomorphisms/utilities-android-phone-user.git main none
+
+# Current applications, games, and mathematical experiments
+algebraic-variety-explorer-mobile https://github.com/isomorphisms/algebraic-variety-explorer-mobile.git main none
+learn-toki-pona https://github.com/isomorphisms/learn-toki-pona.git main none
+game https://github.com/isomorphisms/game.git main none
+hegel https://github.com/isomorphisms/hegel.git main none
+geofence https://github.com/isomorphisms/geofence.git main none
+analytic-continuation https://github.com/isomorphisms/analytic-continuation.git main none
+non-poly https://github.com/isomorphisms/non-poly.git main none
+coefficient-root-dance https://github.com/isomorphisms/coefficient-root-dance.git main none
+Cayley https://github.com/isomorphisms/Cayley.git cayley none
+tablature https://github.com/isomorphisms/tablature.git master none
+zoneedit https://github.com/isomorphisms/zoneedit.git main none
+Conway https://github.com/isomorphisms/Conway.git main none
+L https://github.com/isomorphisms/L.git main none
+soap https://github.com/isomorphisms/soap.git main recursive
+klein-quartic https://github.com/isomorphisms/klein-quartic.git master none
+hopf_fibration https://github.com/isomorphisms/hopf_fibration.git master none
+ortho https://github.com/isomorphisms/ortho.git main none
+kleinian-groups https://github.com/isomorphisms/kleinian-groups.git master none
+theta https://github.com/isomorphisms/theta.git main none
+indras-pearls https://github.com/isomorphisms/indras-pearls.git main none

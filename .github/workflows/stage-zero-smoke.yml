@@ -11,21 +11,22 @@ jobs:
       - name: Check POSIX stage zero
         shell: sh
         run: |
-          if [ -f bootstrap.sh ] && [ -f update-tools.ysh ]; then
-            dash -n bootstrap.sh
-            dash -n update-tools.ysh
-            sh -n bootstrap.sh
-            sh -n update-tools.ysh
-          else
-            echo 'bootstrap files are not present on this branch; nothing to check yet'
-          fi
-
-          for script in fdroid-deploy.ysh fdroid-check-deployed.ysh; do
+          for script in \
+            bootstrap.sh check-manifest.sh update-tools.ysh \
+            provision.sh activate.sh build-tools.sh refresh.sh doctor.sh import-config.sh \
+            fdroid-deploy.ysh fdroid-check-deployed.ysh tests/check-manifest.sh
+          do
             if [ -f "$script" ]; then
               dash -n "$script"
               sh -n "$script"
             fi
           done
+      - name: Verify the workbench manifest
+        if: ${{ hashFiles('check-manifest.sh', 'tools.tsv') != '' }}
+        shell: sh
+        run: |
+          sh tests/check-manifest.sh
+          sh ./check-manifest.sh --remote
       - name: Exercise az through the stable command path
         shell: bash
         run: |
@@ -91,7 +92,18 @@ jobs:
           CATFOOD_PREFIX: ${{ runner.temp }}/prefix
           CATFOOD_CACHE: ${{ runner.temp }}/cache
         shell: sh
-        run: sh ./provision.sh
+        run: |
+          sudo env \
+            CATFOOD_ROOT="$CATFOOD_ROOT" \
+            CATFOOD_PREFIX="$CATFOOD_PREFIX" \
+            CATFOOD_CACHE="$CATFOOD_CACHE" \
+            CATFOOD_DEPTH="$CATFOOD_DEPTH" \
+            CATFOOD_NO_PROFILE="$CATFOOD_NO_PROFILE" \
+            sh ./provision.sh
+
+          foreign_owner=$(find "$CATFOOD_ROOT" "$CATFOOD_PREFIX" "$CATFOOD_CACHE" \
+            ! -user root -print -quit)
+          test -z "$foreign_owner"
       - name: Verify commands
         if: ${{ hashFiles('provision.sh') != '' }}
         env:
@@ -102,8 +114,16 @@ jobs:
         run: |
           PATH="$CATFOOD_PREFIX/bin:$CATFOOD_ROOT/bin:$PATH"
           export PATH
-          "$CATFOOD_ROOT/bin/ysh" -c 'echo'
-          "$CATFOOD_ROOT/bin/osh" -c 'echo'
-          "$CATFOOD_ROOT/bin/az" link B000000000 >/dev/null
-          "$CATFOOD_ROOT/bin/abe" link 'https://www.abebooks.com/servlet/BookDetailsPL?bi=1' >/dev/null
-          "$CATFOOD_ROOT/bin/catfood-doctor"
+          sudo env \
+            HOME=/root \
+            PATH="$PATH" \
+            CATFOOD_ROOT="$CATFOOD_ROOT" \
+            CATFOOD_PREFIX="$CATFOOD_PREFIX" \
+            CATFOOD_CACHE="$CATFOOD_CACHE" \
+            sh -c '
+              "$CATFOOD_ROOT/bin/ysh" -c "echo"
+              "$CATFOOD_ROOT/bin/osh" -c "echo"
+              "$CATFOOD_ROOT/bin/az" link B000000000 >/dev/null
+              "$CATFOOD_ROOT/bin/abe" link "https://www.abebooks.com/servlet/BookDetailsPL?bi=1" >/dev/null
+              "$CATFOOD_ROOT/bin/catfood-doctor"
+            '

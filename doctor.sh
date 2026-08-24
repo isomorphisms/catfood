@@ -17,6 +17,8 @@ fi
 PATH=$prefix/bin:$workspace/bin:$PATH
 export PATH
 
+CATFOOD_MANIFEST=$manifest sh "$root/check-manifest.sh" || failures=1
+
 check_command() {
     if command -v "$1" >/dev/null 2>&1; then
         printf '%-22s ok\n' "$1"
@@ -36,11 +38,11 @@ check_stable() {
     fi
 }
 
-for command_name in git curl jq R Rscript edric idris2 ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
+for command_name in git curl jq R Rscript edric idris2 fieldmouse ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
     check_command "$command_name"
 done
 
-for stable_name in R Rscript edric idris2 ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
+for stable_name in R Rscript edric idris2 fieldmouse ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
     check_stable "$stable_name"
 done
 
@@ -55,6 +57,13 @@ fi
 if [ -x "$workspace/bin/idris2" ] && ! "$workspace/bin/idris2" --version >/dev/null 2>&1; then
     printf '%-22s stable command not runnable\n' idris2 >&2
     failures=1
+fi
+if [ -x "$workspace/bin/fieldmouse" ]; then
+    output=$("$workspace/bin/fieldmouse" -e 'console.log("catfood-fieldmouse");' 2>/dev/null || true)
+    if [ "$output" != catfood-fieldmouse ]; then
+        printf '%-22s interpreter smoke failed\n' fieldmouse >&2
+        failures=1
+    fi
 fi
 if [ -x "$workspace/bin/ithon" ] && ! "$workspace/bin/ithon" -c 'x ← 42; assert x == 42' >/dev/null 2>&1; then
     printf '%-22s arrow syntax smoke failed\n' ithon >&2
@@ -83,8 +92,22 @@ while read -r name repository branch submodules || [ -n "${name:-}" ]; do
         ''|'#'*) continue ;;
     esac
 
-    if [ -e "$workspace/$name/.git" ]; then
+    checkout=$workspace/$name
+    if [ -e "$checkout/.git" ]; then
         printf '%-22s present\n' "$name"
+        if [ -f "$checkout/.gitmodules" ] && [ "$submodules" != recursive ]; then
+            printf '%-22s has untracked submodule policy\n' "$name" >&2
+            failures=1
+        elif [ ! -f "$checkout/.gitmodules" ] && [ "$submodules" = recursive ]; then
+            printf '%-22s marked recursive without .gitmodules\n' "$name" >&2
+            failures=1
+        elif [ "$submodules" = recursive ]; then
+            submodule_status=$(git -C "$checkout" submodule status --recursive 2>/dev/null || true)
+            if printf '%s\n' "$submodule_status" | grep '^[+U-]' >/dev/null 2>&1; then
+                printf '%-22s submodules are not at recorded commits\n' "$name" >&2
+                failures=1
+            fi
+        fi
     else
         printf '%-22s missing checkout\n' "$name" >&2
         failures=1

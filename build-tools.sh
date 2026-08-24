@@ -26,6 +26,19 @@ mark_built() {
     revision "$repo" > "$stamps/$name"
 }
 
+needs_state_build() {
+    name=$1
+    state=$2
+    stamp=$stamps/$name
+    [ ! -f "$stamp" ] || [ "$(cat "$stamp")" != "$state" ]
+}
+
+mark_state_built() {
+    name=$1
+    state=$2
+    printf '%s\n' "$state" > "$stamps/$name"
+}
+
 build_idric() {
     repo=$workspace/Idric
     output=$repo/build/exec/idris2
@@ -41,6 +54,38 @@ build_idric() {
     fi
 
     "$output" --version >/dev/null
+}
+
+build_fieldmouse() {
+    repo=$workspace/fieldmouse
+    idric=$workspace/Idric
+    compiler=$idric/build/exec/idris2
+    output=$repo/build/exec/fieldmouse
+    [ -d "$repo/.git" ] || return 0
+    [ -x "$compiler" ] || {
+        printf '%s\n' 'Fieldmouse needs the built Idriç compiler' >&2
+        return 1
+    }
+
+    state="$(revision "$repo") $(revision "$idric")"
+    if [ ! -x "$output" ] || needs_state_build fieldmouse "$state"; then
+        printf '%s\n' 'building Fieldmouse'
+        rm -rf "$repo/build"
+        (
+            cd "$repo"
+            PATH="$idric/.tools/bin:$PATH" \
+            IDRIS2_PREFIX="$idric/bootstrap-build" \
+                "$compiler" --build fieldmouse.ipkg
+        )
+        mark_state_built fieldmouse "$state"
+    fi
+
+    expected=$(printf 'sum 10.0\nok')
+    actual=$("$output" -e 'var total = 0; var i = 1; while (i <= 4) { total = total + i; i = i + 1; } console.log("sum", total); if (total === 10) console.log("ok");')
+    [ "$actual" = "$expected" ] || {
+        printf 'Fieldmouse smoke returned:\n%s\n' "$actual" >&2
+        return 1
+    }
 }
 
 build_ithon() {
@@ -98,6 +143,7 @@ build_ir() {
 }
 
 build_idric
+build_fieldmouse
 build_ithon
 build_ir
 
