@@ -35,7 +35,7 @@ build_idric() {
         printf '%s\n' 'building Idriç'
         (
             cd "$repo"
-            JOBS=$jobs sh ./edric all
+            PATH="$repo/.tools/bin:$PATH" JOBS=$jobs sh ./edric all
         )
         mark_built idric "$repo"
     fi
