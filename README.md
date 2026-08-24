@@ -20,6 +20,25 @@ CATFOOD_ROOT="$HOME/opt" ./bootstrap.sh
 
 New clones use shallow history, 12 commits by default. Set `CATFOOD_DEPTH` to change that. Existing checkouts are fetched without rewriting their history.
 
-`tools.tsv` currently tracks Oils (`grease/main`), IR, IRK, Ithon, Icky, ICK, Idriç, and the programmer's keyboard. Grease itself is handled first by `bootstrap.sh`. Project names that do not currently resolve to repositories are not guessed into URLs.
+`tools.tsv` currently tracks Oils (`grease/main`), IR, IRK, Ithon, Icky, ICK, Idriç, the programmer's keyboard, and `az`. Grease itself is handled first by `bootstrap.sh`. Project names that do not currently resolve to repositories are not guessed into URLs.
 
-Updates are intentionally non-destructive: Cat Food fast-forwards clean checkouts, fetches but does not move dirty ones, refuses an unexpected `origin`, and refuses to rewrite diverged local history.
+## Stable commands
+
+After feeding, Cat Food keeps short command names under `$CATFOOD_ROOT/bin` (`/opt/bin` by default). Put that directory on `PATH`:
+
+```sh
+export PATH="${CATFOOD_ROOT:-/opt}/bin:$PATH"
+```
+
+It restores the existing stable names when their targets are present: `R`, `Rscript`, `idris2`, `ick`, `ithon`, `osh`, `ysh`, and `grease`. It also installs `az` and `abe` wrappers from the `az` checkout. Those wrappers prefer a runnable YSH and fall back to Bash, so the current Grease/Oils Python-2 bootstrap gap does not prevent the price tools from running on a stock modern machine.
+
+For example:
+
+```sh
+az search 'K&R C programming'
+abe search 'Sven Nordqvist'
+```
+
+`az search` still needs the Amazon Creators credentials described by the `az` repository. AbeBooks/Impact configuration stays in the `az` user config rather than Cat Food.
+
+Updates are intentionally non-destructive: Cat Food fast-forwards clean checkouts, fetches but does not move dirty ones, refuses an unexpected `origin`, refuses to rewrite diverged local history, and will not replace an unrelated regular file in the stable command directory.
