@@ -1,6 +1,11 @@
 #!/bin/sh
 set -eu
 
+build_locale=${CATFOOD_LOCALE:-C.UTF-8}
+LANG=$build_locale
+LC_ALL=$build_locale
+export LANG LC_ALL
+
 workspace=${CATFOOD_ROOT:-/opt}
 build_root=${CATFOOD_BUILD_ROOT:-$workspace/.build}
 jobs=${CATFOOD_JOBS:-2}
