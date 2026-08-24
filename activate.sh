@@ -27,8 +27,8 @@ write_wrapper() {
     mv "$tmp" "$bindir/$name"
 }
 
-write_wrapper az "$workspace/az/bin/az"
-write_wrapper abe "$workspace/az/bin/abe"
+# update-tools.ysh owns the stable project/tool aliases, including az and abe.
+# Activation only adds Cat Food's own management commands and the PATH entry.
 write_wrapper catfood-update "$root/bootstrap.sh"
 write_wrapper catfood-doctor "$root/doctor.sh"
 
@@ -46,4 +46,4 @@ if [ "${CATFOOD_NO_PROFILE:-0}" != 1 ]; then
 fi
 
 printf 'cat food commands are in %s\n' "$bindir"
-printf '%s\n' 'available: az abe catfood-update catfood-doctor'
+printf '%s\n' 'management: catfood-update catfood-doctor'

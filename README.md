@@ -18,28 +18,36 @@ cd /opt/catfood
 ./provision.sh
 ```
 
-`provision.sh` installs the ordinary console/build dependencies used across the current projects, installs the released native YSH if a runnable one is not already present, feeds the repositories, exposes command wrappers, and runs `catfood-doctor` before returning success.
+`provision.sh` installs the ordinary console/build dependencies used across the current projects, installs the released native YSH if a runnable one is not already present, feeds the repositories, exposes stable commands, and runs `catfood-doctor` before returning success.
 
 The native YSH release is downloaded from Oils, verified by SHA-256, built, and installed under `/usr/local` when provisioning as root. Override `CATFOOD_PREFIX` for another prefix. The source checkout under `grease/source` remains pinned separately for Grease development; the released YSH is the runnable stage-one shell.
 
-After provisioning these commands are on `PATH`:
+Amazon and AbeBooks credentials stay outside Git. Public `az link` and `abe link` work before secrets are configured; Amazon Creators search/price calls and AbeBooks search use the provider configuration under `~/.config/az`.
 
-```text
-az
-abe
+## Repository feed
+
+The workbench feed currently includes Oils (`grease/main`), IR, IRK, Ithon, Icky, ICK, Idriç, the programmer's keyboard, `az`, `ib`, `internetarchive`, `manimi`, `wegert`, and `yt-shorts`. Grease itself is handled first by `bootstrap.sh`. Repositories marked `recursive` in `tools.tsv` have their submodules initialized automatically.
+
+New clones use shallow history, 12 commits by default. Set `CATFOOD_DEPTH` to change that. Existing checkouts are fetched without rewriting their history.
+
+## Stable commands
+
+After feeding, Cat Food keeps short command names under `$CATFOOD_ROOT/bin` (`/opt/bin` by default). Provisioning adds both the installed native YSH prefix and that command directory to `PATH`.
+
+The feed restores existing stable names when their targets are present: `R`, `Rscript`, `idris2`, `ick`, `ithon`, `osh`, `ysh`, and `grease`. It also installs `az` and `abe` wrappers from the `az` checkout. Those price wrappers prefer a runnable YSH and fall back to Bash, so stage zero remains usable even before native YSH has been installed.
+
+For example:
+
+```sh
+az search 'K&R C programming'
+abe find 'Sven Nordqvist'
 catfood-update
 catfood-doctor
 ```
 
-`az link` and `abe link` need no secret credentials. Amazon Creators search/price calls and AbeBooks search need their provider credentials under `~/.config/az`; Cat Food creates the configuration directory but never commits or invents secrets.
+`az search` needs the Amazon Creators credentials described by the `az` repository. AbeBooks search needs its client key. Link generation does not require either secret.
 
-## Repository feed
-
-The workbench feed currently includes the language/toolchain repositories plus the active cross-thread tools and projects: `az`, `ib`, `internetarchive`, `manimi`, `wegert`, and `yt-shorts`. Repositories marked `recursive` in `tools.tsv` have their submodules initialized automatically, so newly pinned project dependencies come across on the next feed.
-
-New clones use shallow history, 12 commits by default. Set `CATFOOD_DEPTH` to change that. Existing checkouts are fetched without rewriting their history.
-
-Updates are intentionally non-destructive: Cat Food fast-forwards clean checkouts, fetches but does not move dirty ones, refuses an unexpected `origin`, and refuses to rewrite diverged local history.
+Updates are intentionally non-destructive: Cat Food fast-forwards clean checkouts, fetches but does not move dirty ones, refuses an unexpected `origin`, refuses to rewrite diverged local history, and will not replace an unrelated regular file in the stable command directory.
 
 ## Stage zero only
 
