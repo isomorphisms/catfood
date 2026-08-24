@@ -97,6 +97,10 @@ install_ysh() {
 install_packages
 install_ysh
 
+if [ -n "${CATFOOD_CONFIG_DIR:-}" ]; then
+    CATFOOD_CONFIG_DIR=$CATFOOD_CONFIG_DIR sh "$root/import-config.sh"
+fi
+
 PATH=$prefix/bin:$workspace/bin:$PATH
 export PATH
 
