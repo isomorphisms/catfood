@@ -1,0 +1,191 @@
+#!/usr/bin/env ysh
+set -eu
+
+GITLAB_HOST=${GITLAB_HOST:-https://gitlab.com}
+GITLAB_API=${GITLAB_API:-$GITLAB_HOST/api/v4}
+GITLAB_FORK=${GITLAB_FORK:-black-ballers/share-freely}
+GITLAB_UPSTREAM=${GITLAB_UPSTREAM:-fdroid/fdroiddata}
+GITLAB_UPSTREAM_BRANCH=${GITLAB_UPSTREAM_BRANCH:-master}
+FDROID_GITLAB_TOKEN_FILE=${FDROID_GITLAB_TOKEN_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/fdroid-gitlab/token}
+FDROID_API=${FDROID_API:-https://f-droid.org/api/v1/packages}
+FDROID_PACKAGES=${FDROID_PACKAGES:-https://f-droid.org/packages}
+
+usage() {
+    cat <<'USAGE'
+usage: fdroid-check-deployed APP_ID [--version VERSION] [--branch BRANCH]
+
+Check both sides of an F-Droid submission:
+  * GitLab merge-request state and all ordinary MR comments
+  * the live F-Droid package API and public package page
+  * an expected version, when --version is supplied
+
+The command exits successfully only when the MR is merged and the app is
+visible in F-Droid. With --version, that version must also be published.
+USAGE
+}
+
+need() {
+    command -v "$1" >/dev/null 2>&1 || {
+        printf 'fdroid-check-deployed needs %s\n' "$1" >&2
+        exit 127
+    }
+}
+
+uri() {
+    jq -rn --arg value "$1" '$value | @uri'
+}
+
+load_optional_token() {
+    if [ -n "${GITLAB_TOKEN:-}" ]; then
+        printf '%s\n' "$GITLAB_TOKEN"
+    elif [ -f "$FDROID_GITLAB_TOKEN_FILE" ]; then
+        tr -d '\r\n' < "$FDROID_GITLAB_TOKEN_FILE"
+    fi
+}
+
+gitlab_get() {
+    if [ -n "$token" ]; then
+        curl -fsS \
+            --header "PRIVATE-TOKEN: $token" \
+            --header 'Accept: application/json' \
+            "$GITLAB_API$1"
+    else
+        curl -fsS \
+            --header 'Accept: application/json' \
+            "$GITLAB_API$1"
+    fi
+}
+
+project_json() {
+    gitlab_get "/projects/$(uri "$1")"
+}
+
+print_comments() {
+    notes=$1
+    count=$(printf '%s' "$notes" | jq '[.[] | select(.system == false)] | length')
+    printf 'Comments: %s\n' "$count"
+    if [ "$count" -gt 0 ]; then
+        printf '%s' "$notes" | jq -r '.[] | select(.system == false) | "  [\(.created_at)] \(.author.username): \(.body | gsub("\\r"; "") | gsub("\\n"; "\\n    "))"'
+        printf '\n'
+    fi
+}
+
+if [ "${1:-}" = --help ] || [ "${1:-}" = -h ]; then
+    usage
+    exit 0
+fi
+
+[ "$#" -ge 1 ] || {
+    usage >&2
+    exit 2
+}
+
+need curl
+need jq
+
+app_id=$1
+shift
+expected_version=
+branch=
+
+while [ "$#" -gt 0 ]; do
+    case $1 in
+        --version)
+            [ "$#" -ge 2 ] || { printf '%s\n' 'fdroid-check-deployed: --version needs a value' >&2; exit 2; }
+            expected_version=$2
+            shift 2
+            ;;
+        --branch)
+            [ "$#" -ge 2 ] || { printf '%s\n' 'fdroid-check-deployed: --branch needs a value' >&2; exit 2; }
+            branch=$2
+            shift 2
+            ;;
+        *)
+            printf 'fdroid-check-deployed: unknown argument: %s\n' "$1" >&2
+            exit 2
+            ;;
+    esac
+done
+
+token=$(load_optional_token)
+failures=0
+
+printf '%s\n' 'GitLab'
+printf '%s\n' '------'
+fork_json=$(project_json "$GITLAB_FORK")
+upstream_json=$(project_json "$GITLAB_UPSTREAM")
+fork_id=$(printf '%s' "$fork_json" | jq -r '.id')
+upstream_id=$(printf '%s' "$upstream_json" | jq -r '.id')
+
+target_q=$(uri "$GITLAB_UPSTREAM_BRANCH")
+mr_path="/projects/$upstream_id/merge_requests?scope=all&state=all&target_branch=$target_q&order_by=updated_at&sort=desc&per_page=100"
+if [ -n "$branch" ]; then
+    mr_path="$mr_path&source_branch=$(uri "$branch")"
+fi
+
+mrs=$(gitlab_get "$mr_path")
+mr=$(printf '%s' "$mrs" | jq -c --argjson fork "$fork_id" '[.[] | select(.source_project_id == $fork)] | first // empty')
+
+if [ -z "$mr" ]; then
+    printf '%s\n' 'MR:       not found'
+    failures=1
+else
+    iid=$(printf '%s' "$mr" | jq -r '.iid')
+    full=$(gitlab_get "/projects/$upstream_id/merge_requests/$iid")
+    mr_state=$(printf '%s' "$full" | jq -r '.state')
+    printf 'MR:       %s\n' "$(printf '%s' "$full" | jq -r '.web_url')"
+    printf 'State:    %s\n' "$mr_state"
+    printf 'Merged:   %s\n' "$(printf '%s' "$full" | jq -r '.merged_at // "no"')"
+    printf 'Merge:    %s\n' "$(printf '%s' "$full" | jq -r '.detailed_merge_status // .merge_status // "unknown"')"
+    printf 'Pipeline: %s\n' "$(printf '%s' "$full" | jq -r '.head_pipeline.status // "not reported"')"
+    printf 'Branch:   %s\n' "$(printf '%s' "$full" | jq -r '.source_branch')"
+
+    notes=$(gitlab_get "/projects/$upstream_id/merge_requests/$iid/notes?sort=asc&order_by=created_at&per_page=100")
+    print_comments "$notes"
+
+    if [ "$mr_state" != merged ]; then
+        failures=1
+    fi
+fi
+
+printf '\n%s\n' 'F-Droid'
+printf '%s\n' '-------'
+package_tmp=$(mktemp)
+http_code=$(curl -sS -o "$package_tmp" -w '%{http_code}' "$FDROID_API/$(uri "$app_id")" || true)
+
+if [ "$http_code" = 200 ]; then
+    package_name=$(jq -r '.packageName // empty' < "$package_tmp")
+    suggested_code=$(jq -r '.suggestedVersionCode // "not reported"' < "$package_tmp")
+    latest=$(jq -r '[.packages[]?] | sort_by(.versionCode) | last | if . == null then "none" else "\(.versionName) (\(.versionCode))" end' < "$package_tmp")
+    printf 'API:      visible as %s\n' "${package_name:-$app_id}"
+    printf 'Suggested version code: %s\n' "$suggested_code"
+    printf 'Newest published:       %s\n' "$latest"
+
+    if [ -n "$expected_version" ]; then
+        if jq -e --arg version "$expected_version" '[.packages[]? | .versionName, (.versionCode | tostring)] | index($version) != null' < "$package_tmp" >/dev/null; then
+            printf 'Expected version:       %s published\n' "$expected_version"
+        else
+            printf 'Expected version:       %s NOT published\n' "$expected_version"
+            failures=1
+        fi
+    fi
+else
+    printf 'API:      not visible (HTTP %s)\n' "$http_code"
+    failures=1
+fi
+rm -f "$package_tmp"
+
+store_code=$(curl -sS -o /dev/null -w '%{http_code}' "$FDROID_PACKAGES/$(uri "$app_id")/" || true)
+if [ "$store_code" = 200 ]; then
+    printf 'Store page: visible\n'
+else
+    printf 'Store page: not visible (HTTP %s)\n' "$store_code"
+    failures=1
+fi
+
+if [ "$failures" -ne 0 ]; then
+    printf '\n%s\n' 'not fully deployed' >&2
+    exit 1
+fi
+
+printf '\n%s\n' 'deployed'
