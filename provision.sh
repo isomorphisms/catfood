@@ -2,10 +2,11 @@
 set -eu
 
 # Root consoles and sudo may start in the ASCII C locale.  The toolchain
-# sources and generated documentation contain Unicode syntax, so make the
-# Debian/Ubuntu-provided UTF-8 locale explicit for every provisioning step.
-LANG=C.UTF-8
-LC_ALL=C.UTF-8
+# sources and generated documentation contain Unicode syntax, so make a
+# configurable UTF-8 locale explicit for every provisioning step.
+catfood_locale=${CATFOOD_LOCALE:-C.UTF-8}
+LANG=$catfood_locale
+LC_ALL=$catfood_locale
 export LANG LC_ALL
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
