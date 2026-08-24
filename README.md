@@ -28,9 +28,34 @@ The core build currently exercises the repositories that need a real build befor
 - Ithon is configured and built out of tree under `/opt/.build/ithon`, then runs `test_ithon_syntax`.
 - IR is built out of tree and installed under `/opt/r`, then smoke-tests the arrow/division/equality syntax.
 
-Build stamps are keyed to each repository commit. `catfood-update` fetches the repositories, rebuilds only core tools whose source commit changed, refreshes aliases, and reruns the doctor. Build output stays outside the IR and Ithon checkouts so routine builds do not make those repositories look locally modified.
+Build stamps are keyed to each repository commit. `catfood-update` fetches the repositories, rebuilds only core tools whose source commit changed or whose built output is missing, refreshes aliases, and reruns the doctor. Build output stays outside the IR and Ithon checkouts so routine builds do not make those repositories look locally modified.
 
-Amazon and AbeBooks credentials stay outside Git. Public `az link` and `abe link` work before secrets are configured; Amazon Creators search/price calls and AbeBooks search use the provider configuration under `~/.config/az`.
+## Private provider config
+
+Amazon and AbeBooks credentials stay outside Git. Public `az link` and `abe link` work before secrets are configured; Amazon Creators search/price calls and AbeBooks search use provider configuration under `~/.config/az`.
+
+A private config directory can be handed to the provisioner:
+
+```text
+/private/catfood-config/
+└── az/
+    ├── amazon-secret
+    └── abebooks-impact
+```
+
+Then provision with:
+
+```sh
+CATFOOD_CONFIG_DIR=/private/catfood-config ./provision.sh
+```
+
+The two files are copied to `~/.config/az` with mode `0600`. The same import can be run later with:
+
+```sh
+catfood-import-config /private/catfood-config
+```
+
+The importer also accepts the two files directly at the root of the private directory. It never copies arbitrary config or puts secrets in the Cat Food checkout.
 
 ## Repository feed
 
@@ -42,7 +67,7 @@ New clones use shallow history, 12 commits by default. Set `CATFOOD_DEPTH` to ch
 
 After provisioning, Cat Food keeps short command names under `$CATFOOD_ROOT/bin` (`/opt/bin` by default). Provisioning adds both the installed native YSH prefix and that command directory to `PATH`.
 
-Current stable names include `R`, `Rscript`, `edric`, `idris2`, `ithon`, `osh`, `ysh`, `grease`, `az`, and `abe` when their targets are present. The `az` and `abe` wrappers prefer the stable runnable YSH and fall back to Bash during stage zero.
+Current stable names include `R`, `Rscript`, `edric`, `idris2`, `ithon`, `osh`, `ysh`, `grease`, `az`, and `abe` when their targets are present. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`. The `az` and `abe` wrappers prefer the stable runnable YSH and fall back to Bash during stage zero.
 
 For example:
 
