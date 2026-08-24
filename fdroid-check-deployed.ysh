@@ -19,6 +19,9 @@ Check both sides of an F-Droid submission:
   * the live F-Droid package API and public package page
   * an expected version, when --version is supplied
 
+Without --branch, the merge request is matched to metadata/APP_ID.yml rather
+than simply taking the latest F-Droid merge request from the fork.
+
 The command exits successfully only when the MR is merged and the app is
 visible in F-Droid. With --version, that version must also be published.
 USAGE
@@ -68,6 +71,30 @@ print_comments() {
         printf '%s' "$notes" | jq -r '.[] | select(.system == false) | "  [\(.created_at)] \(.author.username): \(.body | gsub("\\r"; "") | gsub("\\n"; "\\n    "))"'
         printf '\n'
     fi
+}
+
+find_app_mr() {
+    candidates=$1
+    metadata_path=metadata/$app_id.yml
+
+    if [ -n "$branch" ]; then
+        printf '%s' "$candidates" | jq -c --argjson fork "$fork_id" \
+            '[.[] | select(.source_project_id == $fork)] | first // empty'
+        return 0
+    fi
+
+    for iid in $(printf '%s' "$candidates" | jq -r --argjson fork "$fork_id" \
+        '.[] | select(.source_project_id == $fork) | .iid')
+    do
+        diffs=$(gitlab_get "/projects/$upstream_id/merge_requests/$iid/diffs?per_page=100")
+        if printf '%s' "$diffs" | jq -e --arg path "$metadata_path" \
+            'any(.[]; .new_path == $path or .old_path == $path)' >/dev/null
+        then
+            printf '%s' "$candidates" | jq -c --argjson iid "$iid" \
+                '[.[] | select(.iid == $iid)] | first // empty'
+            return 0
+        fi
+    done
 }
 
 if [ "${1:-}" = --help ] || [ "${1:-}" = -h ]; then
@@ -124,10 +151,10 @@ if [ -n "$branch" ]; then
 fi
 
 mrs=$(gitlab_get "$mr_path")
-mr=$(printf '%s' "$mrs" | jq -c --argjson fork "$fork_id" '[.[] | select(.source_project_id == $fork)] | first // empty')
+mr=$(find_app_mr "$mrs")
 
 if [ -z "$mr" ]; then
-    printf '%s\n' 'MR:       not found'
+    printf '%s\n' 'MR:       not found for this app'
     failures=1
 else
     iid=$(printf '%s' "$mr" | jq -r '.iid')
