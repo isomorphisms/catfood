@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=${CATFOOD_ROOT:-/opt}
 cache=${CATFOOD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/catfood}
 oils_version=${CATFOOD_OILS_VERSION:-0.37.0}

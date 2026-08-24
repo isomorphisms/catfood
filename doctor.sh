@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=${CATFOOD_ROOT:-/opt}
 manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
 failures=0

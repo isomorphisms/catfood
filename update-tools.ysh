@@ -1,7 +1,7 @@
 #!/usr/bin/env ysh
 set -eu
 
-root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=${CATFOOD_ROOT:-/opt}
 history_depth=${CATFOOD_DEPTH:-12}
 manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
@@ -123,7 +123,7 @@ install_az_wrapper() {
 #!/bin/sh
 # catfood az wrapper
 set -eu
-bin_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+bin_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=$(dirname -- "$bin_dir")
 name=$(basename -- "$0")
 script=$workspace/az/bin/$name
