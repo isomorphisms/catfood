@@ -34,9 +34,12 @@ install_packages() {
     if command -v apt-get >/dev/null 2>&1; then
         as_root apt-get update
         as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            bash build-essential ca-certificates cmake curl espeak-ng ffmpeg git jq \
-            libreadline-dev make ninja-build openjdk-17-jdk-headless pkg-config \
-            rsync tmux unzip vim w3m xz-utils
+            bash build-essential ca-certificates cmake curl espeak-ng ffmpeg gfortran git jq \
+            libbz2-dev libcurl4-openssl-dev libdeflate-dev libexpat1-dev libffi-dev \
+            libgdbm-dev liblzma-dev libncurses-dev libpcre2-dev libreadline-dev \
+            libsqlite3-dev libssl-dev make ninja-build openjdk-17-jdk-headless perl \
+            pkg-config python3-venv rsync tk-dev tmux texinfo unzip uuid-dev vim w3m \
+            xz-utils zlib1g-dev
 
         # PDF image/figure extraction candidates; leave disabled until one is chosen.
         # apt-get install -y poppler-utils  # pdfimages
@@ -99,6 +102,20 @@ export PATH
 
 CATFOOD_ROOT=$workspace CATFOOD_DEPTH=${CATFOOD_DEPTH:-12} \
     sh "$root/bootstrap.sh"
+
+# Repair the source-tree shell aliases before any project build uses them.
+CATFOOD_ROOT=$workspace CATFOOD_PREFIX=$prefix \
+    sh "$root/activate.sh"
+
+if [ "${CATFOOD_BUILD_TOOLS:-1}" != 0 ]; then
+    CATFOOD_ROOT=$workspace CATFOOD_JOBS=${CATFOOD_JOBS:-2} \
+        sh "$root/build-tools.sh"
+fi
+
+# Newly built R, Ithon, and Idriç executables can now be linked without a
+# second network fetch of the manifest.
+CATFOOD_ROOT=$workspace CATFOOD_LINKS_ONLY=1 \
+    sh "$root/update-tools.ysh"
 
 CATFOOD_ROOT=$workspace CATFOOD_PREFIX=$prefix \
     sh "$root/activate.sh"
