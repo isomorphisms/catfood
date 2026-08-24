@@ -20,7 +20,9 @@ CATFOOD_ROOT="$HOME/opt" ./bootstrap.sh
 
 New clones use shallow history, 12 commits by default. Set `CATFOOD_DEPTH` to change that. Existing checkouts are fetched without rewriting their history.
 
-`tools.tsv` currently tracks Oils (`grease/main`), IR, IRK, Ithon, Icky, ICK, Idriç, the programmer's keyboard, and `az`. Grease itself is handled first by `bootstrap.sh`. Project names that do not currently resolve to repositories are not guessed into URLs.
+`tools.tsv` currently tracks Oils (`grease/main`), IR, IRK, Ithon, Icky, ICK, Idriç, Fieldmouse (`edric-rewrite`), the programmer's keyboard, and `az`. Grease itself is handled first by `bootstrap.sh`. Project names that do not currently resolve to repositories are not guessed into URLs.
+
+Fieldmouse is built after the repositories are fed. If Cat Food does not already have a runnable `idris2`, it bootstraps the tracked Idriç checkout first, builds `fieldmouse.ipkg`, runs a small interpreter smoke test, and exposes the resulting executable as `fieldmouse`.
 
 ## Stable commands
 
@@ -30,11 +32,12 @@ After feeding, Cat Food keeps short command names under `$CATFOOD_ROOT/bin` (`/o
 export PATH="${CATFOOD_ROOT:-/opt}/bin:$PATH"
 ```
 
-It restores the existing stable names when their targets are present: `R`, `Rscript`, `idris2`, `ick`, `ithon`, `osh`, `ysh`, and `grease`. It also installs `az` and `abe` wrappers from the `az` checkout. Those wrappers prefer a runnable YSH and fall back to Bash, so the current Grease/Oils Python-2 bootstrap gap does not prevent the price tools from running on a stock modern machine.
+It restores the existing stable names when their targets are present: `R`, `Rscript`, `idris2`, `fieldmouse`, `ick`, `ithon`, `osh`, `ysh`, and `grease`. It also installs `az` and `abe` wrappers from the `az` checkout. Those wrappers prefer a runnable YSH and fall back to Bash, so the current Grease/Oils Python-2 bootstrap gap does not prevent the price tools from running on a stock modern machine.
 
 For example:
 
 ```sh
+fieldmouse -e 'console.log(6 * 7);'
 az search 'K&R C programming'
 abe find 'Sven Nordqvist'
 ```
