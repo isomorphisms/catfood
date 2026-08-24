@@ -37,6 +37,12 @@ install_packages() {
             bash build-essential ca-certificates cmake curl espeak-ng ffmpeg git jq \
             libreadline-dev make ninja-build openjdk-17-jdk-headless pkg-config \
             rsync tmux unzip vim w3m xz-utils
+
+        # PDF image/figure extraction candidates; leave disabled until one is chosen.
+        # apt-get install -y poppler-utils  # pdfimages
+        # apt-get install -y mupdf-tools  # mutool extract
+        # apt-get install -y libpoppler-private-dev libleptonica-dev  # build AllenAI pdffigures v1 from source
+        # PDFFigures2 itself is not packaged by Debian; use its upstream Scala/sbt build.
     else
         printf '%s\n' 'cat food: no apt-get; expecting build dependencies to already exist' >&2
     fi
