@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=${CATFOOD_ROOT:-/opt}
 bindir=${CATFOOD_BIN:-$workspace/bin}
 
@@ -80,10 +80,7 @@ write_fdroid_wrapper() {
     {
         printf '%s\n' '#!/bin/sh'
         printf '%s\n' '# catfood fdroid wrapper'
-        printf 'if [ -x "%s/grease" ] && "%s/grease" -c '\''echo'\'' >/dev/null 2>&1; then\n' "$bindir" "$bindir"
-        printf '    exec "%s/grease" "%s" "$@"\n' "$bindir" "$target"
-        printf '%s\n' 'fi'
-        printf 'exec "%s/ysh" "%s" "$@"\n' "$bindir" "$target"
+        printf 'exec sh "%s" "$@"\n' "$target"
     } > "$tmp"
     chmod 0755 "$tmp"
     mv "$tmp" "$wrapper"

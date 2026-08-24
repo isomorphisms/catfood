@@ -1,7 +1,12 @@
 #!/bin/sh
 set -eu
 
-root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+catfood_locale=${CATFOOD_LOCALE:-C.UTF-8}
+LANG=$catfood_locale
+LC_ALL=$catfood_locale
+export LANG LC_ALL
+
+root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=${CATFOOD_ROOT:-/opt}
 manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
 failures=0
@@ -16,6 +21,8 @@ fi
 
 PATH=$prefix/bin:$workspace/bin:$PATH
 export PATH
+
+CATFOOD_MANIFEST=$manifest sh "$root/check-manifest.sh" || failures=1
 
 check_command() {
     if command -v "$1" >/dev/null 2>&1; then
@@ -36,11 +43,11 @@ check_stable() {
     fi
 }
 
-for command_name in git curl jq R Rscript edric idris2 ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
+for command_name in git curl jq R Rscript edric idris2 fieldmouse ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
     check_command "$command_name"
 done
 
-for stable_name in R Rscript edric idris2 ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
+for stable_name in R Rscript edric idris2 fieldmouse ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
     check_stable "$stable_name"
 done
 
@@ -55,6 +62,13 @@ fi
 if [ -x "$workspace/bin/idris2" ] && ! "$workspace/bin/idris2" --version >/dev/null 2>&1; then
     printf '%-22s stable command not runnable\n' idris2 >&2
     failures=1
+fi
+if [ -x "$workspace/bin/fieldmouse" ]; then
+    output=$("$workspace/bin/fieldmouse" -e 'console.log("catfood-fieldmouse");' 2>/dev/null || true)
+    if [ "$output" != catfood-fieldmouse ]; then
+        printf '%-22s interpreter smoke failed\n' fieldmouse >&2
+        failures=1
+    fi
 fi
 if [ -x "$workspace/bin/ithon" ] && ! "$workspace/bin/ithon" -c 'x ← 42; assert x == 42' >/dev/null 2>&1; then
     printf '%-22s arrow syntax smoke failed\n' ithon >&2
@@ -83,8 +97,34 @@ while read -r name repository branch submodules || [ -n "${name:-}" ]; do
         ''|'#'*) continue ;;
     esac
 
-    if [ -e "$workspace/$name/.git" ]; then
+    checkout=$workspace/$name
+    if [ -e "$checkout/.git" ]; then
         printf '%-22s present\n' "$name"
+
+        has_submodules=0
+        if [ -f "$checkout/.gitmodules" ]; then
+            if ! git -C "$checkout" config -f .gitmodules --list >/dev/null 2>&1; then
+                printf '%-22s malformed .gitmodules\n' "$name" >&2
+                failures=1
+            elif git -C "$checkout" config -f .gitmodules \
+                --get-regexp '^submodule[.].*[.]path$' >/dev/null 2>&1; then
+                has_submodules=1
+            fi
+        fi
+
+        if [ "$has_submodules" -eq 1 ] && [ "$submodules" != recursive ]; then
+            printf '%-22s has untracked submodule policy\n' "$name" >&2
+            failures=1
+        elif [ "$has_submodules" -eq 0 ] && [ "$submodules" = recursive ]; then
+            printf '%-22s marked recursive without .gitmodules\n' "$name" >&2
+            failures=1
+        elif [ "$has_submodules" -eq 1 ]; then
+            submodule_status=$(git -C "$checkout" submodule status --recursive 2>/dev/null || true)
+            if printf '%s\n' "$submodule_status" | grep '^[+U-]' >/dev/null 2>&1; then
+                printf '%-22s submodules are not at recorded commits\n' "$name" >&2
+                failures=1
+            fi
+        fi
     else
         printf '%-22s missing checkout\n' "$name" >&2
         failures=1

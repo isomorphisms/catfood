@@ -1,7 +1,15 @@
 #!/bin/sh
 set -eu
 
-root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+# Root consoles and sudo may start in the ASCII C locale.  The toolchain
+# sources and generated documentation contain Unicode syntax, so make a
+# configurable UTF-8 locale explicit for every provisioning step.
+catfood_locale=${CATFOOD_LOCALE:-C.UTF-8}
+LANG=$catfood_locale
+LC_ALL=$catfood_locale
+export LANG LC_ALL
+
+root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=${CATFOOD_ROOT:-/opt}
 cache=${CATFOOD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/catfood}
 oils_version=${CATFOOD_OILS_VERSION:-0.37.0}
@@ -36,7 +44,7 @@ install_packages() {
         as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y \
             bash build-essential ca-certificates cmake curl espeak-ng ffmpeg gfortran git jq \
             libbz2-dev libcurl4-openssl-dev libdeflate-dev libexpat1-dev libffi-dev \
-            libgdbm-dev liblzma-dev libncurses-dev libpcre2-dev libreadline-dev \
+            libgdbm-dev libgmp-dev liblzma-dev libncurses-dev libpcre2-dev libreadline-dev \
             libsqlite3-dev libssl-dev make ninja-build openjdk-17-jdk-headless perl \
             pkg-config python3-venv rsync tk-dev tmux texinfo unzip uuid-dev vim w3m \
             xz-utils zlib1g-dev
@@ -78,7 +86,7 @@ install_ysh() {
     fi
 
     rm -rf "$source_dir"
-    tar -xzf "$archive" -C "$cache"
+    tar --no-same-owner -xzf "$archive" -C "$cache"
 
     (
         cd "$source_dir"

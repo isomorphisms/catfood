@@ -1,7 +1,7 @@
 #!/usr/bin/env ysh
 set -eu
 
-root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=${CATFOOD_ROOT:-/opt}
 history_depth=${CATFOOD_DEPTH:-12}
 manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
@@ -119,19 +119,17 @@ install_az_wrapper() {
         fi
     fi
 
-    cat > "$wrapper" <<'EOF'
+cat > "$wrapper" <<'EOF'
 #!/bin/sh
 # catfood az wrapper
 set -eu
-bin_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+bin_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=$(dirname -- "$bin_dir")
 name=$(basename -- "$0")
 script=$workspace/az/bin/$name
 
-if [ -x "$bin_dir/ysh" ] && "$bin_dir/ysh" -c 'echo' >/dev/null 2>&1; then
-    exec "$bin_dir/ysh" "$script" "$@"
-fi
-
+# az's checked-in test suite and shell features target Bash.  Keep the stable
+# command on that tested interpreter until the repository adds a YSH gate.
 exec bash "$script" "$@"
 EOF
     chmod 0755 "$wrapper"
@@ -149,6 +147,8 @@ install_command_links() {
     link_first idris2 \
         "$workspace/Idric/build/exec/idris2" \
         "$workspace/Idric/idris2"
+    link_first fieldmouse \
+        "$workspace/fieldmouse/build/exec/fieldmouse"
     link_first ick \
         "$workspace/ick-runtime/bin/ick" \
         "$workspace/ick-runtime/bin/gcc"

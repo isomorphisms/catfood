@@ -25,6 +25,7 @@ The native YSH release is downloaded from Oils, verified by SHA-256, built, and 
 The core build currently exercises the repositories that need a real build before they are useful:
 
 - Idriç runs its checked-in `./edric all` bootstrap and focused handoff tests, including its pinned threaded Chez Scheme toolchain.
+- Fieldmouse is built with that Idriç compiler, runs an interpreter smoke test, and rebuilds when either Fieldmouse or Idriç changes.
 - Ithon is configured and built out of tree under `/opt/.build/ithon`, then runs `test_ithon_syntax`.
 - IR is built out of tree and installed under `/opt/r`, then smoke-tests the arrow/division/equality syntax.
 
@@ -59,21 +60,30 @@ The importer also accepts the two files directly at the root of the private dire
 
 ## Repository feed
 
-The workbench feed currently includes Oils (`grease/main`), IR, IRK, Ithon, Icky, ICK, Idriç, the programmer's keyboard, ICU, `az`, `ib`, `internetarchive`, `manimi`, `wegert`, and `yt-shorts`. Grease itself is handled first by `bootstrap.sh`. Repositories marked `recursive` in `tools.tsv` have their submodules initialized automatically.
+`tools.tsv` is the authoritative current-workbench inventory. It includes:
+
+- the language/toolchain line: Oils (`grease/main`), IR, IRK, Ithon, Icky, ICK, Idriç, Fieldmouse (`edric-rewrite`), the ARM and shader backends, `sent.idr`, the programmer's keyboard, and ICU;
+- the browser/publication/workbench line: `az`, `ib`, Internet Archive, BookReader, PDF figure harvesting, DuckDuckGo, Chawan, Manimi, Wegert, `yt-shorts`, `ai-ci`, `computer-science`, and the Android phone utilities;
+- the current application and mathematical work: the algebraic-variety explorer, toki pona, `game`, Hegel, geofence, analytic continuation, `non-poly`, coefficient/root dance, Cayley, tablature, ZoneEdit, Conway, `L`, Soap, Klein quartic and Kleinian-group sources, Hopf fibration, Ortho, theta, and Indra's Pearls.
+
+Grease itself is handled first by `bootstrap.sh`. Repositories marked `recursive` in `tools.tsv` have actual submodules and are initialized automatically. Manimi is in the default feed; Manim/`3b1b-videos` is not.
 
 New clones use shallow history, 12 commits by default. Set `CATFOOD_DEPTH` to change that. Existing checkouts are fetched without rewriting their history.
+
+The bootstrap validates manifest structure before touching the workspace. CI also runs `./check-manifest.sh --remote`, which rejects duplicate or malformed entries and verifies that every named remote branch exists.
 
 ## Stable commands
 
 After provisioning, Cat Food keeps short command names under `$CATFOOD_ROOT/bin` (`/opt/bin` by default). Provisioning adds both the installed native YSH prefix and that command directory to `PATH`.
 
-Current stable names include `R`, `Rscript`, `edric`, `idris2`, `ithon`, `osh`, `ysh`, `grease`, `az`, `abe`, `fdroid-deploy`, and `fdroid-check-deployed` when their targets are present. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`. The `az` and `abe` wrappers prefer the stable runnable YSH and fall back to Bash during stage zero. The F-Droid wrappers prefer Grease and fall back to the stable YSH.
+Current stable names include `R`, `Rscript`, `edric`, `idris2`, `fieldmouse`, `ithon`, `osh`, `ysh`, `grease`, `az`, `abe`, `fdroid-deploy`, and `fdroid-check-deployed` when their targets are present. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`. The `az` and `abe` wrappers use Bash, matching their checked-in test suite; the F-Droid wrappers use their validated POSIX `sh` path. Grease, OSH, and YSH remain available as explicit stable commands.
 
 For example:
 
 ```sh
 ithon
 idris2 --version
+fieldmouse -e 'console.log(6 * 7);'
 R --vanilla
 az search 'K&R C programming'
 abe find 'Sven Nordqvist'

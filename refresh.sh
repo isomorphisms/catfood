@@ -1,7 +1,12 @@
 #!/bin/sh
 set -eu
 
-root=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+catfood_locale=${CATFOOD_LOCALE:-C.UTF-8}
+LANG=$catfood_locale
+LC_ALL=$catfood_locale
+export LANG LC_ALL
+
+root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=${CATFOOD_ROOT:-/opt}
 
 if [ -n "${CATFOOD_PREFIX:-}" ]; then
