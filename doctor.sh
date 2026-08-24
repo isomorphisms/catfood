@@ -44,11 +44,11 @@ for stable_name in R Rscript edric idris2 ithon osh ysh az abe catfood-update ca
     check_stable "$stable_name"
 done
 
-if [ -x "$workspace/bin/osh" ] && ! "$workspace/bin/osh" -c ':' >/dev/null 2>&1; then
+if [ -x "$workspace/bin/osh" ] && ! "$workspace/bin/osh" -c 'echo' >/dev/null 2>&1; then
     printf '%-22s stable command not runnable\n' osh >&2
     failures=1
 fi
-if [ -x "$workspace/bin/ysh" ] && ! "$workspace/bin/ysh" -c ':' >/dev/null 2>&1; then
+if [ -x "$workspace/bin/ysh" ] && ! "$workspace/bin/ysh" -c 'echo' >/dev/null 2>&1; then
     printf '%-22s stable command not runnable\n' ysh >&2
     failures=1
 fi
