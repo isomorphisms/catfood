@@ -66,6 +66,70 @@ feed_repository() {
     fi
 }
 
+find_idris2() {
+    for candidate in \
+        "$workspace/Idric/build/exec/idris2" \
+        "$workspace/Idric/idris2" \
+        "$workspace/idris2/bin/idris2" \
+        "$workspace/idris2/idris2"
+    do
+        if [ -x "$candidate" ]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
+build_fieldmouse() {
+    fieldmouse=$workspace/fieldmouse
+    [ -f "$fieldmouse/fieldmouse.ipkg" ] || return 0
+
+    compiler=$(find_idris2 || true)
+    if [ -z "$compiler" ]; then
+        if [ ! -x "$workspace/Idric/edric" ]; then
+            printf '%s\n' '  Fieldmouse needs a runnable Edriç compiler, but Catfood has no Idriç bootstrap entry point' >&2
+            return 1
+        fi
+
+        printf '%s\n' '  bootstrapping Edriç for Fieldmouse'
+        if ! (cd "$workspace/Idric" && ./edric bootstrap); then
+            printf '%s\n' '  Edriç bootstrap failed; Fieldmouse was not built' >&2
+            return 1
+        fi
+        compiler=$(find_idris2 || true)
+    fi
+
+    if [ -z "$compiler" ]; then
+        printf '%s\n' '  Edriç bootstrap completed without a runnable idris2; Fieldmouse was not built' >&2
+        return 1
+    fi
+
+    printf '%s\n' '  building Fieldmouse'
+    if [ -d "$workspace/Idric/bootstrap-build" ]; then
+        if ! (cd "$fieldmouse" && IDRIS2_PREFIX="$workspace/Idric/bootstrap-build" "$compiler" --build fieldmouse.ipkg); then
+            printf '%s\n' '  Fieldmouse build failed' >&2
+            return 1
+        fi
+    else
+        if ! (cd "$fieldmouse" && "$compiler" --build fieldmouse.ipkg); then
+            printf '%s\n' '  Fieldmouse build failed' >&2
+            return 1
+        fi
+    fi
+
+    if [ ! -x "$fieldmouse/build/exec/fieldmouse" ]; then
+        printf '%s\n' '  Fieldmouse build produced no executable' >&2
+        return 1
+    fi
+
+    output=$("$fieldmouse/build/exec/fieldmouse" -e 'console.log("catfood-fieldmouse");') || return 1
+    if [ "$output" != catfood-fieldmouse ]; then
+        printf '  Fieldmouse smoke test returned: %s\n' "$output" >&2
+        return 1
+    fi
+}
+
 link_first() {
     name=$1
     shift
@@ -134,6 +198,8 @@ install_command_links() {
         "$workspace/idris2/idris2" \
         "$workspace/Idric/build/exec/idris2" \
         "$workspace/Idric/idris2"
+    link_first fieldmouse \
+        "$workspace/fieldmouse/build/exec/fieldmouse"
     link_first ick \
         "$workspace/ick-runtime/bin/ick" \
         "$workspace/ick-runtime/bin/gcc"
@@ -174,6 +240,10 @@ while read -r name repository branch submodules || [ -n "${name:-}" ]; do
         failures=1
     fi
 done < "$manifest"
+
+if ! build_fieldmouse; then
+    failures=1
+fi
 
 if ! install_command_links; then
     failures=1
