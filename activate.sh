@@ -21,7 +21,7 @@ install_native_shell_link() {
     link=$bindir/$name
 
     [ -x "$target" ] || return 0
-    "$target" -c ':' >/dev/null 2>&1 || {
+    "$target" -c 'echo' >/dev/null 2>&1 || {
         printf '%s exists but is not runnable\n' "$target" >&2
         return 1
     }
