@@ -26,7 +26,7 @@ Amazon and AbeBooks credentials stay outside Git. Public `az link` and `abe link
 
 ## Repository feed
 
-The workbench feed currently includes Oils (`grease/main`), IR, IRK, Ithon, Icky, ICK, Idriç, the programmer's keyboard, `az`, `ib`, `internetarchive`, `manimi`, `wegert`, and `yt-shorts`. Grease itself is handled first by `bootstrap.sh`. Repositories marked `recursive` in `tools.tsv` have their submodules initialized automatically.
+The workbench feed currently includes Oils (`grease/main`), IR, IRK, Ithon, Icky, ICK, Idriç, the programmer's keyboard, ICU, `az`, `ib`, `internetarchive`, `manimi`, `wegert`, and `yt-shorts`. Grease itself is handled first by `bootstrap.sh`. Repositories marked `recursive` in `tools.tsv` have their submodules initialized automatically.
 
 New clones use shallow history, 12 commits by default. Set `CATFOOD_DEPTH` to change that. Existing checkouts are fetched without rewriting their history.
 
