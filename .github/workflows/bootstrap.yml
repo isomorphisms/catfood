@@ -20,12 +20,15 @@ jobs:
       - name: Feed toolchain with POSIX sh
         shell: sh
         run: sh ./bootstrap.sh
-      - name: Exercise stable az command and search
+      - name: Exercise stable price commands and az search
         shell: bash
         run: |
           set -euo pipefail
           test -x "$CATFOOD_ROOT/bin/az"
           test -x "$CATFOOD_ROOT/bin/abe"
+
+          export PATH="$CATFOOD_ROOT/bin:$PATH"
+          abe help >/dev/null
 
           fake_bin="$RUNNER_TEMP/catfood-fake-bin"
           mkdir -p "$fake_bin"
@@ -50,7 +53,7 @@ jobs:
           EOF
           chmod +x "$fake_bin/curl"
 
-          export PATH="$fake_bin:$CATFOOD_ROOT/bin:$PATH"
+          export PATH="$fake_bin:$PATH"
           export AZ_AMAZON_CREDENTIAL_ID=test-id
           export AZ_AMAZON_CREDENTIAL_SECRET=test-secret
           export AZ_AMAZON_CREDENTIAL_VERSION=3.1
