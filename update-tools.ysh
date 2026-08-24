@@ -93,13 +93,20 @@ install_az_wrapper() {
 
     [ -f "$script" ] || return 0
 
-    if [ -e "$wrapper" ] && [ ! -L "$wrapper" ] && [ ! -f "$wrapper" ]; then
-        printf '  %s exists and is not a regular file; leaving it alone\n' "$wrapper" >&2
-        return 1
+    if [ -e "$wrapper" ] || [ -L "$wrapper" ]; then
+        if [ -f "$wrapper" ] && grep -F '# catfood az wrapper' "$wrapper" >/dev/null 2>&1; then
+            :
+        elif [ -L "$wrapper" ]; then
+            rm -f "$wrapper"
+        else
+            printf '  %s exists and is not a Cat Food wrapper; leaving it alone\n' "$wrapper" >&2
+            return 1
+        fi
     fi
 
     cat > "$wrapper" <<'EOF'
 #!/bin/sh
+# catfood az wrapper
 set -eu
 bin_dir=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 workspace=$(dirname -- "$bin_dir")
