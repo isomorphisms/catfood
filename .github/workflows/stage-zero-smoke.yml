@@ -19,3 +19,53 @@ jobs:
           else
             echo 'bootstrap files are not present on this branch; nothing to check yet'
           fi
+      - name: Exercise az through the stable command path
+        shell: bash
+        run: |
+          set -euo pipefail
+          workspace="$RUNNER_TEMP/catfood-az"
+          manifest="$RUNNER_TEMP/catfood-az.tsv"
+          printf '%s\n' 'az https://github.com/isomorphisms/az.git main none' > "$manifest"
+
+          CATFOOD_ROOT="$workspace" CATFOOD_DEPTH=1 CATFOOD_MANIFEST="$manifest" \
+            sh ./update-tools.ysh
+
+          test -x "$workspace/bin/az"
+          test -x "$workspace/bin/abe"
+          export PATH="$workspace/bin:$PATH"
+          abe help >/dev/null
+
+          fake_bin="$RUNNER_TEMP/catfood-fake-bin"
+          mkdir -p "$fake_bin"
+          cat > "$fake_bin/curl" <<'EOF'
+          #!/bin/sh
+          for arg in "$@"; do
+            case "$arg" in
+              https://mock/token)
+                printf '%s\n' '{"access_token":"test-token","expires_in":3600}'
+                exit 0
+                ;;
+              https://mock/catalog/v1/searchItems)
+                cat <<'JSON'
+          {"searchResult":{"items":[{"asin":"B098765432","detailPageURL":"https://www.amazon.com/dp/B098765432?tag=macguyver03-20&linkCode=osi","itemInfo":{"title":{"displayValue":"A Small Useful Book"}},"offersV2":{"listings":[{"isBuyBoxWinner":true,"price":{"money":{"amount":12.34,"currency":"USD"}}}]}}]}}
+          JSON
+                exit 0
+                ;;
+            esac
+          done
+          printf 'fake curl: unexpected arguments: %s\n' "$*" >&2
+          exit 22
+          EOF
+          chmod +x "$fake_bin/curl"
+
+          export PATH="$fake_bin:$PATH"
+          export AZ_AMAZON_CREDENTIAL_ID=test-id
+          export AZ_AMAZON_CREDENTIAL_SECRET=test-secret
+          export AZ_AMAZON_CREDENTIAL_VERSION=3.1
+          export AZ_AMAZON_TOKEN_ENDPOINT=https://mock/token
+          export AZ_CREATORS_API_BASE=https://mock
+
+          output=$(az search small useful book)
+          printf '%s\n' "$output"
+          grep -F $'B098765432\t12.34\tUSD' <<<"$output"
+          grep -F 'A Small Useful Book' <<<"$output"
