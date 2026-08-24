@@ -52,7 +52,7 @@ install_packages() {
 }
 
 install_ysh() {
-    if command -v ysh >/dev/null 2>&1 && ysh -c ':' >/dev/null 2>&1; then
+    if command -v ysh >/dev/null 2>&1 && ysh -c 'echo' >/dev/null 2>&1; then
         return 0
     fi
 
@@ -91,7 +91,7 @@ install_ysh() {
         fi
     )
 
-    "$prefix/bin/ysh" -c ':' >/dev/null
+    "$prefix/bin/ysh" -c 'echo' >/dev/null
 }
 
 install_packages
