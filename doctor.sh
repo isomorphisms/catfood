@@ -100,13 +100,25 @@ while read -r name repository branch submodules || [ -n "${name:-}" ]; do
     checkout=$workspace/$name
     if [ -e "$checkout/.git" ]; then
         printf '%-22s present\n' "$name"
-        if [ -f "$checkout/.gitmodules" ] && [ "$submodules" != recursive ]; then
+
+        has_submodules=0
+        if [ -f "$checkout/.gitmodules" ]; then
+            if ! git -C "$checkout" config -f .gitmodules --list >/dev/null 2>&1; then
+                printf '%-22s malformed .gitmodules\n' "$name" >&2
+                failures=1
+            elif git -C "$checkout" config -f .gitmodules \
+                --get-regexp '^submodule[.].*[.]path$' >/dev/null 2>&1; then
+                has_submodules=1
+            fi
+        fi
+
+        if [ "$has_submodules" -eq 1 ] && [ "$submodules" != recursive ]; then
             printf '%-22s has untracked submodule policy\n' "$name" >&2
             failures=1
-        elif [ ! -f "$checkout/.gitmodules" ] && [ "$submodules" = recursive ]; then
+        elif [ "$has_submodules" -eq 0 ] && [ "$submodules" = recursive ]; then
             printf '%-22s marked recursive without .gitmodules\n' "$name" >&2
             failures=1
-        elif [ "$submodules" = recursive ]; then
+        elif [ "$has_submodules" -eq 1 ]; then
             submodule_status=$(git -C "$checkout" submodule status --recursive 2>/dev/null || true)
             if printf '%s\n' "$submodule_status" | grep '^[+U-]' >/dev/null 2>&1; then
                 printf '%-22s submodules are not at recorded commits\n' "$name" >&2

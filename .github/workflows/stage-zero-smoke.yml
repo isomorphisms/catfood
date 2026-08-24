@@ -77,6 +77,20 @@ jobs:
           printf '%s\n' "$output"
           grep -F $'B098765432\t12.34\tUSD' <<<"$output"
           grep -F 'A Small Useful Book' <<<"$output"
+      - name: Exercise F-Droid help through stable commands
+        shell: sh
+        run: |
+          workspace="$RUNNER_TEMP/catfood-fdroid"
+          prefix="$RUNNER_TEMP/catfood-fdroid-prefix"
+          mkdir -p "$workspace" "$prefix"
+
+          CATFOOD_ROOT="$workspace" \
+          CATFOOD_PREFIX="$prefix" \
+          CATFOOD_NO_PROFILE=1 \
+            sh ./activate.sh
+
+          "$workspace/bin/fdroid-deploy" --help >/dev/null
+          "$workspace/bin/fdroid-check-deployed" --help >/dev/null
 
   fresh-ubuntu-workbench:
     runs-on: ubuntu-latest

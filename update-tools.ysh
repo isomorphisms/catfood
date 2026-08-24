@@ -119,7 +119,7 @@ install_az_wrapper() {
         fi
     fi
 
-    cat > "$wrapper" <<'EOF'
+cat > "$wrapper" <<'EOF'
 #!/bin/sh
 # catfood az wrapper
 set -eu
@@ -128,10 +128,8 @@ workspace=$(dirname -- "$bin_dir")
 name=$(basename -- "$0")
 script=$workspace/az/bin/$name
 
-if [ -x "$bin_dir/ysh" ] && "$bin_dir/ysh" -c 'echo' >/dev/null 2>&1; then
-    exec "$bin_dir/ysh" "$script" "$@"
-fi
-
+# az's checked-in test suite and shell features target Bash.  Keep the stable
+# command on that tested interpreter until the repository adds a YSH gate.
 exec bash "$script" "$@"
 EOF
     chmod 0755 "$wrapper"

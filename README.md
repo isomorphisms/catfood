@@ -76,7 +76,7 @@ The bootstrap validates manifest structure before touching the workspace. CI als
 
 After provisioning, Cat Food keeps short command names under `$CATFOOD_ROOT/bin` (`/opt/bin` by default). Provisioning adds both the installed native YSH prefix and that command directory to `PATH`.
 
-Current stable names include `R`, `Rscript`, `edric`, `idris2`, `fieldmouse`, `ithon`, `osh`, `ysh`, `grease`, `az`, `abe`, `fdroid-deploy`, and `fdroid-check-deployed` when their targets are present. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`. The `az` and `abe` wrappers prefer the stable runnable YSH and fall back to Bash during stage zero. The F-Droid wrappers prefer Grease and fall back to the stable YSH.
+Current stable names include `R`, `Rscript`, `edric`, `idris2`, `fieldmouse`, `ithon`, `osh`, `ysh`, `grease`, `az`, `abe`, `fdroid-deploy`, and `fdroid-check-deployed` when their targets are present. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`. The `az` and `abe` wrappers use Bash, matching their checked-in test suite; the F-Droid wrappers use their validated POSIX `sh` path. Grease, OSH, and YSH remain available as explicit stable commands.
 
 For example:
 
