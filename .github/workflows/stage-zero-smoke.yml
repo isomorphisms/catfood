@@ -19,6 +19,13 @@ jobs:
           else
             echo 'bootstrap files are not present on this branch; nothing to check yet'
           fi
+
+          for script in fdroid-deploy.ysh fdroid-check-deployed.ysh; do
+            if [ -f "$script" ]; then
+              dash -n "$script"
+              sh -n "$script"
+            fi
+          done
       - name: Exercise az through the stable command path
         shell: bash
         run: |

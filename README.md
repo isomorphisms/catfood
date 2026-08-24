@@ -67,7 +67,7 @@ New clones use shallow history, 12 commits by default. Set `CATFOOD_DEPTH` to ch
 
 After provisioning, Cat Food keeps short command names under `$CATFOOD_ROOT/bin` (`/opt/bin` by default). Provisioning adds both the installed native YSH prefix and that command directory to `PATH`.
 
-Current stable names include `R`, `Rscript`, `edric`, `idris2`, `ithon`, `osh`, `ysh`, `grease`, `az`, and `abe` when their targets are present. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`. The `az` and `abe` wrappers prefer the stable runnable YSH and fall back to Bash during stage zero.
+Current stable names include `R`, `Rscript`, `edric`, `idris2`, `ithon`, `osh`, `ysh`, `grease`, `az`, `abe`, `fdroid-deploy`, and `fdroid-check-deployed` when their targets are present. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`. The `az` and `abe` wrappers prefer the stable runnable YSH and fall back to Bash during stage zero. The F-Droid wrappers prefer Grease and fall back to the stable YSH.
 
 For example:
 
@@ -77,9 +77,16 @@ idris2 --version
 R --vanilla
 az search 'K&R C programming'
 abe find 'Sven Nordqvist'
+fdroid-deploy path/to/org.example.app.yml
+fdroid-check-deployed org.example.app
+fdroid-check-deployed org.example.app --version 1.2.3
 catfood-update
 catfood-doctor
 ```
+
+`fdroid-deploy` copies one metadata file onto a clean branch of the configured F-Droid GitLab fork, pushes it, and opens or reuses the merge request. It reads `GITLAB_TOKEN` or `~/.config/fdroid-gitlab/token`.
+
+`fdroid-check-deployed` reports the merge-request state and ordinary comments, then checks the live F-Droid package API, public package page, and an expected published version when `--version` is supplied.
 
 `az search` needs the Amazon Creators credentials described by the `az` repository. AbeBooks search needs its client key. Link generation does not require either secret.
 
