@@ -1,0 +1,10 @@
+# Source this file into an interactive Grease/YSH-compatible shell.
+
+mkcd() {
+    if test "$#" -ne 1; then
+        printf '%s\n' 'usage: mkcd DIRECTORY' >&2
+        return 2
+    fi
+
+    mkdir -p -- "$1" && cd -- "$1"
+}

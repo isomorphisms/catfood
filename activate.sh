@@ -98,6 +98,7 @@ write_fdroid_wrapper fdroid-check-deployed "$root/fdroid-check-deployed.ysh"
 
 profile=${CATFOOD_PROFILE:-$HOME/.profile}
 marker='# catfood workbench path'
+aliases_marker='# catfood grease aliases'
 if [ "${CATFOOD_NO_PROFILE:-0}" != 1 ]; then
     touch "$profile"
     if ! grep -F "$marker" "$profile" >/dev/null 2>&1; then
@@ -105,6 +106,12 @@ if [ "${CATFOOD_NO_PROFILE:-0}" != 1 ]; then
             printf '\n%s\n' "$marker"
             printf 'PATH="%s/bin:%s/bin:$PATH"\n' "$prefix" "$workspace"
             printf 'export PATH\n'
+        } >> "$profile"
+    fi
+    if ! grep -F "$aliases_marker" "$profile" >/dev/null 2>&1; then
+        {
+            printf '\n%s\n' "$aliases_marker"
+            printf '. "%s/aliases.grease"\n' "$root"
         } >> "$profile"
     fi
 fi
