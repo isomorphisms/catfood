@@ -26,8 +26,11 @@ The native YSH release is downloaded from Oils, verified by SHA-256, built, and 
 
 The core build currently exercises the repositories that need a real build before they are useful:
 
+- Grease builds its vendored Python 2 bootstrap outside the checkout, generates the pinned Grease source, and exposes that source interpreter as `grease`. The released native YSH remains stage one only.
 - Idriç runs its checked-in `./edric all` bootstrap and focused handoff tests, including its pinned threaded Chez Scheme toolchain.
 - Fieldmouse is built with that Idriç compiler, runs an interpreter smoke test, and rebuilds when either Fieldmouse or Idriç changes.
+- ICU is built with Idriç and OpenSSL into its checked-in `build/exec/icu` command path.
+- IB initializes its PDF-harvester submodule and compiles the deterministic `Smoke.idric` program as `ib-smoke`.
 - Ithon is configured and built out of tree under `/opt/.build/ithon`, then runs `test_ithon_syntax`.
 - IR is built out of tree and installed under `/opt/r`, then smoke-tests the arrow/division/equality syntax.
 
@@ -78,7 +81,7 @@ The bootstrap validates manifest structure before touching the workspace. CI als
 
 After provisioning, Cat Food keeps short command names under `$CATFOOD_ROOT/bin` (`/opt/bin` by default). Provisioning adds both the installed native YSH prefix and that command directory to `PATH`.
 
-Current stable names include `R`, `Rscript`, `edric`, `idris2`, `fieldmouse`, `ithon`, `osh`, `ysh`, `grease`, `az`, `abe`, `fdroid-deploy`, and `fdroid-check-deployed` when their targets are present. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`. The `az` and `abe` wrappers use Bash, matching their checked-in test suite; the F-Droid wrappers use their validated POSIX `sh` path. Grease, OSH, and YSH remain available as explicit stable commands.
+Current stable names include `R`, `Rscript`, `grease`, `edric`, `idris2`, `fieldmouse`, `icu`, `ib-smoke`, `ithon`, `osh`, `ysh`, `az`, `abe`, `fdroid-deploy`, and `fdroid-check-deployed` when their targets are present. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`. The `az` and `abe` wrappers use Bash, matching their checked-in test suite; the F-Droid wrappers use their validated POSIX `sh` path. Grease, OSH, and YSH remain available as explicit stable commands.
 
 For example:
 

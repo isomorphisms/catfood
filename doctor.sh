@@ -43,11 +43,11 @@ check_stable() {
     fi
 }
 
-for command_name in git curl jq R Rscript edric idris2 fieldmouse ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
+for command_name in git curl jq R Rscript grease edric idris2 fieldmouse icu ib-smoke ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
     check_command "$command_name"
 done
 
-for stable_name in R Rscript edric idris2 fieldmouse ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
+for stable_name in R Rscript grease edric idris2 fieldmouse icu ib-smoke ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
     check_stable "$stable_name"
 done
 
@@ -58,6 +58,13 @@ fi
 if [ -x "$workspace/bin/ysh" ] && ! "$workspace/bin/ysh" -c 'echo' >/dev/null 2>&1; then
     printf '%-22s stable command not runnable\n' ysh >&2
     failures=1
+fi
+if [ -x "$workspace/bin/grease" ]; then
+    output=$("$workspace/bin/grease" -c 'var answer = 6 * 7; write -- "grease=$answer"' 2>/dev/null || true)
+    if [ "$output" != grease=42 ]; then
+        printf '%-22s source interpreter smoke failed\n' grease >&2
+        failures=1
+    fi
 fi
 if [ -x "$workspace/bin/idris2" ] && ! "$workspace/bin/idris2" --version >/dev/null 2>&1; then
     printf '%-22s stable command not runnable\n' idris2 >&2
@@ -72,6 +79,10 @@ if [ -x "$workspace/bin/fieldmouse" ]; then
 fi
 if [ -x "$workspace/bin/ithon" ] && ! "$workspace/bin/ithon" -c 'x ← 42; assert x == 42' >/dev/null 2>&1; then
     printf '%-22s arrow syntax smoke failed\n' ithon >&2
+    failures=1
+fi
+if [ -x "$workspace/bin/ib-smoke" ] && ! "$workspace/bin/ib-smoke" >/dev/null 2>&1; then
+    printf '%-22s executable smoke failed\n' ib-smoke >&2
     failures=1
 fi
 if [ -x "$workspace/bin/fdroid-deploy" ] && ! "$workspace/bin/fdroid-deploy" --help >/dev/null 2>&1; then

@@ -20,7 +20,7 @@ icu https://github.com/isomorphisms/icu.git master none
 
 # Workbench, browser, publication, and shared-CI repositories
 az https://github.com/isomorphisms/az.git main none
-ib https://github.com/isomorphisms/ib.git main none
+ib https://github.com/isomorphisms/ib.git main recursive
 internetarchive https://github.com/isomorphisms/internetarchive.git master none
 bookreader https://github.com/isomorphisms/bookreader.git master none
 harvest-images-from-pdf https://github.com/isomorphisms/harvest-images-from-pdf.git main none
