@@ -12,9 +12,10 @@ jobs:
         shell: sh
         run: |
           for script in \
-            bootstrap.sh check-manifest.sh update-tools.ysh \
+            bootstrap.sh check-manifest.sh check-releases.sh update-tools.ysh \
             provision.sh activate.sh build-tools.sh refresh.sh doctor.sh import-config.sh \
-            fdroid-deploy.ysh fdroid-check-deployed.ysh tests/check-manifest.sh
+            fdroid-deploy.ysh fdroid-check-deployed.ysh \
+            tests/check-manifest.sh tests/check-releases.sh
           do
             if [ -f "$script" ]; then
               dash -n "$script"
@@ -26,6 +27,7 @@ jobs:
         shell: sh
         run: |
           sh tests/check-manifest.sh
+          sh tests/check-releases.sh
           sh ./check-manifest.sh --remote
       - name: Exercise az through the stable command path
         shell: bash
@@ -97,6 +99,7 @@ jobs:
     env:
       CATFOOD_DEPTH: 1
       CATFOOD_NO_PROFILE: 1
+      GITHUB_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
       - name: Provision workbench
@@ -113,6 +116,7 @@ jobs:
             CATFOOD_CACHE="$CATFOOD_CACHE" \
             CATFOOD_DEPTH="$CATFOOD_DEPTH" \
             CATFOOD_NO_PROFILE="$CATFOOD_NO_PROFILE" \
+            GITHUB_TOKEN="$GITHUB_TOKEN" \
             sh ./provision.sh
 
           foreign_owner=$(find "$CATFOOD_ROOT" "$CATFOOD_PREFIX" "$CATFOOD_CACHE" \

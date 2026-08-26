@@ -20,18 +20,26 @@ cd /opt/catfood
 ./provision.sh
 ```
 
-`provision.sh` installs the ordinary console/build dependencies used across the current projects, installs a released native YSH when a runnable one is not already present, feeds the repositories, builds the current core toolchain, exposes stable commands, and runs `catfood-doctor` before returning success.
+`provision.sh` installs the ordinary console/build dependencies used across the current projects, installs a released native YSH when a runnable one is not already present, feeds the repositories, checks source and release freshness, builds the current core toolchain, exposes stable commands, and runs `catfood-doctor` before returning success.
 
 The native YSH release is downloaded from Oils, verified by SHA-256, built, and installed under `/usr/local` when provisioning as root. Override `CATFOOD_PREFIX` for another prefix. The source checkout under `grease/source` remains pinned separately for Grease development; the released YSH is the runnable stage-one shell.
 
 The core build currently exercises the repositories that need a real build before they are useful:
 
 - Idriç runs its checked-in `./edric all` bootstrap and focused handoff tests, including its pinned threaded Chez Scheme toolchain.
+- ICU builds its native OpenSSL boundary and Idriç executable, then runs its pure HTTP model tests against the exact Idriç revision built by Cat Food.
 - Fieldmouse is built with that Idriç compiler, runs an interpreter smoke test, and rebuilds when either Fieldmouse or Idriç changes.
+- IB compiles its core, information, 10,000-resource workbench, and arXiv prepaint programs with that same Idriç compiler, then runs the first three deterministic programs.
 - Ithon is configured and built out of tree under `/opt/.build/ithon`, then runs `test_ithon_syntax`.
 - IR is built out of tree and installed under `/opt/r`, then smoke-tests the arrow/division/equality syntax.
 
-Build stamps are keyed to each repository commit. `catfood-update` fetches the repositories, rebuilds only core tools whose source commit changed or whose built output is missing, refreshes aliases, and reruns the doctor. Build output stays outside the IR and Ithon checkouts so routine builds do not make those repositories look locally modified.
+Build stamps are keyed to each repository commit; the ICU, Fieldmouse, and IB stamps also include the exact Idriç commit. A successful build writes the complete tested tuple to `/opt/.build/receipts/core-build.tsv`. `catfood-update` fetches the repositories, rebuilds only core tools whose input tuple changed or whose built output is missing, refreshes aliases, and reruns the doctor. Build output stays outside the IR and Ithon checkouts so routine builds do not make those repositories look locally modified.
+
+## Source and release freshness
+
+Every full provision and `catfood-update` checks Idriç, ICU, Ithon, Fieldmouse, and IB after fetching them. A checkout must equal the configured remote branch head. If a project has a GitHub release, its release tag must resolve to that same head; a missing tag, older release, or inconclusive query fails the refresh. A project with no GitHub release is reported explicitly as `unreleased` rather than being treated as released or blocking a source workbench.
+
+The exact checkout, remote, and release revisions and the resulting status are written to `/opt/.build/receipts/release-status.tsv`. Run `catfood-check-releases` to repeat the check. Cat Food never replaces the tested Idriç/compiler/backend tuple merely because a newer revision exists; the builds prove the moving workbench tuple while ai-ci remains the fleet compatibility authority.
 
 ## Private provider config
 
@@ -78,7 +86,7 @@ The bootstrap validates manifest structure before touching the workspace. CI als
 
 After provisioning, Cat Food keeps short command names under `$CATFOOD_ROOT/bin` (`/opt/bin` by default). Provisioning adds both the installed native YSH prefix and that command directory to `PATH`.
 
-Current stable names include `R`, `Rscript`, `edric`, `idris2`, `fieldmouse`, `ithon`, `osh`, `ysh`, `grease`, `az`, `abe`, `fdroid-deploy`, and `fdroid-check-deployed` when their targets are present. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`. The `az` and `abe` wrappers use Bash, matching their checked-in test suite; the F-Droid wrappers use their validated POSIX `sh` path. Grease, OSH, and YSH remain available as explicit stable commands.
+Current stable names include `R`, `Rscript`, `edric`, `idris2`, `icu`, `fieldmouse`, `ib-arxiv-prepaint`, `ithon`, `osh`, `ysh`, `grease`, `az`, `abe`, `fdroid-deploy`, and `fdroid-check-deployed` when their targets are present. Management commands are `catfood-update`, `catfood-doctor`, `catfood-check-releases`, and `catfood-import-config`. The ICU wrapper enters its repository so the checked native transport library is found. The `az` and `abe` wrappers use Bash, matching their checked-in test suite; the F-Droid wrappers use their validated POSIX `sh` path. Grease, OSH, and YSH remain available as explicit stable commands.
 
 For example:
 
@@ -86,6 +94,8 @@ For example:
 ithon
 idris2 --version
 fieldmouse -e 'console.log(6 * 7);'
+icu get https://example.com/
+ib-arxiv-prepaint REQUESTED_URL RESOLVED_URL HTML_PREFIX
 R --vanilla
 az search 'K&R C programming'
 abe find 'Sven Nordqvist'
@@ -93,6 +103,7 @@ fdroid-deploy path/to/org.example.app.yml
 fdroid-check-deployed org.example.app
 fdroid-check-deployed org.example.app --version 1.2.3
 catfood-update
+catfood-check-releases
 catfood-doctor
 ```
 

@@ -12,6 +12,7 @@ jobs=${CATFOOD_JOBS:-2}
 stamps=$build_root/stamps
 
 mkdir -p "$build_root" "$stamps"
+rm -f "$build_root/receipts/core-build.tsv"
 
 revision() {
     git -C "$1" rev-parse HEAD
@@ -61,6 +62,38 @@ build_idric() {
     "$output" --version >/dev/null
 }
 
+build_icu() {
+    repo=$workspace/icu
+    idric=$workspace/Idric
+    compiler=$idric/build/exec/idris2
+    output=$repo/build/exec/icu
+    test_output=$repo/build/exec/icu-http-tests
+    [ -d "$repo/.git" ] || return 0
+    [ -x "$compiler" ] || {
+        printf '%s\n' 'ICU needs the built Idriç compiler' >&2
+        return 1
+    }
+
+    state="$(revision "$repo") $(revision "$idric")"
+    if [ ! -x "$output" ] || [ ! -x "$test_output" ] || \
+       needs_state_build icu "$state"; then
+        printf '%s\n' 'building ICU'
+        rm -rf "$repo/build" "$repo/libicu_transport.so"
+        (
+            cd "$repo"
+            make check-native
+            IDRIS2_PREFIX="$idric/bootstrap-build" \
+                make IDRIC="$compiler" -j"$jobs"
+            IDRIS2_PREFIX="$idric/bootstrap-build" \
+                "$compiler" tests/HttpTests.idric -o icu-http-tests
+            "$test_output"
+        )
+        mark_state_built icu "$state"
+    fi
+
+    "$test_output" >/dev/null
+}
+
 build_fieldmouse() {
     repo=$workspace/fieldmouse
     idric=$workspace/Idric
@@ -91,6 +124,53 @@ build_fieldmouse() {
         printf 'Fieldmouse smoke returned:\n%s\n' "$actual" >&2
         return 1
     }
+}
+
+build_ib() {
+    repo=$workspace/ib
+    idric=$workspace/Idric
+    compiler=$idric/build/exec/idris2
+    output_dir=$repo/src/build/exec
+    [ -d "$repo/.git" ] || return 0
+    [ -x "$compiler" ] || {
+        printf '%s\n' 'IB needs the built Idriç compiler' >&2
+        return 1
+    }
+
+    state="$(revision "$repo") $(revision "$idric")"
+    if [ ! -x "$output_dir/ib-smoke" ] || \
+       [ ! -x "$output_dir/ib-information-smoke" ] || \
+       [ ! -x "$output_dir/ib-workbench" ] || \
+       [ ! -x "$output_dir/ib-arxiv-prepaint" ] || \
+       needs_state_build ib "$state"; then
+        printf '%s\n' 'building IB'
+        rm -rf "$repo/src/build"
+        (
+            cd "$repo/src"
+            for source_output in \
+                'Smoke.idric ib-smoke' \
+                'InformationSmoke.idric ib-information-smoke' \
+                'Workbench.idric ib-workbench' \
+                'ArxivPrepaint.idric ib-arxiv-prepaint'
+            do
+                set -- $source_output
+                IDRIS2_PREFIX="$idric/bootstrap-build" \
+                    "$compiler" "$1" -o "$2"
+            done
+
+            ./build/exec/ib-smoke >/dev/null
+            ./build/exec/ib-information-smoke >/dev/null
+            ./build/exec/ib-workbench >/dev/null
+        )
+        mark_state_built ib "$state"
+    fi
+
+    (
+        cd "$repo/src"
+        ./build/exec/ib-smoke >/dev/null
+        ./build/exec/ib-information-smoke >/dev/null
+        ./build/exec/ib-workbench >/dev/null
+    )
 }
 
 build_ithon() {
@@ -158,9 +238,47 @@ build_ir() {
         -e 'answer ← 8 ÷ 2; stopifnot((answer = 4))'
 }
 
+tree_state() {
+    relevant_changes=$(git -C "$1" status --porcelain | awk '
+        $2 == "libicu_transport.so" { next }
+        $2 ~ /^build\// { next }
+        $2 ~ /^src\/build\// { next }
+        { print }
+    ')
+    if [ -n "$relevant_changes" ]; then
+        printf '%s\n' dirty
+    else
+        printf '%s\n' clean
+    fi
+}
+
+write_core_receipt() {
+    receipt_dir=$build_root/receipts
+    receipt=$receipt_dir/core-build.tsv
+    temporary=$receipt.tmp
+    idric_sha=$(revision "$workspace/Idric")
+
+    mkdir -p "$receipt_dir"
+    printf 'project\tproject_sha\tcompiler\tcompiler_sha\tbackend\ttree\tstatus\n' > "$temporary"
+    printf 'Idric\t%s\tIdric\t%s\tchez\t%s\tpassed\n' \
+        "$idric_sha" "$idric_sha" "$(tree_state "$workspace/Idric")" >> "$temporary"
+    for project in icu fieldmouse ib; do
+        printf '%s\t%s\tIdric\t%s\tchez\t%s\tpassed\n' \
+            "$project" "$(revision "$workspace/$project")" "$idric_sha" \
+            "$(tree_state "$workspace/$project")" >> "$temporary"
+    done
+    printf 'ithon\t%s\t-\t-\tnative-c\t%s\tpassed\n' \
+        "$(revision "$workspace/ithon")" "$(tree_state "$workspace/ithon")" >> "$temporary"
+    mv "$temporary" "$receipt"
+    printf 'core build receipt: %s\n' "$receipt"
+}
+
 build_idric
+build_icu
 build_fieldmouse
+build_ib
 build_ithon
 build_ir
+write_core_receipt
 
 printf '%s\n' 'cat food core tools are built'

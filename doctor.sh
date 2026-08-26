@@ -8,6 +8,7 @@ export LANG LC_ALL
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=${CATFOOD_ROOT:-/opt}
+build_root=${CATFOOD_BUILD_ROOT:-$workspace/.build}
 manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
 failures=0
 
@@ -43,11 +44,11 @@ check_stable() {
     fi
 }
 
-for command_name in git curl jq R Rscript edric idris2 fieldmouse ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
+for command_name in git curl jq R Rscript edric idris2 icu fieldmouse ib-arxiv-prepaint ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-check-releases catfood-import-config; do
     check_command "$command_name"
 done
 
-for stable_name in R Rscript edric idris2 fieldmouse ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
+for stable_name in R Rscript edric idris2 icu fieldmouse ib-arxiv-prepaint ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-check-releases catfood-import-config; do
     check_stable "$stable_name"
 done
 
@@ -63,6 +64,11 @@ if [ -x "$workspace/bin/idris2" ] && ! "$workspace/bin/idris2" --version >/dev/n
     printf '%-22s stable command not runnable\n' idris2 >&2
     failures=1
 fi
+if [ -x "$workspace/icu/build/exec/icu-http-tests" ] && \
+   ! "$workspace/icu/build/exec/icu-http-tests" >/dev/null 2>&1; then
+    printf '%-22s model smoke failed\n' icu >&2
+    failures=1
+fi
 if [ -x "$workspace/bin/fieldmouse" ]; then
     output=$("$workspace/bin/fieldmouse" -e 'console.log("catfood-fieldmouse");' 2>/dev/null || true)
     if [ "$output" != catfood-fieldmouse ]; then
@@ -74,6 +80,12 @@ if [ -x "$workspace/bin/ithon" ] && ! "$workspace/bin/ithon" -c 'x ← 42; asser
     printf '%-22s arrow syntax smoke failed\n' ithon >&2
     failures=1
 fi
+for ib_program in ib-smoke ib-information-smoke ib-workbench; do
+    if [ ! -x "$workspace/ib/src/build/exec/$ib_program" ]; then
+        printf '%-22s missing built program\n' "$ib_program" >&2
+        failures=1
+    fi
+done
 if [ -x "$workspace/bin/fdroid-deploy" ] && ! "$workspace/bin/fdroid-deploy" --help >/dev/null 2>&1; then
     printf '%-22s help smoke failed\n' fdroid-deploy >&2
     failures=1
@@ -130,6 +142,15 @@ while read -r name repository branch submodules || [ -n "${name:-}" ]; do
         failures=1
     fi
 done < "$manifest"
+
+for receipt_name in release-status.tsv core-build.tsv; do
+    if [ -s "$build_root/receipts/$receipt_name" ]; then
+        printf '%-22s present\n' "$receipt_name"
+    else
+        printf '%-22s missing receipt\n' "$receipt_name" >&2
+        failures=1
+    fi
+done
 
 config_home=${XDG_CONFIG_HOME:-$HOME/.config}
 amazon_secret=$config_home/az/amazon-secret
