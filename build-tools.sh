@@ -91,10 +91,9 @@ build_grease() {
         {
             printf '%s\n' '#!/bin/sh'
             printf '%s\n' '# catfood Grease source launcher'
-            printf 'bin_dir=$(CDPATH=\047\047 cd -- "$(dirname -- "$0")" && pwd)\n'
             printf 'PYTHONPATH="%s:%s/vendor"\n' "$repo" "$repo"
             printf 'export PYTHONPATH\n'
-            printf 'exec "$bin_dir/python2" "%s/bin/oils_for_unix.py" ysh "$@"\n' "$repo"
+            printf 'exec "%s" "%s/bin/oils_for_unix.py" ysh "$@"\n' "$python" "$repo"
         } > "$output"
         chmod 0755 "$output"
         mark_state_built grease "$state"
