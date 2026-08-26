@@ -149,6 +149,10 @@ install_command_links() {
         "$workspace/Idric/idris2"
     link_first fieldmouse \
         "$workspace/fieldmouse/build/exec/fieldmouse"
+    link_first icu \
+        "$workspace/icu/build/exec/icu"
+    link_first ib-smoke \
+        "$workspace/ib/src/build/exec/ib-smoke"
     link_first ick \
         "$workspace/ick-runtime/bin/ick" \
         "$workspace/ick-runtime/bin/gcc"
@@ -165,6 +169,7 @@ install_command_links() {
         "$workspace/oils/bin/ysh" \
         "$workspace/oils/ysh"
     link_first grease \
+        "$workspace/.build/grease/bin/grease" \
         "$workspace/grease/_bin/cxx-sh/ysh" \
         "$workspace/grease/bin/ysh" \
         "$workspace/grease/ysh" \

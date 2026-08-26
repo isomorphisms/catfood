@@ -44,6 +44,69 @@ mark_state_built() {
     printf '%s\n' "$state" > "$stamps/$name"
 }
 
+build_grease() {
+    checkout=$workspace/grease
+    repo=$checkout/source
+    grease_build=$build_root/grease
+    python_source=$repo/Python-2.7.13
+    python_build=$grease_build/python2
+    python_prefix=$grease_build/python2-prefix
+    python=$python_build/python
+    output=$grease_build/bin/grease
+    [ -e "$repo/.git" ] || return 0
+
+    state="$(revision "$checkout") $(revision "$repo")"
+    if [ ! -x "$output" ] || needs_state_build grease "$state"; then
+        printf '%s\n' 'building Grease from its pinned source'
+        rm -rf "$grease_build"
+        mkdir -p "$grease_build/bin"
+        cp -R "$python_source" "$python_build"
+
+        # Grease's development interpreter is Python 2.  Its vendored source
+        # is intentionally built outside the checkout so feeding a newer
+        # Grease revision never mistakes generated files for local edits.
+        (
+            cd "$python_build"
+            touch Include/Python-ast.h Python/Python-ast.c
+            ./configure --prefix="$python_prefix" --without-ensurepip
+            make -j"$jobs" python
+            make -j"$jobs" sharedmods
+            make inclinstall
+        )
+        ln -s "$python" "$grease_build/bin/python2"
+
+        (
+            cd "$repo"
+            PATH="$grease_build/bin:$PATH"
+            export PATH
+            ./configure
+            build/stamp.sh write-git-commit
+            build/py.sh py-source
+            build/py.sh pylibc
+            build/py.sh posix_
+            build/py.sh fanos
+            build/py.sh fastfunc
+        )
+
+        {
+            printf '%s\n' '#!/bin/sh'
+            printf '%s\n' '# catfood Grease source launcher'
+            printf 'PYTHONPATH="%s:%s/vendor"\n' "$repo" "$repo"
+            printf 'export PYTHONPATH\n'
+            printf 'exec "%s" "%s/bin/oils_for_unix.py" ysh "$@"\n' "$python" "$repo"
+        } > "$output"
+        chmod 0755 "$output"
+        mark_state_built grease "$state"
+    fi
+
+    expected=grease=42
+    actual=$($output -c 'var answer = 6 * 7; write -- "grease=$answer"')
+    [ "$actual" = "$expected" ] || {
+        printf 'Grease smoke returned:\n%s\n' "$actual" >&2
+        return 1
+    }
+}
+
 build_idric() {
     repo=$workspace/Idric
     output=$repo/build/exec/idris2
@@ -91,6 +154,62 @@ build_fieldmouse() {
         printf 'Fieldmouse smoke returned:\n%s\n' "$actual" >&2
         return 1
     }
+}
+
+build_icu() {
+    repo=$workspace/icu
+    idric=$workspace/Idric
+    compiler=$idric/build/exec/idris2
+    output=$repo/build/exec/icu
+    [ -d "$repo/.git" ] || return 0
+    [ -x "$compiler" ] || {
+        printf '%s\n' 'ICU needs the built Idriç compiler' >&2
+        return 1
+    }
+
+    state="$(revision "$repo") $(revision "$idric")"
+    if [ ! -x "$output" ] || needs_state_build icu "$state"; then
+        printf '%s\n' 'building ICU'
+        (
+            cd "$repo"
+            PATH="$idric/.tools/bin:$PATH" \
+            IDRIS2_PREFIX="$idric/bootstrap-build" \
+                make -j"$jobs" IDRIC="$compiler"
+        )
+        mark_state_built icu "$state"
+    fi
+
+    [ -x "$output" ] || {
+        printf '%s\n' 'ICU did not produce build/exec/icu' >&2
+        return 1
+    }
+}
+
+build_ib() {
+    repo=$workspace/ib
+    idric=$workspace/Idric
+    compiler=$idric/build/exec/idris2
+    output=$repo/src/build/exec/ib-smoke
+    [ -d "$repo/.git" ] || return 0
+    [ -x "$compiler" ] || {
+        printf '%s\n' 'IB needs the built Idriç compiler' >&2
+        return 1
+    }
+
+    state="$(revision "$repo") $(revision "$idric")"
+    if [ ! -x "$output" ] || needs_state_build ib "$state"; then
+        printf '%s\n' 'building IB'
+        rm -rf "$repo/src/build"
+        (
+            cd "$repo/src"
+            PATH="$idric/.tools/bin:$PATH" \
+            IDRIS2_PREFIX="$idric/bootstrap-build" \
+                "$compiler" Smoke.idric -o ib-smoke
+        )
+        mark_state_built ib "$state"
+    fi
+
+    "$output" >/dev/null
 }
 
 build_ithon() {
@@ -158,8 +277,11 @@ build_ir() {
         -e 'answer ← 8 ÷ 2; stopifnot((answer = 4))'
 }
 
+build_grease
 build_idric
 build_fieldmouse
+build_icu
+build_ib
 build_ithon
 build_ir
 
