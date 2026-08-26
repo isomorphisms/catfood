@@ -7,21 +7,34 @@ on:
 jobs:
   bootstrap:
     runs-on: ubuntu-latest
-    env:
-      CATFOOD_ROOT: ${{ runner.temp }}/cat-food
-      CATFOOD_DEPTH: 1
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Enforce the Cat Food ai-ci contract
+        uses: isomorphisms/ai-ci@e342fc1e58bde3e7bcb82875b66f721725a600e8
+        with:
+          suite: ci/aici.suite.tsv
+          root: .
       - name: Check stage-zero syntax
         shell: sh
         run: |
           dash -n bootstrap.sh
           dash -n update-tools.ysh
+          dash -n catfood
+          dash -n tests/entrypoint.sh
+      - name: Exercise cloud and Termux entrypoints
+        shell: sh
+        run: sh tests/entrypoint.sh
       - name: Feed toolchain with POSIX sh
         shell: sh
+        env:
+          CATFOOD_ROOT: ${{ runner.temp }}/cat-food
+          CATFOOD_DEPTH: 1
         run: sh ./bootstrap.sh
       - name: Exercise stable price commands and az search
         shell: bash
+        env:
+          CATFOOD_ROOT: ${{ runner.temp }}/cat-food
+          CATFOOD_DEPTH: 1
         run: |
           set -euo pipefail
           test -x "$CATFOOD_ROOT/bin/az"
