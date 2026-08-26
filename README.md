@@ -4,9 +4,11 @@ Feed current copies of our own tools into a fresh development environment, then 
 
 Cat Food is deliberately small. It is not a monorepo: working repositories live under `/opt` by default, not inside this checkout.
 
-## Fresh Hetzner / Ubuntu workbench
+## Run this
 
-On a stock Debian/Ubuntu server, get Git, clone Cat Food, and provision the machine:
+The normal full-setup entry point is **`./provision.sh`**.
+
+On a stock Debian/Ubuntu server, get Git, clone Cat Food, and run it:
 
 ```sh
 apt-get update
