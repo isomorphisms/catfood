@@ -23,6 +23,9 @@ export PATH
 CATFOOD_ROOT=$workspace CATFOOD_DEPTH=${CATFOOD_DEPTH:-12} \
     sh "$root/bootstrap.sh"
 
+CATFOOD_ROOT=$workspace \
+    sh "$root/check-releases.sh"
+
 # Ensure the stable shell paths prefer the installed native Oils release before
 # project builds invoke any shell-dependent tooling.
 CATFOOD_ROOT=$workspace CATFOOD_PREFIX=$prefix \

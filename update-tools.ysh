@@ -135,6 +135,41 @@ EOF
     chmod 0755 "$wrapper"
 }
 
+install_idric_program_wrapper() {
+    name=$1
+    target=$2
+    working_directory=${3:-}
+    wrapper=$workspace/bin/$name
+
+    [ -x "$workspace/$target" ] || return 0
+
+    if [ -e "$wrapper" ] || [ -L "$wrapper" ]; then
+        if [ -f "$wrapper" ] && grep -F '# catfood idric program wrapper' "$wrapper" >/dev/null 2>&1; then
+            :
+        elif [ -L "$wrapper" ]; then
+            rm -f "$wrapper"
+        else
+            printf '  %s exists and is not a Cat Food wrapper; leaving it alone\n' "$wrapper" >&2
+            return 1
+        fi
+    fi
+
+cat > "$wrapper" <<'EOF'
+#!/bin/sh
+# catfood idric program wrapper
+set -eu
+bin_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+workspace=$(dirname -- "$bin_dir")
+EOF
+    printf 'PATH="$workspace/Idric/.tools/bin:$PATH"\n' >> "$wrapper"
+    printf '%s\n' 'export PATH' >> "$wrapper"
+    if [ -n "$working_directory" ]; then
+        printf 'cd "$workspace/%s"\n' "$working_directory" >> "$wrapper"
+    fi
+    printf 'exec "$workspace/%s" "$@"\n' "$target" >> "$wrapper"
+    chmod 0755 "$wrapper"
+}
+
 install_command_links() {
     mkdir -p "$workspace/bin"
 
@@ -144,11 +179,6 @@ install_command_links() {
         "$workspace/r/bin/Rscript"
     link_first edric \
         "$workspace/Idric/edric"
-    link_first idris2 \
-        "$workspace/Idric/build/exec/idris2" \
-        "$workspace/Idric/idris2"
-    link_first fieldmouse \
-        "$workspace/fieldmouse/build/exec/fieldmouse"
     link_first ick \
         "$workspace/ick-runtime/bin/ick" \
         "$workspace/ick-runtime/bin/gcc"
@@ -173,6 +203,10 @@ install_command_links() {
 
     install_az_wrapper az
     install_az_wrapper abe
+    install_idric_program_wrapper idris2 Idric/build/exec/idris2
+    install_idric_program_wrapper fieldmouse fieldmouse/build/exec/fieldmouse
+    install_idric_program_wrapper ib-arxiv-prepaint ib/src/build/exec/ib-arxiv-prepaint
+    install_idric_program_wrapper icu icu/build/exec/icu icu
 }
 
 command -v git >/dev/null 2>&1 || {

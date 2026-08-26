@@ -92,6 +92,7 @@ install_native_shell_link osh
 install_native_shell_link ysh
 write_wrapper catfood-update "$root/refresh.sh"
 write_wrapper catfood-doctor "$root/doctor.sh"
+write_wrapper catfood-check-releases "$root/check-releases.sh"
 write_wrapper catfood-import-config "$root/import-config.sh"
 write_fdroid_wrapper fdroid-deploy "$root/fdroid-deploy.ysh"
 write_fdroid_wrapper fdroid-check-deployed "$root/fdroid-check-deployed.ysh"
@@ -103,12 +104,12 @@ if [ "${CATFOOD_NO_PROFILE:-0}" != 1 ]; then
     if ! grep -F "$marker" "$profile" >/dev/null 2>&1; then
         {
             printf '\n%s\n' "$marker"
-            printf 'PATH="%s/bin:%s/bin:$PATH"\n' "$prefix" "$workspace"
+            printf 'PATH="%s/Idric/.tools/bin:%s/bin:%s/bin:$PATH"\n' "$workspace" "$prefix" "$workspace"
             printf 'export PATH\n'
         } >> "$profile"
     fi
 fi
 
 printf 'cat food commands are in %s\n' "$bindir"
-printf '%s\n' 'management: catfood-update catfood-doctor catfood-import-config'
+printf '%s\n' 'management: catfood-update catfood-doctor catfood-check-releases catfood-import-config'
 printf '%s\n' 'F-Droid: fdroid-deploy fdroid-check-deployed'
