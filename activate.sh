@@ -104,7 +104,7 @@ if [ "${CATFOOD_NO_PROFILE:-0}" != 1 ]; then
     if ! grep -F "$marker" "$profile" >/dev/null 2>&1; then
         {
             printf '\n%s\n' "$marker"
-            printf 'PATH="%s/bin:%s/bin:$PATH"\n' "$prefix" "$workspace"
+            printf 'PATH="%s/Idric/.tools/bin:%s/bin:%s/bin:$PATH"\n' "$workspace" "$prefix" "$workspace"
             printf 'export PATH\n'
         } >> "$profile"
     fi

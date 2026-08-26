@@ -135,14 +135,16 @@ EOF
     chmod 0755 "$wrapper"
 }
 
-install_icu_wrapper() {
-    target=$workspace/icu/build/exec/icu
-    wrapper=$workspace/bin/icu
+install_idric_program_wrapper() {
+    name=$1
+    target=$2
+    working_directory=${3:-}
+    wrapper=$workspace/bin/$name
 
-    [ -x "$target" ] || return 0
+    [ -x "$workspace/$target" ] || return 0
 
     if [ -e "$wrapper" ] || [ -L "$wrapper" ]; then
-        if [ -f "$wrapper" ] && grep -F '# catfood icu wrapper' "$wrapper" >/dev/null 2>&1; then
+        if [ -f "$wrapper" ] && grep -F '# catfood idric program wrapper' "$wrapper" >/dev/null 2>&1; then
             :
         elif [ -L "$wrapper" ]; then
             rm -f "$wrapper"
@@ -154,13 +156,17 @@ install_icu_wrapper() {
 
 cat > "$wrapper" <<'EOF'
 #!/bin/sh
-# catfood icu wrapper
+# catfood idric program wrapper
 set -eu
 bin_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=$(dirname -- "$bin_dir")
-cd "$workspace/icu"
-exec "$workspace/icu/build/exec/icu" "$@"
 EOF
+    printf 'PATH="$workspace/Idric/.tools/bin:$PATH"\n' >> "$wrapper"
+    printf '%s\n' 'export PATH' >> "$wrapper"
+    if [ -n "$working_directory" ]; then
+        printf 'cd "$workspace/%s"\n' "$working_directory" >> "$wrapper"
+    fi
+    printf 'exec "$workspace/%s" "$@"\n' "$target" >> "$wrapper"
     chmod 0755 "$wrapper"
 }
 
@@ -173,11 +179,6 @@ install_command_links() {
         "$workspace/r/bin/Rscript"
     link_first edric \
         "$workspace/Idric/edric"
-    link_first idris2 \
-        "$workspace/Idric/build/exec/idris2" \
-        "$workspace/Idric/idris2"
-    link_first fieldmouse \
-        "$workspace/fieldmouse/build/exec/fieldmouse"
     link_first ick \
         "$workspace/ick-runtime/bin/ick" \
         "$workspace/ick-runtime/bin/gcc"
@@ -185,8 +186,6 @@ install_command_links() {
         "$workspace/.build/ithon/python" \
         "$workspace/ithon/ithon" \
         "$workspace/ithon/bin/ithon"
-    link_first ib-arxiv-prepaint \
-        "$workspace/ib/src/build/exec/ib-arxiv-prepaint"
     link_shell osh \
         "$workspace/oils/_bin/cxx-sh/osh" \
         "$workspace/oils/bin/osh" \
@@ -204,7 +203,10 @@ install_command_links() {
 
     install_az_wrapper az
     install_az_wrapper abe
-    install_icu_wrapper
+    install_idric_program_wrapper idris2 Idric/build/exec/idris2
+    install_idric_program_wrapper fieldmouse fieldmouse/build/exec/fieldmouse
+    install_idric_program_wrapper ib-arxiv-prepaint ib/src/build/exec/ib-arxiv-prepaint
+    install_idric_program_wrapper icu icu/build/exec/icu icu
 }
 
 command -v git >/dev/null 2>&1 || {

@@ -86,7 +86,7 @@ The bootstrap validates manifest structure before touching the workspace. CI als
 
 After provisioning, Cat Food keeps short command names under `$CATFOOD_ROOT/bin` (`/opt/bin` by default). Provisioning adds both the installed native YSH prefix and that command directory to `PATH`.
 
-Current stable names include `R`, `Rscript`, `edric`, `idris2`, `icu`, `fieldmouse`, `ib-arxiv-prepaint`, `ithon`, `osh`, `ysh`, `grease`, `az`, `abe`, `fdroid-deploy`, and `fdroid-check-deployed` when their targets are present. Management commands are `catfood-update`, `catfood-doctor`, `catfood-check-releases`, and `catfood-import-config`. The ICU wrapper enters its repository so the checked native transport library is found. The `az` and `abe` wrappers use Bash, matching their checked-in test suite; the F-Droid wrappers use their validated POSIX `sh` path. Grease, OSH, and YSH remain available as explicit stable commands.
+Current stable names include `R`, `Rscript`, `edric`, `idris2`, `icu`, `fieldmouse`, `ib-arxiv-prepaint`, `ithon`, `osh`, `ysh`, `grease`, `az`, `abe`, `fdroid-deploy`, and `fdroid-check-deployed` when their targets are present. Management commands are `catfood-update`, `catfood-doctor`, `catfood-check-releases`, and `catfood-import-config`. The Idriç-generated program wrappers put Idriç's pinned Chez runtime on `PATH`; the ICU wrapper also enters its repository so the checked native transport library is found. The `az` and `abe` wrappers use Bash, matching their checked-in test suite; the F-Droid wrappers use their validated POSIX `sh` path. Grease, OSH, and YSH remain available as explicit stable commands.
 
 For example:
 

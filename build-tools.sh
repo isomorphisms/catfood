@@ -81,6 +81,8 @@ build_icu() {
         rm -rf "$repo/build" "$repo/libicu_transport.so"
         (
             cd "$repo"
+            PATH="$idric/.tools/bin:$PATH"
+            export PATH
             make check-native
             IDRIS2_PREFIX="$idric/bootstrap-build" \
                 make IDRIC="$compiler" -j"$jobs"
@@ -91,7 +93,7 @@ build_icu() {
         mark_state_built icu "$state"
     fi
 
-    "$test_output" >/dev/null
+    PATH="$idric/.tools/bin:$PATH" "$test_output" >/dev/null
 }
 
 build_fieldmouse() {
@@ -119,7 +121,8 @@ build_fieldmouse() {
     fi
 
     expected=$(printf 'sum 10.0\nok')
-    actual=$("$output" -e 'var total = 0; var i = 1; while (i <= 4) { total = total + i; i = i + 1; } console.log("sum", total); if (total === 10) console.log("ok");')
+    actual=$(PATH="$idric/.tools/bin:$PATH" \
+        "$output" -e 'var total = 0; var i = 1; while (i <= 4) { total = total + i; i = i + 1; } console.log("sum", total); if (total === 10) console.log("ok");')
     [ "$actual" = "$expected" ] || {
         printf 'Fieldmouse smoke returned:\n%s\n' "$actual" >&2
         return 1
@@ -147,6 +150,8 @@ build_ib() {
         rm -rf "$repo/src/build"
         (
             cd "$repo/src"
+            PATH="$idric/.tools/bin:$PATH"
+            export PATH
             for source_output in \
                 'Smoke.idric ib-smoke' \
                 'InformationSmoke.idric ib-information-smoke' \
@@ -167,6 +172,8 @@ build_ib() {
 
     (
         cd "$repo/src"
+        PATH="$idric/.tools/bin:$PATH"
+        export PATH
         ./build/exec/ib-smoke >/dev/null
         ./build/exec/ib-information-smoke >/dev/null
         ./build/exec/ib-workbench >/dev/null

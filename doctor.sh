@@ -20,7 +20,7 @@ else
     prefix=$HOME/.local
 fi
 
-PATH=$prefix/bin:$workspace/bin:$PATH
+PATH=$workspace/Idric/.tools/bin:$prefix/bin:$workspace/bin:$PATH
 export PATH
 
 CATFOOD_MANIFEST=$manifest sh "$root/check-manifest.sh" || failures=1
