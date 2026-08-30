@@ -1,0 +1,6 @@
+nonempty	CATFOOD-SHELL-BOUNDARY	ci/shell-boundary.tsv
+tsv_header	CATFOOD-SHELL-BOUNDARY-HEADER	ci/shell-boundary.tsv	path,layer,runner,reason
+tsv	CATFOOD-SHELL-BOUNDARY-FIELDS	ci/shell-boundary.tsv	4	15
+suffix_first_line	CATFOOD-YSH-SHEBANG	.	.ysh	#!/usr/bin/env ysh
+not_contains	CATFOOD-YSH-NOT-SH-WRAPPED	activate.sh	exec sh
+not_contains	CATFOOD-UPDATER-NOT-SH-RUN	refresh.sh	sh "$root/update-tools.ysh"
