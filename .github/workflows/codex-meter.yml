@@ -1,0 +1,26 @@
+name: codex-meter
+
+on:
+  push:
+    paths:
+      - 'codex-meter/**'
+      - '.github/workflows/codex-meter.yml'
+      - 'refresh.sh'
+  pull_request:
+    paths:
+      - 'codex-meter/**'
+      - '.github/workflows/codex-meter.yml'
+      - 'refresh.sh'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fixture tests
+        run: python3 codex-meter/test_codex_meter.py
+      - name: Installer wrapper
+        run: |
+          tmp=$(mktemp -d)
+          CODEX_METER_BIN_DIR="$tmp/bin" sh codex-meter/install.sh
+          "$tmp/bin/codex-meter" --help >/dev/null
