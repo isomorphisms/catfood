@@ -7,6 +7,16 @@ history_depth=${CATFOOD_DEPTH:-12}
 manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
 failures=0
 
+normalize_repository() {
+    value=$1
+    case $value in
+        git@github.com:*) value=https://github.com/${value#git@github.com:} ;;
+        ssh://git@github.com/*) value=https://github.com/${value#ssh://git@github.com/} ;;
+    esac
+    value=${value%.git}
+    printf '%s\n' "$value"
+}
+
 checkout_branch() {
     target=$1
     branch=$2
@@ -33,7 +43,7 @@ feed_repository() {
 
     if [ -e "$target/.git" ]; then
         origin=$(git -C "$target" remote get-url origin 2>/dev/null || true)
-        if [ "$origin" != "$repository" ]; then
+        if [ "$(normalize_repository "$origin")" != "$(normalize_repository "$repository")" ]; then
             printf '  origin is %s, expected %s; leaving it alone\n' "${origin:-<missing>}" "$repository" >&2
             return 1
         fi
