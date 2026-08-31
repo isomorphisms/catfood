@@ -17,7 +17,7 @@ grep -F 'OPENAI_API_KEY_FILE' termux-bootstrap.sh >/dev/null
 grep -F 'openai-api-key SKIP' termux-setup.grease >/dev/null || \
     grep -F 'openai-api-key' termux-setup.grease >/dev/null
 
-# Named fetches must populate the exact remote ref.  Branch creation must not
+# Named fetches must populate the exact remote ref. Branch creation must not
 # rely on automatic tracking inference because old single-branch shallow clones
 # can reject an otherwise-present origin/<branch> as "not a branch".
 grep -F 'refs/remotes/origin/$branch' termux-bootstrap.sh >/dev/null
@@ -28,6 +28,13 @@ if grep -F 'checkout -b "$branch" --track' termux-bootstrap.sh update-tools.ysh 
     printf '%s\n' 'stage zero must not depend on Git tracking inference' >&2
     exit 1
 fi
+
+# Existing clones may spell the same GitHub origin with or without .git, or
+# through GitHub SSH. Those forms must compare as the same repository.
+grep -F 'normalize_repository()' termux-bootstrap.sh >/dev/null
+grep -F 'normalize_repository()' bootstrap.sh >/dev/null
+grep -F 'normalize_repository()' update-tools.ysh >/dev/null
+grep -F 'value=${value%.git}' bootstrap.sh update-tools.ysh >/dev/null
 
 # Keep routine smoke checks ordinary rather than reintroducing the old joke.
 if grep -F '42' termux-bootstrap.sh termux-setup.grease build-tools.sh doctor.sh >/dev/null; then
