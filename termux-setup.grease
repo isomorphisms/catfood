@@ -26,8 +26,8 @@ for command_name in git curl jq grease; do
 done
 
 if command -v grease >/dev/null 2>&1; then
-    grease_answer=$(grease -c 'var answer = 6 * 7; write -- "$answer"' 2>/dev/null || true)
-    if ⟦ "$grease_answer" = 42 ⟧; then
+    grease_answer=$(grease -c 'var answer = 13 * 17; write -- "$answer"' 2>/dev/null || true)
+    if ⟦ "$grease_answer" = 221 ⟧; then
         printf '%-26s %s\n' grease-runtime PASS
     else
         printf '%-26s %s\n' grease-runtime FAIL >&2
