@@ -53,6 +53,23 @@ find_checkout_by_origin() {
     return 1
 }
 
+checkout_branch() {
+    checkout=$1
+    branch=$2
+
+    if git -C "$checkout" show-ref --verify --quiet "refs/heads/$branch"; then
+        git -C "$checkout" checkout "$branch"
+    else
+        git -C "$checkout" checkout -b "$branch" "refs/remotes/origin/$branch"
+    fi
+
+    # A single-branch shallow clone may not recognize origin/<branch> as a
+    # tracking branch even though the ref exists.  Record upstream metadata
+    # directly instead of asking Git to infer it through --track.
+    git -C "$checkout" config "branch.$branch.remote" origin
+    git -C "$checkout" config "branch.$branch.merge" "refs/heads/$branch"
+}
+
 update_existing_checkout() {
     checkout=$1
     branch=$2
@@ -65,12 +82,8 @@ update_existing_checkout() {
     if [ -n "$(git -C "$checkout" status --porcelain)" ]; then
         printf '  local changes present; fetched but did not move it\n'
     else
-        if git -C "$checkout" show-ref --verify --quiet "refs/heads/$branch"; then
-            git -C "$checkout" checkout "$branch"
-        else
-            git -C "$checkout" checkout -b "$branch" --track "origin/$branch"
-        fi
-        git -C "$checkout" merge --ff-only "origin/$branch"
+        checkout_branch "$checkout" "$branch"
+        git -C "$checkout" merge --ff-only "refs/remotes/origin/$branch"
     fi
 
     if [ "$submodules" = recursive ]; then
@@ -119,7 +132,7 @@ build_grease_runtime() {
     python=$python_build/python
     output=$build_root/bin/grease
 
-    if [ -x "$output" ] && "$output" -c 'var answer = 6 * 7; write -- "$answer"' 2>/dev/null | grep -Fx 42 >/dev/null 2>&1; then
+    if [ -x "$output" ] && "$output" -c 'var answer = 13 * 17; write -- "$answer"' 2>/dev/null | grep -Fx 221 >/dev/null 2>&1; then
         return 0
     fi
 
@@ -168,8 +181,8 @@ EOF
     chmod 0755 "$output"
     ln -sfn "$output" "$bindir/grease"
 
-    actual=$("$output" -c 'var answer = 6 * 7; write -- "$answer"')
-    [ "$actual" = 42 ] || {
+    actual=$("$output" -c 'var answer = 13 * 17; write -- "$answer"')
+    [ "$actual" = 221 ] || {
         printf 'BLOCKED grease-runtime: smoke returned <%s>\n' "$actual" >&2
         return 1
     }
