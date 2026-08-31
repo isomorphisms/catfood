@@ -16,6 +16,16 @@ need() {
     }
 }
 
+normalize_repository() {
+    value=$1
+    case $value in
+        git@github.com:*) value=https://github.com/${value#git@github.com:} ;;
+        ssh://git@github.com/*) value=https://github.com/${value#ssh://git@github.com/} ;;
+    esac
+    value=${value%.git}
+    printf '%s\n' "$value"
+}
+
 checkout_grease_branch() {
     if git -C "$grease" show-ref --verify --quiet "refs/heads/$grease_branch"; then
         git -C "$grease" checkout "$grease_branch"
@@ -31,7 +41,7 @@ checkout_grease_branch() {
 update_grease() {
     if [ -e "$grease/.git" ]; then
         origin=$(git -C "$grease" remote get-url origin 2>/dev/null || true)
-        if [ "$origin" != "$grease_url" ]; then
+        if [ "$(normalize_repository "$origin")" != "$(normalize_repository "$grease_url")" ]; then
             printf 'grease origin is %s, expected %s; leaving it alone\n' "${origin:-<missing>}" "$grease_url" >&2
             return 1
         fi
