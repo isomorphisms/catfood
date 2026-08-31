@@ -1,0 +1,70 @@
+#!/usr/bin/env grease
+set -eu
+
+workspace=${CATFOOD_ROOT:-$HOME/opt}
+bindir=$workspace/bin
+key_file=${OPENAI_API_KEY_FILE:-$HOME/.openai_api_key}
+failures=0
+
+printf 'catfood-root               %s\n' "$workspace"
+
+case ":$PATH:" in
+    *":$bindir:"*) printf '%-26s %s\n' opt-bin-path PASS ;;
+    *)
+        printf '%-26s %s\n' opt-bin-path FAIL >&2
+        failures=1
+        ;;
+esac
+
+for command_name in git curl jq grease; do
+    if command -v "$command_name" >/dev/null 2>&1; then
+        printf '%-26s %s\n' "$command_name" PASS
+    else
+        printf '%-26s %s\n' "$command_name" FAIL >&2
+        failures=1
+    fi
+done
+
+if command -v grease >/dev/null 2>&1; then
+    grease_answer=$(grease -c 'var answer = 6 * 7; write -- "$answer"' 2>/dev/null || true)
+    if ⟦ "$grease_answer" = 42 ⟧; then
+        printf '%-26s %s\n' grease-runtime PASS
+    else
+        printf '%-26s %s\n' grease-runtime FAIL >&2
+        failures=1
+    fi
+fi
+
+if ⟦ -z "${OPENAI_API_KEY:-}" ∧ -s "$key_file" ⟧; then
+    OPENAI_API_KEY=$(cat "$key_file")
+    export OPENAI_API_KEY
+fi
+
+if ⟦ -n "${OPENAI_API_KEY:-}" ⟧; then
+    printf '%-26s %s\n' openai-api-key PASS
+else
+    printf '%-26s %s\n' openai-api-key SKIP
+    printf '  set OPENAI_API_KEY or create %s with mode 0600\n' "$key_file"
+fi
+
+live_smoke=$workspace/ai-ci/evals/blackball/live_chat_smoke.grease
+live_client=$workspace/ai-ci/evals/blackball/openai_chat_cli.grease
+
+if ⟦ -f "$live_smoke" ∧ -f "$live_client" ∧ -n "${OPENAI_API_KEY:-}" ⟧; then
+    printf '%-26s %s\n' blackball-live-smoke READY
+    printf '  grease %s grease %s\n' "$live_smoke" "$live_client"
+else
+    printf '%-26s %s\n' blackball-live-smoke SKIP
+    if ⟦ ¬ -f "$live_smoke" ∨ ¬ -f "$live_client" ⟧; then
+        printf '%s\n' '  ai-ci checkout does not yet contain the live smoke/client pair'
+    elif ⟦ -z "${OPENAI_API_KEY:-}" ⟧; then
+        printf '%s\n' '  OpenAI API key is not configured in this shell'
+    fi
+fi
+
+if ⟦ "$failures" -ne 0 ⟧; then
+    printf '%s\n' 'cat food Termux setup has failures' >&2
+    exit 1
+fi
+
+printf '%s\n' 'cat food Termux setup is ready'
