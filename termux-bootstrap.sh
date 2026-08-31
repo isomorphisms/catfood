@@ -59,7 +59,8 @@ update_existing_checkout() {
     submodules=$3
 
     printf 'existing %-22s %s\n' "$(basename -- "$checkout")" "$checkout"
-    git -C "$checkout" fetch --prune origin "$branch"
+    git -C "$checkout" fetch --prune origin \
+        "+refs/heads/$branch:refs/remotes/origin/$branch"
 
     if [ -n "$(git -C "$checkout" status --porcelain)" ]; then
         printf '  local changes present; fetched but did not move it\n'
