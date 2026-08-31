@@ -60,8 +60,8 @@ if [ -x "$workspace/bin/ysh" ] && ! "$workspace/bin/ysh" -c 'echo' >/dev/null 2>
     failures=1
 fi
 if [ -x "$workspace/bin/grease" ]; then
-    output=$("$workspace/bin/grease" -c 'var answer = 6 * 7; write -- "grease=$answer"' 2>/dev/null || true)
-    if [ "$output" != grease=42 ]; then
+    output=$("$workspace/bin/grease" -c 'var answer = 13 * 17; write -- "grease=$answer"' 2>/dev/null || true)
+    if [ "$output" != grease=221 ]; then
         printf '%-22s source interpreter smoke failed\n' grease >&2
         failures=1
     fi
@@ -77,7 +77,7 @@ if [ -x "$workspace/bin/fieldmouse" ]; then
         failures=1
     fi
 fi
-if [ -x "$workspace/bin/ithon" ] && ! "$workspace/bin/ithon" -c 'x ← 42; assert x == 42' >/dev/null 2>&1; then
+if [ -x "$workspace/bin/ithon" ] && ! "$workspace/bin/ithon" -c 'x ← 221; assert x == 221' >/dev/null 2>&1; then
     printf '%-22s arrow syntax smoke failed\n' ithon >&2
     failures=1
 fi

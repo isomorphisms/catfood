@@ -7,6 +7,31 @@ history_depth=${CATFOOD_DEPTH:-12}
 manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
 failures=0
 
+normalize_repository() {
+    value=$1
+    case $value in
+        git@github.com:*) value=https://github.com/${value#git@github.com:} ;;
+        ssh://git@github.com/*) value=https://github.com/${value#ssh://git@github.com/} ;;
+    esac
+    value=${value%.git}
+    printf '%s\n' "$value"
+}
+
+checkout_branch() {
+    target=$1
+    branch=$2
+
+    if git -C "$target" show-ref --verify --quiet "refs/heads/$branch"; then
+        git -C "$target" checkout "$branch"
+    else
+        git -C "$target" checkout -b "$branch" \
+            "refs/remotes/origin/$branch"
+    fi
+
+    git -C "$target" config "branch.$branch.remote" origin
+    git -C "$target" config "branch.$branch.merge" "refs/heads/$branch"
+}
+
 feed_repository() {
     name=$1
     repository=$2
@@ -18,12 +43,13 @@ feed_repository() {
 
     if [ -e "$target/.git" ]; then
         origin=$(git -C "$target" remote get-url origin 2>/dev/null || true)
-        if [ "$origin" != "$repository" ]; then
+        if [ "$(normalize_repository "$origin")" != "$(normalize_repository "$repository")" ]; then
             printf '  origin is %s, expected %s; leaving it alone\n' "${origin:-<missing>}" "$repository" >&2
             return 1
         fi
 
-        if ! git -C "$target" fetch --prune origin "$branch"; then
+        if ! git -C "$target" fetch --prune origin \
+            "+refs/heads/$branch:refs/remotes/origin/$branch"; then
             printf '  fetch failed\n' >&2
             return 1
         fi
@@ -33,17 +59,12 @@ feed_repository() {
             return 0
         fi
 
-        if git -C "$target" show-ref --verify --quiet "refs/heads/$branch"; then
-            if ! git -C "$target" checkout "$branch"; then
-                return 1
-            fi
-        else
-            if ! git -C "$target" checkout -b "$branch" --track "origin/$branch"; then
-                return 1
-            fi
+        if ! checkout_branch "$target" "$branch"; then
+            return 1
         fi
 
-        if ! git -C "$target" merge --ff-only "origin/$branch"; then
+        if ! git -C "$target" merge --ff-only \
+            "refs/remotes/origin/$branch"; then
             printf '  local history diverged; not rewriting it\n' >&2
             return 1
         fi
@@ -91,9 +112,6 @@ link_shell() {
     shift
     link=$workspace/bin/$name
 
-    # Provisioning may deliberately point the stable shell name at a released
-    # native Oils install outside the source checkout. Keep that link as long
-    # as it is still runnable instead of regressing to an older source launcher.
     if [ -L "$link" ] && [ -x "$link" ] && "$link" -c 'echo' >/dev/null 2>&1; then
         return 0
     fi
@@ -127,9 +145,6 @@ bin_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 workspace=$(dirname -- "$bin_dir")
 name=$(basename -- "$0")
 script=$workspace/az/bin/$name
-
-# az's checked-in test suite and shell features target Bash.  Keep the stable
-# command on that tested interpreter until the repository adds a YSH gate.
 exec bash "$script" "$@"
 EOF
     chmod 0755 "$wrapper"
@@ -138,43 +153,18 @@ EOF
 install_command_links() {
     mkdir -p "$workspace/bin"
 
-    link_first R \
-        "$workspace/r/bin/R"
-    link_first Rscript \
-        "$workspace/r/bin/Rscript"
-    link_first edric \
-        "$workspace/Idric/edric"
-    link_first idris2 \
-        "$workspace/Idric/build/exec/idris2" \
-        "$workspace/Idric/idris2"
-    link_first fieldmouse \
-        "$workspace/fieldmouse/build/exec/fieldmouse"
-    link_first icu \
-        "$workspace/icu/build/exec/icu"
-    link_first ib-smoke \
-        "$workspace/ib/src/build/exec/ib-smoke"
-    link_first ick \
-        "$workspace/ick-runtime/bin/ick" \
-        "$workspace/ick-runtime/bin/gcc"
-    link_first ithon \
-        "$workspace/.build/ithon/python" \
-        "$workspace/ithon/ithon" \
-        "$workspace/ithon/bin/ithon"
-    link_shell osh \
-        "$workspace/oils/_bin/cxx-sh/osh" \
-        "$workspace/oils/bin/osh" \
-        "$workspace/oils/osh"
-    link_shell ysh \
-        "$workspace/oils/_bin/cxx-sh/ysh" \
-        "$workspace/oils/bin/ysh" \
-        "$workspace/oils/ysh"
-    link_first grease \
-        "$workspace/.build/grease/bin/grease" \
-        "$workspace/grease/_bin/cxx-sh/ysh" \
-        "$workspace/grease/bin/ysh" \
-        "$workspace/grease/ysh" \
-        "$workspace/grease/source/_bin/cxx-sh/ysh" \
-        "$workspace/grease/source/bin/ysh"
+    link_first R "$workspace/r/bin/R"
+    link_first Rscript "$workspace/r/bin/Rscript"
+    link_first edric "$workspace/Idric/edric"
+    link_first idris2 "$workspace/Idric/build/exec/idris2" "$workspace/Idric/idris2"
+    link_first fieldmouse "$workspace/fieldmouse/build/exec/fieldmouse"
+    link_first icu "$workspace/icu/build/exec/icu"
+    link_first ib-smoke "$workspace/ib/src/build/exec/ib-smoke"
+    link_first ick "$workspace/ick-runtime/bin/ick" "$workspace/ick-runtime/bin/gcc"
+    link_first ithon "$workspace/.build/ithon/python" "$workspace/ithon/ithon" "$workspace/ithon/bin/ithon"
+    link_shell osh "$workspace/oils/_bin/cxx-sh/osh" "$workspace/oils/bin/osh" "$workspace/oils/osh"
+    link_shell ysh "$workspace/oils/_bin/cxx-sh/ysh" "$workspace/oils/bin/ysh" "$workspace/oils/ysh"
+    link_first grease "$workspace/.build/grease/bin/grease" "$workspace/grease/_bin/cxx-sh/ysh" "$workspace/grease/bin/ysh" "$workspace/grease/ysh" "$workspace/grease/source/_bin/cxx-sh/ysh" "$workspace/grease/source/bin/ysh"
 
     install_az_wrapper az
     install_az_wrapper abe

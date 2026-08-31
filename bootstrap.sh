@@ -16,27 +16,47 @@ need() {
     }
 }
 
+normalize_repository() {
+    value=$1
+    case $value in
+        git@github.com:*) value=https://github.com/${value#git@github.com:} ;;
+        ssh://git@github.com/*) value=https://github.com/${value#ssh://git@github.com/} ;;
+    esac
+    value=${value%.git}
+    printf '%s\n' "$value"
+}
+
+checkout_grease_branch() {
+    if git -C "$grease" show-ref --verify --quiet "refs/heads/$grease_branch"; then
+        git -C "$grease" checkout "$grease_branch"
+    else
+        git -C "$grease" checkout -b "$grease_branch" \
+            "refs/remotes/origin/$grease_branch"
+    fi
+    git -C "$grease" config "branch.$grease_branch.remote" origin
+    git -C "$grease" config "branch.$grease_branch.merge" \
+        "refs/heads/$grease_branch"
+}
+
 update_grease() {
     if [ -e "$grease/.git" ]; then
         origin=$(git -C "$grease" remote get-url origin 2>/dev/null || true)
-        if [ "$origin" != "$grease_url" ]; then
+        if [ "$(normalize_repository "$origin")" != "$(normalize_repository "$grease_url")" ]; then
             printf 'grease origin is %s, expected %s; leaving it alone\n' "${origin:-<missing>}" "$grease_url" >&2
             return 1
         fi
 
-        git -C "$grease" fetch --prune origin "$grease_branch"
+        git -C "$grease" fetch --prune origin \
+            "+refs/heads/$grease_branch:refs/remotes/origin/$grease_branch"
 
         if [ -n "$(git -C "$grease" status --porcelain)" ]; then
             printf 'grease has local changes; fetched but did not move it\n'
             return 0
         fi
 
-        if git -C "$grease" show-ref --verify --quiet "refs/heads/$grease_branch"; then
-            git -C "$grease" checkout "$grease_branch"
-        else
-            git -C "$grease" checkout -b "$grease_branch" --track "origin/$grease_branch"
-        fi
-        git -C "$grease" merge --ff-only "origin/$grease_branch"
+        checkout_grease_branch
+        git -C "$grease" merge --ff-only \
+            "refs/remotes/origin/$grease_branch"
     elif [ -e "$grease" ]; then
         printf '%s exists but is not a git checkout; leaving it alone\n' "$grease" >&2
         return 1

@@ -62,9 +62,6 @@ build_grease() {
         mkdir -p "$grease_build/bin"
         cp -R "$python_source" "$python_build"
 
-        # Grease's development interpreter is Python 2.  Its vendored source
-        # is intentionally built outside the checkout so feeding a newer
-        # Grease revision never mistakes generated files for local edits.
         (
             cd "$python_build"
             touch Include/Python-ast.h Python/Python-ast.c
@@ -99,8 +96,8 @@ build_grease() {
         mark_state_built grease "$state"
     fi
 
-    expected=grease=42
-    actual=$($output -c 'var answer = 6 * 7; write -- "grease=$answer"')
+    expected=grease=221
+    actual=$($output -c 'var answer = 13 * 17; write -- "grease=$answer"')
     [ "$actual" = "$expected" ] || {
         printf 'Grease smoke returned:\n%s\n' "$actual" >&2
         return 1
@@ -176,7 +173,7 @@ build_icu() {
             IDRIS2_PREFIX="$idric/bootstrap-build" \
                 make -j"$jobs" IDRIC="$compiler"
         )
-        mark_state_built icu "$state"
+        mark_state_built icu "$repo"
     fi
 
     [ -x "$output" ] || {
@@ -206,7 +203,7 @@ build_ib() {
             IDRIS2_PREFIX="$idric/bootstrap-build" \
                 "$compiler" Smoke.idric -o ib-smoke
         )
-        mark_state_built ib "$state"
+        mark_state_built ib "$repo"
     fi
 
     "$output" >/dev/null
@@ -231,7 +228,7 @@ build_ithon() {
         mark_built ithon "$repo"
     fi
 
-    "$output" -c 'x ← 42; assert x == 42'
+    "$output" -c 'x ← 221; assert x == 221'
 }
 
 build_ir() {
@@ -248,10 +245,6 @@ build_ir() {
         rm -rf "$source" "$runtime"
         mkdir -p "$source"
 
-        # Build a committed snapshot in place.  IR's configured base-package
-        # DESCRIPTION files declare UTF-8; keeping them beside the Rd sources
-        # lets the bootstrap documentation parser honor that declaration while
-        # leaving the live checkout clean for future refreshes.
         git -C "$repo" archive HEAD code |
             tar --no-same-owner -x -C "$source"
 
