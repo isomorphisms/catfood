@@ -23,7 +23,8 @@ feed_repository() {
             return 1
         fi
 
-        if ! git -C "$target" fetch --prune origin "$branch"; then
+        if ! git -C "$target" fetch --prune origin \
+            "+refs/heads/$branch:refs/remotes/origin/$branch"; then
             printf '  fetch failed\n' >&2
             return 1
         fi
