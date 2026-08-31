@@ -24,7 +24,8 @@ update_grease() {
             return 1
         fi
 
-        git -C "$grease" fetch --prune origin "$grease_branch"
+        git -C "$grease" fetch --prune origin \
+            "+refs/heads/$grease_branch:refs/remotes/origin/$grease_branch"
 
         if [ -n "$(git -C "$grease" status --porcelain)" ]; then
             printf 'grease has local changes; fetched but did not move it\n'
