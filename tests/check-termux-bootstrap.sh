@@ -18,12 +18,13 @@ grep -F 'openai-api-key SKIP' termux-setup.grease >/dev/null || \
     grep -F 'openai-api-key' termux-setup.grease >/dev/null
 
 # Named fetches must populate the exact remote ref.  Branch creation must not
-# rely on --track because old single-branch shallow clones can reject an
-# otherwise-present origin/<branch> as "not a branch".
+# rely on automatic tracking inference because old single-branch shallow clones
+# can reject an otherwise-present origin/<branch> as "not a branch".
 grep -F 'refs/remotes/origin/$branch' termux-bootstrap.sh >/dev/null
 grep -F 'refs/remotes/origin/$grease_branch' bootstrap.sh >/dev/null
 grep -F 'refs/remotes/origin/$branch' update-tools.ysh >/dev/null
-if grep -F -- '--track' termux-bootstrap.sh bootstrap.sh update-tools.ysh >/dev/null; then
+if grep -F 'checkout -b "$branch" --track' termux-bootstrap.sh update-tools.ysh >/dev/null || \
+   grep -F 'checkout -b "$grease_branch" --track' bootstrap.sh >/dev/null; then
     printf '%s\n' 'stage zero must not depend on Git tracking inference' >&2
     exit 1
 fi
