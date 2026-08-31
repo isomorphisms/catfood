@@ -17,12 +17,22 @@ grep -F 'OPENAI_API_KEY_FILE' termux-bootstrap.sh >/dev/null
 grep -F 'openai-api-key SKIP' termux-setup.grease >/dev/null || \
     grep -F 'openai-api-key' termux-setup.grease >/dev/null
 
-# Fetching a named branch alone updates FETCH_HEAD but need not create or
-# refresh origin/<branch>.  Every updater that later consumes origin/<branch>
-# must fetch that remote-tracking ref explicitly.
+# Named fetches must populate the exact remote ref.  Branch creation must not
+# rely on --track because old single-branch shallow clones can reject an
+# otherwise-present origin/<branch> as "not a branch".
 grep -F 'refs/remotes/origin/$branch' termux-bootstrap.sh >/dev/null
 grep -F 'refs/remotes/origin/$grease_branch' bootstrap.sh >/dev/null
 grep -F 'refs/remotes/origin/$branch' update-tools.ysh >/dev/null
+if grep -F -- '--track' termux-bootstrap.sh bootstrap.sh update-tools.ysh >/dev/null; then
+    printf '%s\n' 'stage zero must not depend on Git tracking inference' >&2
+    exit 1
+fi
+
+# Keep routine smoke checks ordinary rather than reintroducing the old joke.
+if grep -F '42' termux-bootstrap.sh termux-setup.grease build-tools.sh doctor.sh >/dev/null; then
+    printf '%s\n' 'reserved joke value found in Cat Food smoke checks' >&2
+    exit 1
+fi
 
 if grep -E 'sk-(proj-)?[A-Za-z0-9_-]{20,}' termux-bootstrap.sh termux-setup.grease TERMUX.md >/dev/null; then
     printf '%s\n' 'secret-shaped OpenAI key material found in tracked Termux setup files' >&2
