@@ -42,7 +42,7 @@ normalize_repository() {
 find_checkout_by_origin() {
     wanted=$(normalize_repository "$1")
     for candidate in "$workspace"/*; do
-        [ -d "$candidate/.git" ] || continue
+        [ -e "$candidate/.git" ] || continue
         origin=$(git -C "$candidate" remote get-url origin 2>/dev/null || true)
         [ -n "$origin" ] || continue
         if [ "$(normalize_repository "$origin")" = "$wanted" ]; then
@@ -122,7 +122,7 @@ build_grease_runtime() {
         return 0
     fi
 
-    [ -d "$source/.git" ] || {
+    [ -e "$source/.git" ] || {
         printf '%s\n' 'BLOCKED grease-runtime: pinned Grease source is missing' >&2
         return 1
     }
@@ -216,6 +216,11 @@ while IFS= read -r line || [ -n "$line" ]; do
     checkout=$(find_checkout_by_origin "$repository" || true)
     if [ -n "$checkout" ]; then
         update_existing_checkout "$checkout" "$branch" "$submodules"
+        canonical=$workspace/$name
+        if [ "$checkout" != "$canonical" ] && [ ! -e "$canonical" ] && [ ! -L "$canonical" ]; then
+            ln -s "$checkout" "$canonical"
+            printf '  canonical link -> %s\n' "$canonical"
+        fi
     else
         printf '%s\n' "$line" >> "$filtered_manifest"
     fi
