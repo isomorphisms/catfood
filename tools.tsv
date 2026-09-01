@@ -5,7 +5,7 @@
 
 # Core languages, compilers, and machine-facing tools
 oils https://github.com/isomorphisms/oils.git grease/main none
-ir https://github.com/isomorphisms/ir.git trunk none
+ir https://github.com/isomorphisms/ir.git ir none
 irk https://github.com/isomorphisms/irk.git main none
 ithon https://github.com/isomorphisms/ithon.git main none
 icky https://github.com/isomorphisms/icky.git main none
