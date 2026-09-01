@@ -11,6 +11,7 @@ ithon https://github.com/isomorphisms/ithon.git main none
 icky https://github.com/isomorphisms/icky.git main none
 ick https://github.com/isomorphisms/ick.git main none
 Idric https://github.com/isomorphisms/Idric.git main none
+idric-cli https://github.com/isomorphisms/idric-cli.git main none
 fieldmouse https://github.com/isomorphisms/fieldmouse.git edric-rewrite none
 idris-arm-backend https://github.com/isomorphisms/idris-arm-backend.git main none
 idris-shader-backend https://github.com/isomorphisms/idris-shader-backend.git main none
@@ -53,4 +54,4 @@ hopf_fibration https://github.com/isomorphisms/hopf_fibration.git master none
 ortho https://github.com/isomorphisms/ortho.git main none
 kleinian-groups https://github.com/isomorphisms/kleinian-groups.git master none
 theta https://github.com/isomorphisms/theta.git main none
-indras-pearls https://github.com/isomorphisms/indras-pearls.git main none
+indras-pearls https://github.com/isomorphisms/indras-pearls.git master none
