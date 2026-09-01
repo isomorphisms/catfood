@@ -17,7 +17,7 @@ idris-arm-backend https://github.com/isomorphisms/idris-arm-backend.git main non
 idris-shader-backend https://github.com/isomorphisms/idris-shader-backend.git main none
 sent.idr https://github.com/isomorphisms/sent.idr.git main none
 programmers-keyboard https://github.com/isomorphisms/programmers-keyboard.git main none
-icu https://github.com/isomorphisms/icu.git master none
+icu https://github.com/dilapidated-shed/icu.git icu none
 
 # Workbench, browser, publication, and shared-CI repositories
 az https://github.com/isomorphisms/az.git main none
