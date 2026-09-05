@@ -42,7 +42,7 @@ install_packages() {
     if command -v apt-get >/dev/null 2>&1; then
         as_root apt-get update
         as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            bash build-essential ca-certificates cmake curl espeak-ng ffmpeg gfortran git jq \
+            bash build-essential ca-certificates cmake curl espeak-ng ffmpeg gfortran gh git jq \
             libbz2-dev libcurl4-openssl-dev libdeflate-dev libexpat1-dev libffi-dev \
             libgdbm-dev libgmp-dev liblzma-dev libncurses-dev libpcre2-dev libreadline-dev \
             libsqlite3-dev libssl-dev make ninja-build default-jdk-headless perl \
