@@ -45,7 +45,7 @@ install_packages() {
             bash build-essential ca-certificates cmake curl espeak-ng ffmpeg gfortran git jq \
             libbz2-dev libcurl4-openssl-dev libdeflate-dev libexpat1-dev libffi-dev \
             libgdbm-dev libgmp-dev liblzma-dev libncurses-dev libpcre2-dev libreadline-dev \
-            libsqlite3-dev libssl-dev make ninja-build openjdk-17-jdk-headless perl \
+            libsqlite3-dev libssl-dev make ninja-build default-jdk-headless perl \
             pkg-config python3-venv rsync tk-dev tmux texinfo unzip uuid-dev vim w3m \
             xz-utils zlib1g-dev
 
