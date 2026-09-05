@@ -1,0 +1,13 @@
+# Fresh Debian/Hetzner provisioning must encode and exercise the setup failures seen on 2026-09-05.
+contains	HETZNER-JDK-PACKAGE	provision.sh	default-jdk-headless
+not_contains	HETZNER-NO-OPENJDK17	provision.sh	openjdk-17-jdk-headless
+contains	HETZNER-GH-PACKAGE	provision.sh	gfortran gh git jq
+contains	HETZNER-DOCTOR-GH	doctor.sh	for command_name in git gh curl jq java javac
+contains	HETZNER-DOCTOR-JAVA	doctor.sh	java -version
+contains	HETZNER-DOCTOR-JAVAC	doctor.sh	javac -version
+contains	HETZNER-DEBIAN-IMAGE	.github/workflows/stage-zero-smoke.yml	debian:13-slim
+contains	HETZNER-RUN-PROVISION	.github/workflows/stage-zero-smoke.yml	sh ./provision.sh
+contains	HETZNER-GH-AUTH	.github/workflows/stage-zero-smoke.yml	gh auth status
+contains	HETZNER-GH-CLONE	.github/workflows/stage-zero-smoke.yml	gh repo clone isomorphisms/ai-ci /tmp/gh-clone
+contains	HETZNER-JAVA-RUNTIME	.github/workflows/stage-zero-smoke.yml	java -version
+contains	HETZNER-JAVA-COMPILER	.github/workflows/stage-zero-smoke.yml	javac -version
