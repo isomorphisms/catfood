@@ -6,6 +6,7 @@ on:
 jobs:
   fresh-hetzner-debian-4gb:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Provision a constrained Debian 13 server
@@ -52,6 +53,7 @@ jobs:
               osh -c "echo"
               catfood-doctor
 
+              test -x /opt/cat-food/Idric/edric
               test -x /opt/cat-food/Idric/build/exec/idris2
               /opt/cat-food/Idric/build/exec/idris2 --version
 
