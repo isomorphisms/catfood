@@ -1,0 +1,28 @@
+name: ai-ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  catfood-links:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: isomorphisms/ai-ci
+          ref: c24fe6babf61c7e3faf326fed88094f906bc7643
+          path: _ai-ci
+      - name: Verify Catfood linkage contracts
+        shell: sh
+        run: |
+          cc -std=c17 -Wall -Wextra -Werror -pedantic -O2 \
+            -o "$RUNNER_TEMP/aici" _ai-ci/src/aici.c
+          "$RUNNER_TEMP/aici" verify \
+            _ai-ci/contracts/catfood-idric-cli-v0.contract.tsv .
+          "$RUNNER_TEMP/aici" verify \
+            _ai-ci/contracts/catfood-issh-v0.contract.tsv .
