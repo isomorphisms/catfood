@@ -33,8 +33,19 @@ if [ "${CATFOOD_BUILD_TOOLS:-1}" != 0 ]; then
         sh "$root/build-tools.sh"
 
     # Expose outputs produced by the build without another manifest fetch.
+    if [ -x "$workspace/bin/grease" ] && \
+       "$workspace/bin/grease" -c 'echo' >/dev/null 2>&1; then
+        grease_runner=$workspace/bin/grease
+    elif [ -x "$workspace/bin/ysh" ] && \
+         "$workspace/bin/ysh" -c 'echo' >/dev/null 2>&1; then
+        grease_runner=$workspace/bin/ysh
+    else
+        printf '%s\n' 'cat food cannot refresh links without Grease/YSH' >&2
+        exit 1
+    fi
     CATFOOD_ROOT=$workspace CATFOOD_LINKS_ONLY=1 \
-        sh "$root/update-tools.ysh"
+        "$grease_runner" "$root/update-tools.ysh" \
+            "$workspace" "${CATFOOD_DEPTH:-12}" "$root/tools.tsv" 1
 fi
 
 CATFOOD_ROOT=$workspace CATFOOD_PREFIX=$prefix \

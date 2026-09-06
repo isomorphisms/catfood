@@ -80,7 +80,8 @@ write_fdroid_wrapper() {
     {
         printf '%s\n' '#!/bin/sh'
         printf '%s\n' '# catfood fdroid wrapper'
-        printf 'exec sh "%s" "$@"\n' "$target"
+        printf '%s\n' "bin_dir=\$(CDPATH='' cd -- \"\$(dirname -- \"\$0\")\" && pwd)"
+        printf 'exec "$bin_dir/ysh" "%s" "$@"\n' "$target"
     } > "$tmp"
     chmod 0755 "$tmp"
     mv "$tmp" "$wrapper"
