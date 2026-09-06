@@ -1,0 +1,65 @@
+name: hetzner-debian-4gb
+
+on:
+  pull_request:
+
+jobs:
+  fresh-hetzner-debian-4gb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Provision a constrained Debian 13 server
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          docker run --rm \
+            --memory=4g \
+            --memory-swap=4g \
+            --cpus=2 \
+            --pids-limit=1024 \
+            -e GH_TOKEN \
+            -v "$PWD:/src:ro" \
+            debian:13-slim sh -euxc '
+              test "$(cat /sys/fs/cgroup/memory.max)" = 4294967296
+              case "$(cat /sys/fs/cgroup/memory.swap.max)" in
+                0) ;;
+                *) printf "expected no swap, got %s bytes\n" "$(cat /sys/fs/cgroup/memory.swap.max)" >&2; exit 1 ;;
+              esac
+
+              cp -a /src /work
+              cd /work
+
+              CATFOOD_ROOT=/opt/cat-food \
+              CATFOOD_PREFIX=/usr/local \
+              CATFOOD_CACHE=/var/cache/catfood \
+              CATFOOD_DEPTH=1 \
+              CATFOOD_JOBS=2 \
+              CATFOOD_NO_PROFILE=1 \
+                sh ./provision.sh
+
+              PATH=/usr/local/bin:/opt/cat-food/bin:$PATH
+              export PATH
+
+              command -v gh
+              gh --version
+              gh auth status
+              java -version
+              javac -version
+              ysh -c "echo"
+              osh -c "echo"
+              catfood-doctor
+
+              test -x /opt/cat-food/Idric/build/exec/idris2
+              /opt/cat-food/Idric/build/exec/idris2 --version
+
+              rm -rf /tmp/gh-clone
+              gh repo clone isomorphisms/ai-ci /tmp/gh-clone
+              test -d /tmp/gh-clone/.git
+
+              printf "memory.max=%s\n" "$(cat /sys/fs/cgroup/memory.max)"
+              printf "memory.peak=%s\n" "$(cat /sys/fs/cgroup/memory.peak)"
+              printf "memory.swap.max=%s\n" "$(cat /sys/fs/cgroup/memory.swap.max)"
+            '
