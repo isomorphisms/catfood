@@ -43,7 +43,7 @@ check_stable() {
     fi
 }
 
-for command_name in git curl jq R Rscript grease edric idris2 fieldmouse icu ib-smoke ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
+for command_name in git gh curl jq java javac R Rscript grease edric idris2 fieldmouse icu ib-smoke ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
     check_command "$command_name"
 done
 
@@ -51,6 +51,18 @@ for stable_name in R Rscript grease edric idris2 fieldmouse icu ib-smoke ithon o
     check_stable "$stable_name"
 done
 
+if command -v gh >/dev/null 2>&1 && ! gh --version >/dev/null 2>&1; then
+    printf '%-22s command not runnable\n' gh >&2
+    failures=1
+fi
+if command -v java >/dev/null 2>&1 && ! java -version >/dev/null 2>&1; then
+    printf '%-22s runtime not runnable\n' java >&2
+    failures=1
+fi
+if command -v javac >/dev/null 2>&1 && ! javac -version >/dev/null 2>&1; then
+    printf '%-22s compiler not runnable\n' javac >&2
+    failures=1
+fi
 if [ -x "$workspace/bin/osh" ] && ! "$workspace/bin/osh" -c 'echo' >/dev/null 2>&1; then
     printf '%-22s stable command not runnable\n' osh >&2
     failures=1

@@ -124,6 +124,28 @@ build_idric() {
     "$output" --version >/dev/null
 }
 
+build_idric_net() {
+    repo=$workspace/Idric-Net
+    idric=$workspace/Idric
+    compiler=$idric/build/exec/idris2
+    [ -d "$repo/.git" ] || return 0
+    [ -x "$compiler" ] || {
+        printf '%s\n' 'Idric-Net needs the built Idriç compiler' >&2
+        return 1
+    }
+
+    # ICU declares idric_net as an installed package dependency.  Install it
+    # into the same compiler prefix ICU uses rather than copying its types or
+    # smuggling source paths into ICU's build.
+    printf '%s\n' 'installing Idric-Net package'
+    (
+        cd "$repo"
+        PATH="$idric/.tools/bin:$PATH" \
+        IDRIS2_PREFIX="$idric/bootstrap-build" \
+            "$compiler" --install idric-net.ipkg
+    )
+}
+
 build_fieldmouse() {
     repo=$workspace/fieldmouse
     idric=$workspace/Idric
@@ -159,6 +181,7 @@ build_fieldmouse() {
 build_icu() {
     repo=$workspace/icu
     idric=$workspace/Idric
+    idric_net=$workspace/Idric-Net
     compiler=$idric/build/exec/idris2
     output=$repo/build/exec/icu
     [ -d "$repo/.git" ] || return 0
@@ -166,8 +189,12 @@ build_icu() {
         printf '%s\n' 'ICU needs the built Idriç compiler' >&2
         return 1
     }
+    [ -d "$idric_net/.git" ] || {
+        printf '%s\n' 'ICU needs the Idric-Net package checkout' >&2
+        return 1
+    }
 
-    state="$(revision "$repo") $(revision "$idric")"
+    state="$(revision "$repo") $(revision "$idric") $(revision "$idric_net")"
     if [ ! -x "$output" ] || needs_state_build icu "$state"; then
         printf '%s\n' 'building ICU'
         (
@@ -279,6 +306,7 @@ build_ir() {
 
 build_grease
 build_idric
+build_idric_net
 build_fieldmouse
 build_icu
 build_ib

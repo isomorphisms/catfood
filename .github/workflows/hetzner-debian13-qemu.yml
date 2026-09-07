@@ -1,0 +1,163 @@
+name: hetzner-debian13-qemu
+
+on:
+  pull_request:
+
+jobs:
+  boot-and-provision:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      DEBIAN_IMAGE_URL: https://cloud.debian.org/cdimage/cloud/trixie/20260712-2537/debian-13-genericcloud-amd64-20260712-2537.qcow2
+      DEBIAN_IMAGE_SHA512: 7ae53e9dbee282bfc16f289dec483dde3a8598769c38a267948310f7a2a52c662620198603bc52c142627efba379863d16079698a10b34102d55bcedd40e8d32
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install QEMU and cloud-init tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y qemu-system-x86 qemu-utils cloud-image-utils openssh-client
+
+      - name: Boot Debian 13 with 4 GB RAM and 2 CPUs
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CATFOOD_BRANCH: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+
+          work="$RUNNER_TEMP/hetzner-qemu"
+          mkdir -p "$work"
+          cd "$work"
+
+          curl -fL "$DEBIAN_IMAGE_URL" -o debian-base.qcow2
+          printf '%s  %s\n' "$DEBIAN_IMAGE_SHA512" debian-base.qcow2 | sha512sum -c -
+          cp debian-base.qcow2 debian.qcow2
+          qemu-img resize debian.qcow2 40G
+
+          ssh-keygen -q -t ed25519 -N '' -f id_ed25519
+          public_key=$(cat id_ed25519.pub)
+
+          cat > user-data <<EOF
+          #cloud-config
+          users:
+            - default
+            - name: catfood
+              gecos: Catfood Hetzner acceptance
+              groups: [sudo]
+              sudo: ALL=(ALL) NOPASSWD:ALL
+              shell: /bin/bash
+              ssh_authorized_keys:
+                - $public_key
+          ssh_pwauth: false
+          disable_root: true
+          growpart:
+            mode: auto
+            devices: ['/']
+          resize_rootfs: true
+          EOF
+
+          cat > meta-data <<'EOF'
+          instance-id: catfood-hetzner-debian13
+          local-hostname: catfood-hetzner
+          EOF
+
+          cloud-localds seed.img user-data meta-data
+
+          qemu-system-x86_64 \
+            -machine q35,accel=tcg \
+            -cpu max \
+            -smp 2 \
+            -m 4096 \
+            -drive file=debian.qcow2,if=virtio,format=qcow2 \
+            -drive file=seed.img,if=virtio,format=raw \
+            -device virtio-net-pci,netdev=net0 \
+            -netdev user,id=net0,hostfwd=tcp:127.0.0.1:2222-:22 \
+            -display none \
+            -serial file:qemu-console.log \
+            -monitor none \
+            -pidfile qemu.pid \
+            -daemonize
+
+          cleanup() {
+            if [ -f qemu.pid ] && kill -0 "$(cat qemu.pid)" 2>/dev/null; then
+              kill "$(cat qemu.pid)" || true
+            fi
+            printf '%s\n' '--- QEMU console tail ---'
+            tail -n 120 qemu-console.log || true
+          }
+          trap cleanup EXIT
+
+          ssh_opts=(
+            -i "$work/id_ed25519"
+            -p 2222
+            -o StrictHostKeyChecking=no
+            -o UserKnownHostsFile=/dev/null
+            -o ConnectTimeout=5
+          )
+
+          ready=0
+          for attempt in $(seq 1 180); do
+            if ssh "${ssh_opts[@]}" catfood@127.0.0.1 true 2>/dev/null; then
+              ready=1
+              break
+            fi
+            sleep 2
+          done
+          test "$ready" = 1
+
+          ssh "${ssh_opts[@]}" catfood@127.0.0.1 'cloud-init status --wait'
+          ssh "${ssh_opts[@]}" catfood@127.0.0.1 'test "$(cat /etc/debian_version | cut -d. -f1)" = 13'
+          ssh "${ssh_opts[@]}" catfood@127.0.0.1 'test "$(nproc)" = 2'
+          ssh "${ssh_opts[@]}" catfood@127.0.0.1 'awk '\''/MemTotal:/ { exit !($2 >= 3900000 && $2 <= 4300000) }'\'' /proc/meminfo'
+          ssh "${ssh_opts[@]}" catfood@127.0.0.1 'test "$(ps -p 1 -o comm=)" = systemd'
+          ssh "${ssh_opts[@]}" catfood@127.0.0.1 'systemctl is-active --quiet ssh'
+
+          printf '%s' "$GH_TOKEN" | ssh "${ssh_opts[@]}" catfood@127.0.0.1 'umask 077; cat > /tmp/gh-token'
+
+          ssh "${ssh_opts[@]}" catfood@127.0.0.1 "CATFOOD_BRANCH='$CATFOOD_BRANCH' bash -s" <<'REMOTE'
+          set -euo pipefail
+
+          sudo apt-get update
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y gh git ca-certificates
+
+          export GH_TOKEN=$(cat /tmp/gh-token)
+          gh auth status
+          rm -rf "$HOME/catfood"
+          gh repo clone isomorphisms/catfood "$HOME/catfood" -- --branch "$CATFOOD_BRANCH" --depth 1
+          test -d "$HOME/catfood/.git"
+
+          sudo -H env \
+            GH_TOKEN="$GH_TOKEN" \
+            CATFOOD_ROOT=/opt/cat-food \
+            CATFOOD_PREFIX=/usr/local \
+            CATFOOD_CACHE=/var/cache/catfood \
+            CATFOOD_DEPTH=1 \
+            CATFOOD_BUILD_TOOLS=0 \
+            CATFOOD_NO_PROFILE=1 \
+              sh "$HOME/catfood/provision.sh"
+
+          command -v gh
+          gh --version
+          java -version
+          javac -version
+          /usr/local/bin/ysh -c 'echo'
+          test -d /opt/cat-food/Idric/.git
+          test -d /opt/cat-food/ai-ci/.git
+
+          rm -f /tmp/gh-token
+          REMOTE
+
+          ssh "${ssh_opts[@]}" catfood@127.0.0.1 'df -h /; free -h; nproc; systemctl is-active ssh'
+          ssh "${ssh_opts[@]}" catfood@127.0.0.1 'sudo poweroff' || true
+
+          for attempt in $(seq 1 60); do
+            if ! kill -0 "$(cat qemu.pid)" 2>/dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+          printf '%s\n' 'QEMU VM did not power off cleanly' >&2
+          exit 1

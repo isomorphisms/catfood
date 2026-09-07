@@ -8,6 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Verify fresh Debian acceptance contract
+        uses: isomorphisms/ai-ci@ddcfeabf62ab38a3efd0f4a29de08888eeacade7
+        with:
+          suite: ci/ai-ci.suite.tsv
+          root: .
       - name: Check POSIX stage zero
         shell: sh
         run: |
@@ -140,4 +145,45 @@ jobs:
               "$CATFOOD_ROOT/bin/az" link B000000000 >/dev/null
               "$CATFOOD_ROOT/bin/abe" link "https://www.abebooks.com/servlet/BookDetailsPL?bi=1" >/dev/null
               "$CATFOOD_ROOT/bin/catfood-doctor"
+            '
+
+  fresh-debian-server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Provision and clone from clean Debian 13
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          manifest="$RUNNER_TEMP/catfood-debian.tsv"
+          printf '%s\n' 'ai-ci https://github.com/isomorphisms/ai-ci.git main none' > "$manifest"
+
+          docker run --rm \
+            -e GH_TOKEN \
+            -v "$PWD:/src:ro" \
+            -v "$manifest:/tmp/tools.tsv:ro" \
+            debian:13-slim sh -euxc '
+              cp -a /src /work
+              cd /work
+              CATFOOD_ROOT=/opt/cat-food \
+              CATFOOD_PREFIX=/usr/local \
+              CATFOOD_CACHE=/var/cache/catfood \
+              CATFOOD_DEPTH=1 \
+              CATFOOD_MANIFEST=/tmp/tools.tsv \
+              CATFOOD_BUILD_TOOLS=0 \
+              CATFOOD_NO_PROFILE=1 \
+                sh ./provision.sh
+
+              command -v gh
+              gh --version
+              gh auth status
+              java -version
+              javac -version
+              ysh -c "echo"
+              test -d /opt/cat-food/ai-ci/.git
+
+              gh repo clone isomorphisms/ai-ci /tmp/gh-clone
+              test -d /tmp/gh-clone/.git
             '

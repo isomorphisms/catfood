@@ -1,0 +1,20 @@
+# Fresh Debian/Hetzner provisioning must encode and exercise the setup failures seen on 2026-09-05.
+contains	HETZNER-JDK-PACKAGE	provision.sh	default-jdk-headless
+not_contains	HETZNER-NO-OPENJDK17	provision.sh	openjdk-17-jdk-headless
+contains	HETZNER-GH-PACKAGE	provision.sh	gfortran gh git jq
+contains	HETZNER-DOCTOR-GH	doctor.sh	for command_name in git gh curl jq java javac
+contains	HETZNER-DOCTOR-JAVA	doctor.sh	java -version
+contains	HETZNER-DOCTOR-JAVAC	doctor.sh	javac -version
+contains	HETZNER-DEBIAN-IMAGE	.github/workflows/stage-zero-smoke.yml	debian:13-slim
+contains	HETZNER-RUN-PROVISION	.github/workflows/stage-zero-smoke.yml	sh ./provision.sh
+contains	HETZNER-GH-AUTH	.github/workflows/stage-zero-smoke.yml	gh auth status
+contains	HETZNER-GH-CLONE	.github/workflows/stage-zero-smoke.yml	gh repo clone isomorphisms/ai-ci /tmp/gh-clone
+contains	HETZNER-JAVA-RUNTIME	.github/workflows/stage-zero-smoke.yml	java -version
+contains	HETZNER-JAVA-COMPILER	.github/workflows/stage-zero-smoke.yml	javac -version
+contains	HETZNER-QEMU-DEBIAN13	.github/workflows/hetzner-debian13-qemu.yml	debian-13-genericcloud-amd64-20260712-2537.qcow2
+contains	HETZNER-QEMU-RAM	.github/workflows/hetzner-debian13-qemu.yml	-m 4096
+contains	HETZNER-QEMU-CPU	.github/workflows/hetzner-debian13-qemu.yml	-smp 2
+contains	HETZNER-QEMU-SSH	.github/workflows/hetzner-debian13-qemu.yml	hostfwd=tcp:127.0.0.1:2222-:22
+contains	HETZNER-QEMU-SYSTEMD	.github/workflows/hetzner-debian13-qemu.yml	ps -p 1 -o comm=
+contains	HETZNER-QEMU-GH-CLONE	.github/workflows/hetzner-debian13-qemu.yml	gh repo clone isomorphisms/catfood
+contains	HETZNER-QEMU-PROVISION	.github/workflows/hetzner-debian13-qemu.yml	sh "$HOME/catfood/provision.sh"
