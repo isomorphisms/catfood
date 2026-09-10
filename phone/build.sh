@@ -73,9 +73,11 @@ while IFS="$tab" read -r name mode command abi source ref url sha256 entrypoint;
     receipt="$prefix/receipts/$name.tsv"
     tool_dir="$prefix/tools/$name"
     wrapper="$bin_dir/$command"
+    expected_url=$(printf 'url\t%s' "$url")
+    expected_sha256=$(printf 'sha256\t%s' "$sha256")
     if [ -x "$wrapper" ] && [ -f "$receipt" ] &&
-       grep -Fqx "url\t$url" "$receipt" 2>/dev/null &&
-       grep -Fqx "sha256\t$sha256" "$receipt" 2>/dev/null; then
+       grep -Fqx "$expected_url" "$receipt" 2>/dev/null &&
+       grep -Fqx "$expected_sha256" "$receipt" 2>/dev/null; then
         printf '%-10s current %s@%s\n' "$name" "$source" "$ref"
         continue
     fi
