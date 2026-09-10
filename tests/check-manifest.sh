@@ -11,6 +11,8 @@ printf '%s\n' \
     '# fixture' \
     'one https://github.com/example/one.git main none' \
     'two https://github.com/example/two.git feature/branch recursive' \
+    'three https://github.com/example/three.git Idriç none' \
+    'four https://github.com/example/four.git how-long+how-wide none' \
     > "$good"
 CATFOOD_MANIFEST=$good sh "$checker" >/dev/null
 
@@ -33,8 +35,16 @@ expect_failure parent-name \
     '.. https://github.com/example/one.git main none'
 expect_failure repository \
     'one git@github.com:example/one.git main none'
-expect_failure branch \
+expect_failure branch-colon \
     'one https://github.com/example/one.git bad:branch none'
+expect_failure branch-dotdot \
+    'one https://github.com/example/one.git bad..branch none'
+expect_failure branch-reflog \
+    'one https://github.com/example/one.git bad@{branch none'
+expect_failure branch-lock \
+    'one https://github.com/example/one.git bad.lock none'
+expect_failure branch-hidden-component \
+    'one https://github.com/example/one.git feature/.hidden none'
 expect_failure submodules \
     'one https://github.com/example/one.git main sometimes'
 expect_failure duplicate-name \

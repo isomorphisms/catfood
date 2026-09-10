@@ -5,6 +5,20 @@ root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
 
 awk '
+    function unsafe_branch(branch) {
+        return branch == "" || branch == "@" ||
+               branch ~ /^-/ || branch ~ /^\./ || branch ~ /\.$/ ||
+               branch ~ /^\// || branch ~ /\/$/ ||
+               branch ~ /[[:cntrl:]]/ ||
+               index(branch, "..") || index(branch, "@{") ||
+               index(branch, "//") || index(branch, "/.") ||
+               branch ~ /[.]lock(\/|$)/ ||
+               index(branch, "~") || index(branch, "^") ||
+               index(branch, ":") || index(branch, "?") ||
+               index(branch, "*") || index(branch, "[") ||
+               index(branch, "\\")
+    }
+
     /^[[:space:]]*($|#)/ { next }
 
     NF != 4 {
@@ -23,7 +37,7 @@ awk '
         failed = 1
     }
 
-    $3 !~ /^[[:alnum:]_.\/-]+$/ {
+    unsafe_branch($3) {
         printf "%s:%d: unsafe branch name: %s\n", FILENAME, NR, $3 > "/dev/stderr"
         failed = 1
     }
