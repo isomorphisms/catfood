@@ -17,11 +17,14 @@ The first phone target is the current 32-bit `armeabi-v7a` device. Direct DEX pl
 
 ## First checkout
 
+Keep the phone profile in a separate checkout. Do not switch an existing Cat Food worktree that may contain local edits or a branch-specific fetch configuration.
+
 ```sh
 mkdir -p ~/opt
 cd ~/opt
-git clone --depth 1 --branch phone https://github.com/isomorphisms/catfood.git catfood
-cd catfood
+git clone --depth 1 --single-branch --branch phone \
+    https://github.com/isomorphisms/catfood.git catfood-phone
+cd catfood-phone
 sh phone/build.sh
 ```
 
@@ -30,7 +33,7 @@ sh phone/build.sh
 ## Update
 
 ```sh
-cd ~/opt/catfood
+cd ~/opt/catfood-phone
 sh phone/update.sh
 ```
 
