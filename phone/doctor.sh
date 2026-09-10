@@ -62,12 +62,26 @@ while IFS="$tab" read -r name mode command wanted_abi source ref url sha256 entr
         continue
     fi
 
-    if [ -x "$bin_dir/$command" ]; then
-        printf '%-10s PASS %s\n' "$name" "$bin_dir/$command"
-    else
+    if [ ! -x "$bin_dir/$command" ]; then
         printf '%-10s FAIL expected installed command %s\n' "$name" "$bin_dir/$command"
         failed=1
+        continue
     fi
+
+    case "$name" in
+        grease)
+            if result=$("$bin_dir/$command" -c 'false ∨ echo grease-phone-ok' 2>&1) &&
+               [ "$result" = grease-phone-ok ]; then
+                printf '%-10s PASS executable readable-syntax smoke\n' "$name"
+            else
+                printf '%-10s FAIL executable smoke: %s\n' "$name" "$result"
+                failed=1
+            fi
+            ;;
+        *)
+            printf '%-10s PASS %s\n' "$name" "$bin_dir/$command"
+            ;;
+    esac
 done < "$manifest"
 
 [ "$failed" -eq 0 ] || exit 1
