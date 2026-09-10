@@ -10,7 +10,24 @@ LC_ALL=$catfood_locale
 export LANG LC_ALL
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
-workspace=${CATFOOD_ROOT:-/opt}
+target=${CATFOOD_TARGET:-auto}
+if [ "$target" = auto ]; then
+    case ${PREFIX:-}:${TERMUX_VERSION:-} in
+        /data/data/com.termux/*:*|*:*?*) target=termux ;;
+        *) target=cloud ;;
+    esac
+fi
+
+case $target in
+    cloud) default_workspace=/opt ;;
+    termux) default_workspace=$HOME/opt ;;
+    *)
+        printf 'CATFOOD_TARGET must be cloud or termux, found: %s\n' "$target" >&2
+        exit 2
+        ;;
+esac
+
+workspace=${CATFOOD_ROOT:-$default_workspace}
 cache=${CATFOOD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/catfood}
 oils_version=${CATFOOD_OILS_VERSION:-0.37.0}
 oils_sha256=${CATFOOD_OILS_SHA256:-f4d41d20a0523dbcfbd4ba231f82edf25b08d4965d65bc71fcb56666d6743000}
@@ -39,7 +56,13 @@ install_packages() {
         return 0
     fi
 
-    if command -v apt-get >/dev/null 2>&1; then
+    if [ "$target" = termux ]; then
+        command -v pkg >/dev/null 2>&1 || {
+            printf '%s\n' 'cat food needs the Termux pkg command' >&2
+            exit 127
+        }
+        pkg install -y bash ca-certificates coreutils curl gawk git jq
+    elif command -v apt-get >/dev/null 2>&1; then
         as_root apt-get update
         as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y \
             bash build-essential ca-certificates cmake curl espeak-ng ffmpeg gfortran git jq \
@@ -103,7 +126,9 @@ install_ysh() {
 }
 
 install_packages
-install_ysh
+if [ "${CATFOOD_INSTALL_YSH:-1}" != 0 ]; then
+    install_ysh
+fi
 
 if [ -n "${CATFOOD_CONFIG_DIR:-}" ]; then
     CATFOOD_CONFIG_DIR=$CATFOOD_CONFIG_DIR sh "$root/import-config.sh"
@@ -112,5 +137,12 @@ fi
 PATH=$prefix/bin:$workspace/bin:$PATH
 export PATH
 
-CATFOOD_ROOT=$workspace CATFOOD_PREFIX=$prefix \
-    sh "$root/refresh.sh"
+if [ "$target" = termux ] && [ "${CATFOOD_BUILD_TOOLS:-0}" = 0 ]; then
+    CATFOOD_ROOT=$workspace CATFOOD_DEPTH=${CATFOOD_DEPTH:-12} \
+        sh "$root/bootstrap.sh"
+    printf 'cat food phone feed is current under %s\n' "$workspace"
+else
+    CATFOOD_ROOT=$workspace CATFOOD_PREFIX=$prefix \
+    CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-1} \
+        sh "$root/refresh.sh"
+fi

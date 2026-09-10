@@ -1,0 +1,6 @@
+yaml_forbid_key	CATFOOD-CI-CONTINUE	.github/workflows/bootstrap.yml	continue-on-error
+yaml_forbid_key	CATFOOD-CI-CONTINUE-SMOKE	.github/workflows/stage-zero-smoke.yml	continue-on-error
+not_contains	CATFOOD-CI-SWALLOW	.github/workflows/bootstrap.yml	set +e
+not_contains	CATFOOD-CI-SWALLOW-SMOKE	.github/workflows/stage-zero-smoke.yml	set +e
+actions_pinned	CATFOOD-CI-PINS	.github/workflows/bootstrap.yml
+actions_pinned	CATFOOD-CI-PINS-SMOKE	.github/workflows/stage-zero-smoke.yml

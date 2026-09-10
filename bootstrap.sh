@@ -96,4 +96,5 @@ else
 fi
 
 CATFOOD_ROOT=$workspace CATFOOD_DEPTH=$history_depth CATFOOD_MANIFEST=$manifest \
-    exec "$shell" "$root/update-tools.ysh"
+    exec "$shell" "$root/update-tools.ysh" \
+        "$workspace" "$history_depth" "$manifest" 0

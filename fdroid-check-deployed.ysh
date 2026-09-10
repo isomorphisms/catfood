@@ -1,14 +1,22 @@
 #!/usr/bin/env ysh
 set -eu
 
-GITLAB_HOST=${GITLAB_HOST:-https://gitlab.com}
-GITLAB_API=${GITLAB_API:-$GITLAB_HOST/api/v4}
-GITLAB_FORK=${GITLAB_FORK:-black-ballers/share-freely}
-GITLAB_UPSTREAM=${GITLAB_UPSTREAM:-fdroid/fdroiddata}
-GITLAB_UPSTREAM_BRANCH=${GITLAB_UPSTREAM_BRANCH:-master}
-FDROID_GITLAB_TOKEN_FILE=${FDROID_GITLAB_TOKEN_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/fdroid-gitlab/token}
-FDROID_API=${FDROID_API:-https://f-droid.org/api/v1/packages}
-FDROID_PACKAGES=${FDROID_PACKAGES:-https://f-droid.org/packages}
+# These commands are owned by YSH.  Their existing command surface is being
+# migrated incrementally, so retain portable test/function idioms while taking
+# configuration from YSH's explicit environment object.
+shopt -u strict_errexit simple_test_builtin
+var HOME = get(ENV, 'HOME', '')
+var XDG_CONFIG_HOME = get(ENV, 'XDG_CONFIG_HOME', "$HOME/.config")
+var GITLAB_TOKEN = get(ENV, 'GITLAB_TOKEN', '')
+var GITLAB_HOST = get(ENV, 'GITLAB_HOST', 'https://gitlab.com')
+var GITLAB_API = get(ENV, 'GITLAB_API', "$GITLAB_HOST/api/v4")
+var GITLAB_FORK = get(ENV, 'GITLAB_FORK', 'black-ballers/share-freely')
+var GITLAB_UPSTREAM = get(ENV, 'GITLAB_UPSTREAM', 'fdroid/fdroiddata')
+var GITLAB_UPSTREAM_BRANCH = get(ENV, 'GITLAB_UPSTREAM_BRANCH', 'master')
+var FDROID_GITLAB_TOKEN_FILE = get(
+    ENV, 'FDROID_GITLAB_TOKEN_FILE', "$XDG_CONFIG_HOME/fdroid-gitlab/token")
+var FDROID_API = get(ENV, 'FDROID_API', 'https://f-droid.org/api/v1/packages')
+var FDROID_PACKAGES = get(ENV, 'FDROID_PACKAGES', 'https://f-droid.org/packages')
 
 usage() {
     cat <<'USAGE'

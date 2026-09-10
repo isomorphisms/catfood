@@ -1,0 +1,15 @@
+path	layer	runner	reason
+catfood	stage-zero	sh	Fresh hosts and Termux have no Grease yet
+bootstrap.sh	stage-zero	sh	Fetches Grease before Grease can run
+check-manifest.sh	stage-zero	sh	Validates the feed before workspace mutation
+provision.sh	stage-zero	sh	Installs the target package and Grease prerequisites
+activate.sh	transition	sh	Creates stable command links after bootstrap
+refresh.sh	transition	sh	Hands YSH files to a runnable Grease or YSH
+build-tools.sh	transition	sh	Existing post-bootstrap build driver pending Grease migration
+doctor.sh	transition	sh	Existing post-bootstrap verifier pending Grease migration
+import-config.sh	transition	sh	Secret importer remains dependency-free and auditable
+tests/check-manifest.sh	test	sh	Stage-zero manifest failure fixtures
+tests/entrypoint.sh	test	sh	Cloud and Termux dispatch fixtures
+update-tools.ysh	grease	ysh	Repository feed after the Grease bootstrap
+fdroid-deploy.ysh	grease	ysh	F-Droid publication command
+fdroid-check-deployed.ysh	grease	ysh	F-Droid publication status command

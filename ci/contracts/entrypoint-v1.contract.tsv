@@ -1,0 +1,5 @@
+nonempty	CATFOOD-ENTRYPOINT	catfood
+nonempty	CATFOOD-MANIFEST	tools.tsv
+nonempty	CATFOOD-TERMUX-TEST	tests/entrypoint.sh
+not_contains	CATFOOD-ENTRYPOINT-NO-SUDO	catfood	sudo
+not_contains	CATFOOD-ENTRYPOINT-NO-APT	catfood	apt-get

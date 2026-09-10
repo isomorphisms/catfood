@@ -1,0 +1,65 @@
+#!/bin/sh
+set -eu
+
+root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+
+usage() {
+    cat <<'EOF'
+usage: ./catfood
+
+Fetch and prepare the Cat Food workbench.
+
+The target is detected automatically:
+  cloud    provision and build the complete Debian/Ubuntu workbench
+  termux   install the small fetch-time tool set and feed every repository
+
+Overrides:
+  CATFOOD_TARGET=cloud|termux
+  CATFOOD_ROOT=/path/to/workspace
+  CATFOOD_BUILD_TOOLS=0|1
+  CATFOOD_INSTALL_YSH=0|1
+EOF
+}
+
+case ${1:-} in
+    '')
+        ;;
+    -h|--help)
+        usage
+        exit 0
+        ;;
+    *)
+        usage >&2
+        exit 2
+        ;;
+esac
+
+target=${CATFOOD_TARGET:-auto}
+if [ "$target" = auto ]; then
+    case ${PREFIX:-}:${TERMUX_VERSION:-} in
+        /data/data/com.termux/*:*|*:*?*) target=termux ;;
+        *) target=cloud ;;
+    esac
+fi
+
+case $target in
+    cloud)
+        CATFOOD_ROOT=${CATFOOD_ROOT:-/opt}
+        CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-1}
+        CATFOOD_INSTALL_YSH=${CATFOOD_INSTALL_YSH:-1}
+        ;;
+    termux)
+        CATFOOD_ROOT=${CATFOOD_ROOT:-$HOME/opt}
+        CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-0}
+        CATFOOD_INSTALL_YSH=${CATFOOD_INSTALL_YSH:-0}
+        ;;
+    *)
+        printf 'CATFOOD_TARGET must be cloud or termux, found: %s\n' "$target" >&2
+        exit 2
+        ;;
+esac
+
+CATFOOD_TARGET=$target
+export CATFOOD_TARGET CATFOOD_ROOT CATFOOD_BUILD_TOOLS CATFOOD_INSTALL_YSH
+
+exec sh "$root/provision.sh"
