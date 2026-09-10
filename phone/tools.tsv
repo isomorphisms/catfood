@@ -7,6 +7,7 @@ git	system	git	any	termux	system	-	-	-
 curl	system	curl	any	termux	system	-	-	-
 tar	system	tar	any	termux	system	-	-	-
 sha256sum	system	sha256sum	any	termux	system	-	-	-
+grep	system	grep	any	termux	system	-	-	-
 unzip	system	unzip	any	termux	system	-	-	-
 ike	file	ike	armeabi-v7a	dilapidated-shed/ike	depends-on-v1	PENDING	PENDING	ike
 grease	archive	grease	armeabi-v7a	isomorphisms/grease	main	PENDING	PENDING	bin/grease
