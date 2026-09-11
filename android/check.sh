@@ -33,6 +33,17 @@ function split_dependencies(value, owner, target,    count, i, values) {
         depended_on[values[i]] = 1
     }
 }
+function reference_package(package, target, name) {
+    if (!package_seen[package])
+        fail(delivery ": unknown package " package " for " name)
+    else if (package_target[package] != target)
+        fail(delivery ": package " package " targets " package_target[package] ", not " target)
+    direct_reference[package] = 1
+}
+function reference_package_list(value, target, name,    count, i, values) {
+    count = split(value, values, ",")
+    for (i = 1; i <= count; i++) reference_package(values[i], target, name)
+}
 
 BEGIN {
     FS = "\t"
@@ -41,13 +52,13 @@ BEGIN {
 
 FILENAME == packages {
     if ($0 ~ /^[[:space:]]*($|#)/) next
-    if (NF != 17) {
-        fail(packages ":" FNR ": expected 17 tab-separated fields, found " NF)
+    if (NF != 18) {
+        fail(packages ":" FNR ": expected 18 tab-separated fields, found " NF)
         next
     }
     id=$1; target=$2; abi=$3; mode=$4; source=$5; source_ref=$6; package_ref=$7
     url=$8; digest=$9; command=$10; entrypoint=$11; main_class=$12; jni_library=$13
-    jni_property=$14; install_requires=$15; runtime_requires=$16; package_requires=$17
+    jni_property=$14; install_requires=$15; termux_packages=$16; runtime_requires=$17; package_requires=$18
 
     if (id !~ /^[[:alnum:]_.-]+$/) fail(packages ":" FNR ": unsafe package id: " id)
     if (target != "phone" && target != "tablet") fail(packages ":" FNR ": invalid target: " target)
@@ -62,10 +73,16 @@ FILENAME == packages {
     if (command !~ /^[[:alnum:]_.-]+$/) fail(packages ":" FNR ": unsafe command: " command)
     if (entrypoint == "" || entrypoint !~ /^[[:alnum:]_.+\/-]+$/ || entrypoint ~ /^\// || entrypoint ~ /(^|\/)\.\.($|\/)/)
         fail(packages ":" FNR ": unsafe entrypoint: " entrypoint)
-    if (install_requires == "" || runtime_requires == "" || package_requires == "") fail(packages ":" FNR ": dependency fields must be explicit; use - for none")
-    if (install_requires != "-" && install_requires !~ /^[[:alnum:]_.+-]+(,[[:alnum:]_.+-]+)*$/) fail(packages ":" FNR ": invalid install_requires: " install_requires)
-    if (runtime_requires != "-" && runtime_requires !~ /^(command:[[:alnum:]_.+-]+|path:\/[^,]+)(,(command:[[:alnum:]_.+-]+|path:\/[^,]+))*$/) fail(packages ":" FNR ": invalid runtime_requires: " runtime_requires)
-    if (package_requires != "-" && package_requires !~ /^[[:alnum:]_.-]+(,[[:alnum:]_.-]+)*$/) fail(packages ":" FNR ": invalid package_requires: " package_requires)
+    if (install_requires == "" || termux_packages == "" || runtime_requires == "" || package_requires == "")
+        fail(packages ":" FNR ": dependency fields must be explicit; use - for none")
+    if (install_requires != "-" && install_requires !~ /^[[:alnum:]_.+-]+(,[[:alnum:]_.+-]+)*$/)
+        fail(packages ":" FNR ": invalid install_requires: " install_requires)
+    if (termux_packages != "-" && termux_packages !~ /^[[:alnum:]_.+-]+(,[[:alnum:]_.+-]+)*$/)
+        fail(packages ":" FNR ": invalid termux_packages: " termux_packages)
+    if (runtime_requires != "-" && runtime_requires !~ /^(command:[[:alnum:]_.+-]+|path:\/[^,]+)(,(command:[[:alnum:]_.+-]+|path:\/[^,]+))*$/)
+        fail(packages ":" FNR ": invalid runtime_requires: " runtime_requires)
+    if (package_requires != "-" && package_requires !~ /^[[:alnum:]_.-]+(,[[:alnum:]_.-]+)*$/)
+        fail(packages ":" FNR ": invalid package_requires: " package_requires)
 
     if (mode == "dex-jni") {
         if (main_class == "-" || jni_library == "-" || jni_property == "-")
@@ -86,13 +103,13 @@ FILENAME == packages {
     command_owner[command_key] = id
 
     if (package_seen[id]) {
-        common = target FS abi FS mode FS source FS source_ref FS package_ref FS url FS digest FS main_class FS jni_library FS jni_property FS install_requires FS runtime_requires FS package_requires
+        common = target FS abi FS mode FS source FS source_ref FS package_ref FS url FS digest FS main_class FS jni_library FS jni_property FS install_requires FS termux_packages FS runtime_requires FS package_requires
         if (package_common[id] != common) fail(packages ":" FNR ": package metadata changes across rows: " id)
     } else {
         package_seen[id] = 1
         package_target[id] = target
         package_abi[id] = abi
-        package_common[id] = target FS abi FS mode FS source FS source_ref FS package_ref FS url FS digest FS main_class FS jni_library FS jni_property FS install_requires FS runtime_requires FS package_requires
+        package_common[id] = target FS abi FS mode FS source FS source_ref FS package_ref FS url FS digest FS main_class FS jni_library FS jni_property FS install_requires FS termux_packages FS runtime_requires FS package_requires
         split_dependencies(package_requires, id, target)
     }
     package_commands[id]++
@@ -136,12 +153,16 @@ FILENAME == delivery {
         if (disposition ~ /^package:[[:alnum:]_.-]+$/) {
             package = disposition
             sub(/^package:/, "", package)
-            if (!package_seen[package]) fail(delivery ":" FNR ": unknown package " package " for " name)
-            else if (package_target[package] != target) fail(delivery ":" FNR ": package " package " targets " package_target[package] ", not " target)
-            direct_reference[package] = 1
+            reference_package(package, target, name)
             continue
         }
-        fail(delivery ":" FNR ": runtime/review entry " name " needs package:<id> or gap:<reason> for " target)
+        if (disposition ~ /^packages:[[:alnum:]_.-]+(,[[:alnum:]_.-]+)+$/) {
+            package_list = disposition
+            sub(/^packages:/, "", package_list)
+            reference_package_list(package_list, target, name)
+            continue
+        }
+        fail(delivery ":" FNR ": runtime/review entry " name " needs package:<id>, packages:<id>,<id>, or gap:<reason> for " target)
     }
     next
 }
