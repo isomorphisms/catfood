@@ -1,0 +1,27 @@
+name: tablet-artifact
+
+on:
+  push:
+    branches: ['tablet/prebuilt-grease']
+  pull_request:
+    paths:
+      - 'tablet/**'
+      - 'tests/tablet-artifact.sh'
+      - '.github/workflows/tablet-artifact.yml'
+      - 'provision.sh'
+
+jobs:
+  verify-tablet-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Check POSIX scripts
+        shell: sh
+        run: |
+          dash -n tablet/install-grease.sh
+          sh -n tablet/install-grease.sh
+          dash -n tests/tablet-artifact.sh
+          sh -n tests/tablet-artifact.sh
+      - name: Download, verify, and install exact AArch64 artifact
+        shell: sh
+        run: sh tests/tablet-artifact.sh
