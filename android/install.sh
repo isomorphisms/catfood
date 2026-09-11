@@ -39,7 +39,25 @@ if [ "$abi" != "$expected_abi" ]; then
 fi
 
 mkdir -p "$workspace/bin" "$workspace/downloads" "$workspace/packages" "$workspace/receipts" "$cache"
+PATH="$workspace/bin:$PATH"
+export PATH
 tab=$(printf '\t')
+
+install_termux_packages() {
+    values=$1
+    package=$2
+    [ "$values" != - ] || return 0
+    command -v pkg >/dev/null 2>&1 || {
+        printf '%s declares Termux packages but pkg is not available: %s\n' "$package" "$values" >&2
+        exit 127
+    }
+    old_ifs=$IFS
+    IFS=,
+    set -- $values
+    IFS=$old_ifs
+    printf '%-24s pkg %s\n' "$package" "$*"
+    pkg install -y "$@"
+}
 
 require_commands() {
     values=$1
@@ -148,7 +166,8 @@ for package in $package_ids; do
     ' "$packages")
     [ -n "$row" ] || { printf 'package vanished while reading manifest: %s\n' "$package" >&2; exit 3; }
     IFS="$tab" read -r package_id package_target package_abi mode source source_ref package_ref url sha256 \
-        first_command first_entrypoint main_class jni_library jni_property install_requires runtime_requires package_requires <<EOF_ROW
+        first_command first_entrypoint main_class jni_library jni_property install_requires termux_packages \
+        runtime_requires package_requires <<EOF_ROW
 $row
 EOF_ROW
 
@@ -156,6 +175,7 @@ EOF_ROW
         printf '%s manifest target/ABI does not match device\n' "$package" >&2
         exit 3
     }
+    install_termux_packages "$termux_packages" "$package"
     require_commands "$install_requires"
     check_runtime_requirements "$runtime_requires" "$package"
     check_package_requirements "$package_requires" "$package"
@@ -171,7 +191,8 @@ EOF_ROW
     current=0
     if [ -d "$package_dir" ] && [ -f "$receipt" ] &&
        grep -Fqx "package_ref${tab}$package_ref" "$receipt" 2>/dev/null &&
-       grep -Fqx "sha256${tab}$sha256" "$receipt" 2>/dev/null; then
+       grep -Fqx "sha256${tab}$sha256" "$receipt" 2>/dev/null &&
+       grep -Fqx "termux_packages${tab}$termux_packages" "$receipt" 2>/dev/null; then
         current=1
         while IFS="$tab" read -r command entrypoint; do
             [ -f "$package_dir/$entrypoint" ] || current=0
@@ -252,6 +273,7 @@ EOF_ROW
             printf 'package_ref\t%s\n' "$package_ref"
             printf 'url\t%s\n' "$url"
             printf 'sha256\t%s\n' "$sha256"
+            printf 'termux_packages\t%s\n' "$termux_packages"
             printf 'runtime_requires\t%s\n' "$runtime_requires"
             printf 'package_requires\t%s\n' "$package_requires"
             printf 'physical_device_execution\tPENDING\n'
