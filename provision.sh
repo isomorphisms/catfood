@@ -80,7 +80,7 @@ as_root() {
 }
 
 install_packages() {
-    if [ "${CATFOOD_NO_PACKAGES:-0}" = 1 ]; then
+    if [ "${CATFOOD_NO_PACKAGES:-0}" = 1 ] || [ "$target" = phone ]; then
         return 0
     fi
 
@@ -165,7 +165,11 @@ fi
 PATH=$prefix/bin:$workspace/bin:$PATH
 export PATH
 
-if [ "$termux_target" -eq 1 ] && [ "${CATFOOD_BUILD_TOOLS:-0}" = 0 ]; then
+if [ "$target" = phone ]; then
+    CATFOOD_PHONE_ROOT=$workspace \
+        sh "$root/phone/build.sh"
+    printf 'cat food phone binaries are current under %s\n' "$workspace"
+elif [ "$termux_target" -eq 1 ] && [ "${CATFOOD_BUILD_TOOLS:-0}" = 0 ]; then
     CATFOOD_ROOT=$workspace CATFOOD_DEPTH=${CATFOOD_DEPTH:-12} \
         sh "$root/bootstrap.sh"
     printf 'cat food %s feed is current under %s\n' "$target" "$workspace"
