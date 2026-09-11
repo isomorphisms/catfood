@@ -89,7 +89,7 @@ install_packages() {
             printf '%s\n' 'cat food needs the Termux pkg command' >&2
             exit 127
         }
-        pkg install -y bash ca-certificates coreutils curl gawk git jq
+        pkg install -y bash ca-certificates coreutils curl gawk git grep jq libiconv sed tar
     elif command -v apt-get >/dev/null 2>&1; then
         as_root apt-get update
         as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -168,6 +168,10 @@ export PATH
 if [ "$termux_target" -eq 1 ] && [ "${CATFOOD_BUILD_TOOLS:-0}" = 0 ]; then
     CATFOOD_ROOT=$workspace CATFOOD_DEPTH=${CATFOOD_DEPTH:-12} \
         sh "$root/bootstrap.sh"
+    if [ "$target" = tablet ]; then
+        CATFOOD_ROOT=$workspace CATFOOD_CACHE=$cache \
+            sh "$root/tablet/install-grease.sh"
+    fi
     printf 'cat food %s feed is current under %s\n' "$target" "$workspace"
 else
     CATFOOD_ROOT=$workspace CATFOOD_PREFIX=$prefix \

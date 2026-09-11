@@ -44,7 +44,7 @@ CATFOOD_NO_PROFILE=1 \
 test -d "$termux_home/opt/grease/.git"
 test -d "$termux_home/opt/catfood-fixture/.git"
 tab=$(printf '\t')
-grep -F "pkg${tab}install -y bash ca-certificates coreutils curl gawk git jq" "$log" >/dev/null
+grep -F "pkg${tab}install -y bash ca-certificates coreutils curl gawk git grep jq libiconv sed tar" "$log" >/dev/null
 if grep -F 'forbidden' "$log" >/dev/null; then
     printf '%s\n' 'Termux entrypoint attempted a root/cloud package command' >&2
     exit 1
