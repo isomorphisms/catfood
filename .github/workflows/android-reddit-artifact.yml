@@ -1,0 +1,32 @@
+name: android-reddit-artifact
+
+on:
+  push:
+    branches: ['android/reddit-dex-jni']
+  pull_request:
+    paths:
+      - 'android/**'
+      - 'tests/android-reddit-artifact.sh'
+      - '.github/workflows/android-reddit-artifact.yml'
+      - 'provision.sh'
+
+jobs:
+  verify-android-reddit-artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - name: Check POSIX scripts
+        shell: sh
+        run: |
+          dash -n android/install-reddit.sh
+          sh -n android/install-reddit.sh
+          dash -n tests/android-reddit-artifact.sh
+          sh -n tests/android-reddit-artifact.sh
+      - name: Provide Android runtime sentinel for installer test
+        run: |
+          sudo mkdir -p /system/bin
+          sudo sh -c 'printf "#!/bin/sh\nexit 0\n" > /system/bin/app_process'
+          sudo chmod 0755 /system/bin/app_process
+      - name: Verify phone and tablet installation contracts
+        shell: sh
+        run: sh tests/android-reddit-artifact.sh
