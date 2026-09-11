@@ -2,7 +2,7 @@
 
 Feed current copies of our own tools into a fresh development environment, then let those tools build and update one another.
 
-Cat Food is deliberately small. It is not a monorepo: working repositories live under `/opt` by default, not inside this checkout.
+Cat Food is deliberately small. It is not a monorepo: working repositories live under `/opt` by default, not inside this checkout. The phone is the deliberate exception: it is a binary runtime target rather than a repository workbench.
 
 ## Run Cat Food
 
@@ -35,12 +35,13 @@ The cloud path installs the ordinary console/build dependencies used across the 
 
 ### Android phone / Termux
 
-From Termux on the 32-bit ARMv7 Android Go phone:
+From Termux on the 32-bit ARMv7 Android Go phone, keep the small Cat Food checkout outside the runtime tree:
 
 ```sh
 pkg install -y git ca-certificates
-git clone https://github.com/isomorphisms/catfood.git "$HOME/opt/catfood"
-cd "$HOME/opt/catfood"
+mkdir -p "$HOME/.cache"
+git clone --depth 1 https://github.com/isomorphisms/catfood.git "$HOME/.cache/catfood"
+cd "$HOME/.cache/catfood"
 ./catfood
 ```
 
@@ -48,8 +49,9 @@ The phone path does not feed `tools.tsv`, clone project repositories, build
 compilers, or install a compiler toolchain. It checks the small system-command
 boundary and installs only exact prebuilt ARM artifacts whose URL and SHA-256
 are pinned in `phone/tools.tsv`. An artifact marked `PENDING` is skipped rather
-than triggering a source build. See `phone/README.md` for the phone receipt and
-storage policy.
+than triggering a source build.
+
+The phone runtime is flat under `~/opt`: stable commands are in `~/opt/bin`, artifacts in `~/opt/tools`, receipts in `~/opt/receipts`, and transient downloads in `~/opt/downloads`. There is deliberately no `~/opt/phone` layer. See `phone/README.md` for the receipt and storage policy.
 
 The native YSH release is downloaded from Oils, verified by SHA-256, built, and installed under `/usr/local` when provisioning as root. Override `CATFOOD_PREFIX` for another prefix. The source checkout under `grease/source` remains pinned separately for Grease development; the released YSH is the runnable stage-one shell. This source-build path is not used by the phone target.
 
