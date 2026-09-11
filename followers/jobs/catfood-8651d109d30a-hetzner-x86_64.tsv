@@ -15,11 +15,11 @@ required	yes
 action	carry forward the persistent Hetzner x86 runtime obligation to Cat Food commit 8651d109d30ae324684d56ff490cd862c8178aac and record exact acceptance.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh cloud
-state	blocked
+state	superseded
 last_attempt_commit	-
-blocker	No persistent Hetzner execution channel is available from this session; the exact job is durable for a Hetzner agent.
+blocker	-
 evidence	-
 depends_on	-
 reason	carried-forward-from-7a11-source-trigger
-superseded_by	-
+superseded_by	catfood-750bd6693830-hetzner-x86_64
 follow_policy	exact
