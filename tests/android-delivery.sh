@@ -110,6 +110,28 @@ CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
 CATFOOD_ANDROID_PACKAGES="$fixture_packages" \
     sh "$root/android/check.sh" ready phone >/dev/null
 
+# DEX/JNI metadata becomes a generated shell command. Reject shell syntax in
+# every manifest field that is interpolated into that wrapper.
+assert_package_manifest_rejected() {
+    field=$1
+    value=$2
+    candidate=$tmp/unsafe-packages-$field.tsv
+    awk -F '\t' -v OFS='\t' -v field="$field" -v value="$value" \
+        '/^[[:space:]]*($|#)/ { print; next } { $field=value; print }' \
+        "$fixture_packages" > "$candidate"
+    if CATFOOD_TOOLS="$fixture_tools" \
+       CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
+       CATFOOD_ANDROID_PACKAGES="$candidate" \
+           sh "$root/android/check.sh" check >/dev/null 2>&1; then
+        printf 'unsafe Android package field %s unexpectedly passed validation: %s\n' "$field" "$value" >&2
+        exit 1
+    fi
+}
+assert_package_manifest_rejected 11 'classes.dex;echo'
+assert_package_manifest_rejected 12 'org.isomorphisms.app.Main$Injected'
+assert_package_manifest_rejected 13 'lib/libapp.so;echo'
+assert_package_manifest_rejected 14 'app.library;echo'
+
 workspace=$tmp/workspace
 cache=$tmp/cache
 mkdir -p "$workspace" "$cache"

@@ -60,15 +60,22 @@ FILENAME == packages {
     if (url !~ /^https:\/\//) fail(packages ":" FNR ": package URL must be HTTPS: " url)
     if (length(digest) != 64 || digest !~ /^[0-9a-f]+$/) fail(packages ":" FNR ": sha256 must be 64 lowercase hex characters")
     if (command !~ /^[[:alnum:]_.-]+$/) fail(packages ":" FNR ": unsafe command: " command)
-    if (entrypoint == "" || entrypoint ~ /^\// || entrypoint ~ /(^|\/)\.\.($|\/)/) fail(packages ":" FNR ": unsafe entrypoint: " entrypoint)
+    if (entrypoint == "" || entrypoint !~ /^[[:alnum:]_.+\/-]+$/ || entrypoint ~ /^\// || entrypoint ~ /(^|\/)\.\.($|\/)/)
+        fail(packages ":" FNR ": unsafe entrypoint: " entrypoint)
     if (install_requires == "" || runtime_requires == "" || package_requires == "") fail(packages ":" FNR ": dependency fields must be explicit; use - for none")
     if (install_requires != "-" && install_requires !~ /^[[:alnum:]_.+-]+(,[[:alnum:]_.+-]+)*$/) fail(packages ":" FNR ": invalid install_requires: " install_requires)
     if (runtime_requires != "-" && runtime_requires !~ /^(command:[[:alnum:]_.+-]+|path:\/[^,]+)(,(command:[[:alnum:]_.+-]+|path:\/[^,]+))*$/) fail(packages ":" FNR ": invalid runtime_requires: " runtime_requires)
     if (package_requires != "-" && package_requires !~ /^[[:alnum:]_.-]+(,[[:alnum:]_.-]+)*$/) fail(packages ":" FNR ": invalid package_requires: " package_requires)
 
     if (mode == "dex-jni") {
-        if (main_class == "-" || jni_library == "-" || jni_property == "-") fail(packages ":" FNR ": dex-jni row must name class, JNI library, and property")
-        if (jni_library ~ /^\// || jni_library ~ /(^|\/)\.\.($|\/)/) fail(packages ":" FNR ": unsafe JNI library path: " jni_library)
+        if (main_class == "-" || jni_library == "-" || jni_property == "-")
+            fail(packages ":" FNR ": dex-jni row must name class, JNI library, and property")
+        if (main_class !~ /^[[:alnum:]_.]+$/)
+            fail(packages ":" FNR ": unsafe DEX main class: " main_class)
+        if (jni_library !~ /^[[:alnum:]_.+\/-]+$/ || jni_library ~ /^\// || jni_library ~ /(^|\/)\.\.($|\/)/)
+            fail(packages ":" FNR ": unsafe JNI library path: " jni_library)
+        if (jni_property !~ /^[[:alnum:]_.-]+$/)
+            fail(packages ":" FNR ": unsafe JNI property: " jni_property)
     } else if (main_class != "-" || jni_library != "-" || jni_property != "-") {
         fail(packages ":" FNR ": non-DEX package must use - for DEX/JNI fields")
     }
