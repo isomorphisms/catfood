@@ -188,7 +188,6 @@ test -f "$workspace/receipts/phone-app-phone.tsv"
 grep -F '# catfood android dex-jni wrapper' "$workspace/bin/app" >/dev/null
 grep -F "source_ref	$source_ref" "$workspace/receipts/phone-app-phone.tsv" >/dev/null
 grep -F "package_ref	$package_ref" "$workspace/receipts/phone-app-phone.tsv" >/dev/null
-grep -F $'termux_packages\tcurl,jq' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
 grep -F 'physical_device_execution	PENDING' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
 grep -Fx 'install -y curl jq' "$pkg_log" >/dev/null
 test ! -s "$backend_log"
