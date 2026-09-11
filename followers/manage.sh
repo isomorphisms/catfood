@@ -78,13 +78,32 @@ affected() {
     trap - EXIT HUP INT TERM
 }
 
+control_path() {
+    case $1 in
+        followers/*|AGENTS.md|docs/followers.md|tests/followers.sh|.github/workflows/followers.yml)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
 latest_source() {
-    git -C "$root" log -1 --format=%H -- . \
-        ':(exclude)followers/**' \
-        ':(exclude)AGENTS.md' \
-        ':(exclude)docs/followers.md' \
-        ':(exclude)tests/followers.sh' \
-        ':(exclude).github/workflows/followers.yml'
+    tmp=$(mktemp)
+    for candidate in $(git -C "$root" rev-list --first-parent HEAD); do
+        changed_for_commit "$candidate" > "$tmp"
+        while IFS= read -r path; do
+            [ -n "$path" ] || continue
+            if ! control_path "$path"; then
+                rm -f "$tmp"
+                printf '%s\n' "$candidate"
+                return 0
+            fi
+        done < "$tmp"
+    done
+    rm -f "$tmp"
+    fatal 'no source-changing commit found on first-parent history'
 }
 
 job_for() {
