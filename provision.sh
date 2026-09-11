@@ -154,7 +154,7 @@ install_ysh() {
 }
 
 install_packages
-if [ "${CATFOOD_INSTALL_YSH:-1}" != 0 ]; then
+if [ "$target" != phone ] && [ "${CATFOOD_INSTALL_YSH:-1}" != 0 ]; then
     install_ysh
 fi
 
