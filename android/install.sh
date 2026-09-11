@@ -279,13 +279,15 @@ EOF_ROW
                     exit 127
                 }
                 temporary_wrapper="$destination.tmp.$$"
-                {
-                    printf '%s\n' '#!/bin/sh'
-                    printf '%s\n' '# catfood android dex-jni wrapper'
-                    printf '%s\n' 'set -eu'
-                    printf 'exec env CLASSPATH="%s/%s" "%s" "-D%s=%s/%s" /system/bin %s "$@"\n' \
-                        "$package_dir" "$entrypoint" "$app_process" "$jni_property" "$package_dir" "$jni_library" "$main_class"
-                } > "$temporary_wrapper"
+                cat > "$temporary_wrapper" <<EOF_WRAPPER
+#!/bin/sh
+# catfood android dex-jni wrapper
+set -eu
+root=\$(CDPATH='' cd -- "\$(dirname -- "\$0")/.." && pwd)
+package_dir="\$root/packages/$package/$package_ref"
+app_process=\${CATFOOD_APP_PROCESS:-/system/bin/app_process}
+exec env CLASSPATH="\$package_dir/$entrypoint" "\$app_process" "-D$jni_property=\$package_dir/$jni_library" /system/bin "$main_class" "\$@"
+EOF_WRAPPER
                 chmod +x "$temporary_wrapper"
                 mv "$temporary_wrapper" "$destination"
                 ;;

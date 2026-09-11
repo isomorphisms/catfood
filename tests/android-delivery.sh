@@ -74,7 +74,8 @@ EOF_BACKEND
 
 cat > "$fake_bin/app_process" <<'EOF_APP_PROCESS'
 #!/bin/sh
-printf '%s\n' "$*" >> "$CATFOOD_APP_LOG"
+printf 'CLASSPATH=%s\n' "${CLASSPATH:-}" >> "$CATFOOD_APP_LOG"
+printf 'ARGS=%s\n' "$*" >> "$CATFOOD_APP_LOG"
 exit 0
 EOF_APP_PROCESS
 chmod 0755 "$fake_bin/curl" "$fake_bin/idris-arm-backend" "$fake_bin/app_process"
@@ -132,7 +133,9 @@ assert_package_manifest_rejected 12 'org.isomorphisms.app.Main$Injected'
 assert_package_manifest_rejected 13 'lib/libapp.so;echo'
 assert_package_manifest_rejected 14 'app.library;echo'
 
-workspace=$tmp/workspace
+# A workspace path is local configuration, not manifest syntax. The installed
+# wrapper must preserve it literally instead of embedding it as shell source.
+workspace="$tmp/workspace with \$literal"
 cache=$tmp/cache
 mkdir -p "$workspace" "$cache"
 PATH="$fake_bin:$PATH" \
@@ -158,8 +161,10 @@ grep -F "source_ref	$source_ref" "$workspace/receipts/phone-app-phone.tsv" >/dev
 grep -F "package_ref	$package_ref" "$workspace/receipts/phone-app-phone.tsv" >/dev/null
 grep -F 'physical_device_execution	PENDING' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
 test ! -s "$backend_log"
-CATFOOD_APP_LOG="$app_log" "$workspace/bin/app" fixture-argument
-[ -s "$app_log" ]
+CATFOOD_APP_LOG="$app_log" CATFOOD_APP_PROCESS="$fake_bin/app_process" \
+    "$workspace/bin/app" fixture-argument
+grep -F "CLASSPATH=$workspace/packages/app-phone/$package_ref/classes.dex" "$app_log" >/dev/null
+grep -F 'ARGS=-Dapp.library=' "$app_log" >/dev/null
 
 # The normal device provisioner must enter the same runtime-only path. It must
 # not install packages, clone sources, bootstrap a compiler, or use a backend.
