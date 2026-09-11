@@ -28,28 +28,29 @@ printf '%s\n' \
     'catfood-fixture https://github.com/isomorphisms/catfood.git main none' \
     > "$manifest"
 
-phone_home=$temporary/phone-home
-mkdir -p "$phone_home"
-HOME=$phone_home \
+termux_home=$temporary/termux-home
+mkdir -p "$termux_home"
+HOME=$termux_home \
 PREFIX=/data/data/com.termux/files/usr \
 TERMUX_VERSION=0.118.3 \
 PATH=$fake_bin:$PATH \
 CATFOOD_TEST_LOG=$log \
+CATFOOD_TARGET=termux \
 CATFOOD_MANIFEST=$manifest \
 CATFOOD_DEPTH=1 \
 CATFOOD_NO_PROFILE=1 \
     sh "$root/catfood" >/dev/null
 
-test -d "$phone_home/opt/grease/.git"
-test -d "$phone_home/opt/catfood-fixture/.git"
+test -d "$termux_home/opt/grease/.git"
+test -d "$termux_home/opt/catfood-fixture/.git"
 tab=$(printf '\t')
-grep -F "pkg${tab}install -y bash ca-certificates coreutils curl gawk git jq" "$log" >/dev/null
+grep -F "pkg${tab}install -y bash ca-certificates coreutils curl gawk git grep jq libiconv sed tar" "$log" >/dev/null
 if grep -F 'forbidden' "$log" >/dev/null; then
     printf '%s\n' 'Termux entrypoint attempted a root/cloud package command' >&2
     exit 1
 fi
 
-cloud_root=$phone_home/opt
+cloud_root=$termux_home/opt
 mkdir -p "$cloud_root/bin"
 cat > "$cloud_root/bin/ysh" <<'EOF'
 #!/bin/sh
@@ -57,7 +58,7 @@ exec sh "$@"
 EOF
 chmod 0755 "$cloud_root/bin/ysh"
 
-HOME=$phone_home \
+HOME=$termux_home \
 PATH=$fake_bin:$PATH \
 CATFOOD_TEST_LOG=$log \
 CATFOOD_TARGET=cloud \
@@ -76,4 +77,4 @@ grep -F 'exec "$bin_dir/ysh"' "$cloud_root/bin/fdroid-deploy" >/dev/null
 grep -F 'exec "$bin_dir/ysh"' "$cloud_root/bin/fdroid-check-deployed" >/dev/null
 sh "$root/catfood" --help | grep -F 'CATFOOD_TARGET=cloud|termux' >/dev/null
 
-printf '%s\n' 'cat food cloud and Termux entrypoints pass'
+printf '%s\n' 'cat food cloud and generic Termux entrypoints pass'
