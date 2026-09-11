@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-7a11b316fd99-container-x86_64
+repository	isomorphisms/catfood
+branch	android/whole-inventory-delivery
+pr	35
+trigger_commit	7a11b316fd99e1743e48fe842de01948d6805933
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	container-x86_64
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit 7a11b316fd99e1743e48fe842de01948d6805933 on container-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh container
+state	superseded
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	catfood-8651d109d30a-container-x86_64
+follow_policy	exact

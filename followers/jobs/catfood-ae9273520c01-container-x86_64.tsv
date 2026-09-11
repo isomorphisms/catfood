@@ -12,14 +12,14 @@ artifact_sha256	-
 follower_platform	container-x86_64
 follower_arch	x86_64
 required	yes
-action	Follow Cat Food commit ae9273520c01d358723e6e5e2886fccd44caed6f on an independent local/container x86-64 Linux environment and look for ARM, Bionic, width, alignment, filesystem, shell, or tool assumptions.
+action	Follow Cat Food commit ae9273520c01d358723e6e5e2886fccd44caed6f on an independent local/container x86-64 Linux environment and look for CPU, Bionic, width, alignment, filesystem, shell, or tool assumptions.
 acceptance_kind	runtime
 acceptance_action	sh tests/entrypoint.sh && sh tests/targets.sh && sh tests/phone-binaries.sh && CATFOOD_TARGET=container ./catfood --target
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	shared-portable
-superseded_by	-
+superseded_by	catfood-7a11b316fd99-container-x86_64
 follow_policy	exact

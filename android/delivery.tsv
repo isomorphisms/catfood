@@ -1,0 +1,56 @@
+# name	role	phone	tablet	note
+# role: runtime | host | reference | review
+# target disposition: package:<package-id> | gap:<reason> | n/a
+# `review` is explicit unresolved classification debt and blocks readiness.
+grease	runtime	package:grease-phone	package:grease-tablet	separate-bootstrap-runtime
+
+oils	host	n/a	n/a	grease-source-and-host-build-input
+ir	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
+irk	review	gap:classification	gap:classification	intent-needs-explicit-classification
+ithon	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
+icky	review	gap:classification	gap:classification	intent-needs-explicit-classification
+ick	review	gap:classification	gap:classification	intent-needs-explicit-classification
+Idric	runtime	gap:android-package-missing	gap:android-package-missing	compiler-interpreter-runtime
+idric-cli	runtime	gap:android-package-missing	gap:android-package-missing	command-line-runtime
+issh	runtime	gap:android-package-missing	gap:android-package-missing	shell-runtime
+fieldmouse	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
+idris-arm-backend	host	n/a	n/a	experimental-compiler-backend-not-delivery-prerequisite
+idris-shader-backend	host	n/a	n/a	experimental-compiler-backend-not-delivery-prerequisite
+sent.idr	review	gap:classification	gap:classification	intent-needs-explicit-classification
+programmers-keyboard	runtime	gap:android-package-missing	gap:android-package-missing	android-application
+icu	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
+
+az	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
+ib	runtime	gap:android-package-missing	gap:android-package-missing	browser-application
+internetarchive	runtime	gap:android-package-missing	gap:android-package-missing	user-facing-tool
+bookreader	runtime	gap:android-package-missing	gap:android-package-missing	browser-application
+harvest-images-from-pdf	runtime	gap:android-package-missing	gap:android-package-missing	user-facing-tool
+ddg	runtime	gap:android-package-missing	gap:android-package-missing	user-facing-tool
+chawan	runtime	gap:android-package-missing	gap:android-package-missing	browser-application
+manimi	review	gap:classification	gap:classification	intent-needs-explicit-classification
+wegert	review	gap:classification	gap:classification	library-or-application-role-needs-explicit-classification
+yt-shorts	host	n/a	n/a	publication-build-tool
+ai-ci	host	n/a	n/a	build-test-policy-tool
+computer-science	reference	n/a	n/a	reference-source
+utilities-android-phone-user	runtime	gap:android-package-missing	gap:android-package-missing	android-runtime-applications
+
+algebraic-variety-explorer-mobile	runtime	gap:android-package-missing	gap:android-package-missing	mathematical-application
+learn-toki-pona	runtime	gap:android-package-missing	gap:android-package-missing	application
+game	runtime	gap:android-package-missing	gap:android-package-missing	application
+hegel	runtime	gap:android-package-missing	gap:android-package-missing	application
+geofence	runtime	gap:android-package-missing	gap:android-package-missing	application
+analytic-continuation	runtime	gap:android-package-missing	gap:android-package-missing	mathematical-application
+non-poly	runtime	gap:android-package-missing	gap:android-package-missing	mathematical-application
+coefficient-root-dance	runtime	gap:android-package-missing	gap:android-package-missing	mathematical-application
+Cayley	runtime	gap:android-package-missing	gap:android-package-missing	mathematical-application
+tablature	runtime	gap:android-package-missing	gap:android-package-missing	application
+zoneedit	runtime	gap:android-package-missing	gap:android-package-missing	user-facing-tool
+Conway	reference	n/a	n/a	reference-source
+L	review	gap:classification	gap:classification	intent-needs-explicit-classification
+soap	review	gap:classification	gap:classification	intent-needs-explicit-classification
+klein-quartic	runtime	gap:android-package-missing	gap:android-package-missing	mathematical-application
+hopf_fibration	runtime	gap:android-package-missing	gap:android-package-missing	mathematical-application
+ortho	runtime	gap:android-package-missing	gap:android-package-missing	mathematical-application
+kleinian-groups	runtime	gap:android-package-missing	gap:android-package-missing	mathematical-application
+theta	runtime	gap:android-package-missing	gap:android-package-missing	mathematical-application
+indras-pearls	runtime	gap:android-package-missing	gap:android-package-missing	mathematical-application

@@ -7,16 +7,16 @@ usage() {
     cat <<'EOF'
 usage: ./catfood [--target]
 
-Fetch and prepare the Cat Food workbench.
+Feed the selected Cat Food target.
 
 The target is detected automatically when possible:
-  phone      Termux on ARMv7; install pinned binaries only
-  tablet     Termux on AArch64; fetch the complete repository feed
+  phone      Termux on ARMv7; install verified runtime packages only
+  tablet     Termux on AArch64; install verified runtime packages only
   container  disposable Debian/Ubuntu workbench; select explicitly
   cloud      persistent Debian/Ubuntu/Hetzner workbench
 
 Compatibility targets:
-  termux     generic Termux target when architecture is unknown or forced
+  termux     generic Termux source workbench when architecture is unknown/forced
   hetzner    alias for cloud
   CATFOOD_TARGET=cloud|termux remains valid
 
@@ -44,19 +44,10 @@ detect_target() {
 
 show_target=0
 case ${1:-} in
-    '')
-        ;;
-    --target)
-        show_target=1
-        ;;
-    -h|--help)
-        usage
-        exit 0
-        ;;
-    *)
-        usage >&2
-        exit 2
-        ;;
+    '') ;;
+    --target) show_target=1 ;;
+    -h|--help) usage; exit 0 ;;
+    *) usage >&2; exit 2 ;;
 esac
 
 target=${CATFOOD_TARGET:-auto}
@@ -85,11 +76,7 @@ case $target in
         CATFOOD_INSTALL_YSH=${CATFOOD_INSTALL_YSH:-1}
         ;;
     container)
-        if [ -w /opt ]; then
-            default_root=/opt
-        else
-            default_root=$HOME/opt
-        fi
+        if [ -w /opt ]; then default_root=/opt; else default_root=$HOME/opt; fi
         CATFOOD_ROOT=${CATFOOD_ROOT:-$default_root}
         CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-1}
         CATFOOD_INSTALL_YSH=${CATFOOD_INSTALL_YSH:-1}

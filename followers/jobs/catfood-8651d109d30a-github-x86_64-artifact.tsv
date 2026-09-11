@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-8651d109d30a-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	android/whole-inventory-delivery
+pr	35
+trigger_commit	8651d109d30ae324684d56ff490cd862c8178aac
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit 8651d109d30ae324684d56ff490cd862c8178aac on github-x86_64-artifact; validate the Android package contract and record a receipt.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	superseded
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device
+superseded_by	catfood-750bd6693830-github-x86_64-artifact
+follow_policy	exact

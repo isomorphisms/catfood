@@ -15,11 +15,11 @@ required	yes
 action	Follow Cat Food commit ae9273520c01d358723e6e5e2886fccd44caed6f on the persistent Hetzner x86-64 Linux host; fetch the exact commit, provision the cloud target, run doctor/runtime checks, and record a receipt.
 acceptance_kind	runtime
 acceptance_action	On Hetzner checkout ae9273520c01d358723e6e5e2886fccd44caed6f, run CATFOOD_TARGET=cloud ./catfood and the installed catfood-doctor path, then record exact commands and host/runtime evidence.
-state	blocked
+state	superseded
 last_attempt_commit	-
-blocker	No persistent Hetzner execution channel is available from this GitHub-only session; the exact job is durable for a Hetzner agent.
+blocker	No persistent Hetzner execution channel was available for this exact ancestor job.
 evidence	-
 depends_on	-
 reason	shared-portable
-superseded_by	-
+superseded_by	catfood-7a11b316fd99-hetzner-x86_64
 follow_policy	exact

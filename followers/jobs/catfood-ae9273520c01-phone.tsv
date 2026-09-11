@@ -12,14 +12,14 @@ artifact_sha256	-
 follower_platform	phone
 follower_arch	armv7
 required	yes
-action	Leader target for Cat Food commit ae9273520c01d358723e6e5e2886fccd44caed6f on the physical ARMv7 phone; run the exact commit and record the phone receipt.
+action	Leader target for Cat Food commit ae9273520c01d358723e6e5e2886fccd44caed6f on the physical phone; run the exact commit and record the phone receipt.
 acceptance_kind	physical-device
 acceptance_action	./catfood && phone/doctor.sh
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	shared-portable
-superseded_by	-
+superseded_by	catfood-7a11b316fd99-phone
 follow_policy	exact

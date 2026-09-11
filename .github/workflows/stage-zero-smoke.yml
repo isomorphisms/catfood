@@ -14,8 +14,8 @@ jobs:
           for script in \
             catfood bootstrap.sh check-manifest.sh update-tools.ysh \
             provision.sh activate.sh build-tools.sh refresh.sh doctor.sh import-config.sh \
-            phone/build.sh phone/doctor.sh \
-            tests/check-manifest.sh tests/entrypoint.sh tests/targets.sh tests/phone-binaries.sh
+            android/check.sh android/install.sh \
+            tests/check-manifest.sh tests/entrypoint.sh tests/targets.sh tests/android-delivery.sh
           do
             if [ -f "$script" ]; then
               dash -n "$script"
@@ -28,15 +28,15 @@ jobs:
         run: |
           sh tests/check-manifest.sh
           sh ./check-manifest.sh --remote
-      - name: Exercise cloud and Termux entrypoints
+      - name: Exercise cloud and generic Termux entrypoints
         shell: sh
         run: sh tests/entrypoint.sh
       - name: Verify named target profiles
         shell: sh
         run: sh tests/targets.sh
-      - name: Verify phone stays binary-only
+      - name: Verify whole-inventory Android delivery contracts
         shell: sh
-        run: sh tests/phone-binaries.sh
+        run: sh tests/android-delivery.sh
       - name: Exercise az through the stable command path
         shell: bash
         run: |
