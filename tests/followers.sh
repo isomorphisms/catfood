@@ -8,7 +8,8 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 fixture=$tmp/repo
 mkdir -p "$fixture/followers/jobs" "$fixture/followers/receipts" \
-    "$fixture/tests" "$fixture/phone" "$fixture/tablet" "$fixture/.github/workflows"
+    "$fixture/tests" "$fixture/phone" "$fixture/tablet" "$fixture/android" \
+    "$fixture/.github/workflows"
 cp "$root/followers/manage.sh" "$root/followers/stale.sh" \
     "$root/followers/targets.tsv" "$root/followers/impact-rules.tsv" \
     "$fixture/followers/"
@@ -25,6 +26,7 @@ for name in entrypoint targets phone-binaries; do
 done
 printf '%s\n' '# base provision' > "$fixture/provision.sh"
 printf '%s\n' '# phone base' > "$fixture/phone/README.md"
+printf '%s\n' '# android base' > "$fixture/android/install-example.sh"
 
 (
     cd "$fixture"
@@ -99,6 +101,25 @@ EOF_RECEIPT
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
         prepare "$phone_trigger" phone armv7 - phone/example 2 >/dev/null
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh reconcile "$phone_trigger" >/dev/null
+
+    git add followers
+    git commit -qm phone-ledger
+    printf '%s\n' '# Android artifact change' >> android/install-example.sh
+    git add android/install-example.sh
+    git commit -qm android-artifact
+    android_trigger=$(git rev-parse HEAD)
+    android_affected=$(sh followers/manage.sh affected "$android_trigger")
+    [ "$(printf '%s\n' "$android_affected" | wc -l | tr -d ' ')" -eq 3 ]
+    printf '%s\n' "$android_affected" | grep '^phone[[:space:]].*physical-device' >/dev/null
+    printf '%s\n' "$android_affected" | grep '^tablet[[:space:]].*physical-device' >/dev/null
+    printf '%s\n' "$android_affected" | grep '^github-x86_64-artifact[[:space:]].*artifact' >/dev/null
+    if printf '%s\n' "$android_affected" | grep 'hetzner-x86_64' >/dev/null; then
+        echo 'Android-only path incorrectly required Hetzner runtime' >&2
+        exit 1
+    fi
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
+        prepare "$android_trigger" phone armv7 - phone/example 3 >/dev/null
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh reconcile "$android_trigger" >/dev/null
 
     if sh followers/stale.sh >/dev/null 2>&1; then
         echo 'unresolved follower work from an ancestor trigger was forgotten' >&2
