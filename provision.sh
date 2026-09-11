@@ -168,6 +168,12 @@ export PATH
 if [ "$termux_target" -eq 1 ] && [ "${CATFOOD_BUILD_TOOLS:-0}" = 0 ]; then
     CATFOOD_ROOT=$workspace CATFOOD_DEPTH=${CATFOOD_DEPTH:-12} \
         sh "$root/bootstrap.sh"
+    case $target in
+        phone|tablet)
+            CATFOOD_ROOT=$workspace CATFOOD_CACHE=$cache CATFOOD_TARGET=$target \
+                sh "$root/android/install-reddit.sh"
+            ;;
+    esac
     if [ "$target" = tablet ]; then
         CATFOOD_ROOT=$workspace CATFOOD_CACHE=$cache \
             sh "$root/tablet/install-grease.sh"
