@@ -1,0 +1,10 @@
+# match	path	followers	reason
+exact	.github/workflows/followers.yml	-	follower-control-plane
+prefix	followers/	-	follower-control-plane
+exact	AGENTS.md	-	follower-policy
+exact	docs/followers.md	-	follower-policy
+exact	tests/followers.sh	-	follower-control-plane
+prefix	phone/	phone	phone-specific
+prefix	tablet/	tablet	tablet-specific
+prefix	.github/	github-x86_64	github-only
+default	*	phone,tablet,github-x86_64,container-x86_64,hetzner-x86_64	shared-portable
