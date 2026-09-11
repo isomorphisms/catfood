@@ -18,6 +18,7 @@ The target is detected automatically when possible:
 Compatibility targets:
   termux     generic Termux target when architecture is unknown or forced
   hetzner    alias for cloud
+  CATFOOD_TARGET=cloud|termux remains valid
 
 Overrides:
   CATFOOD_TARGET=phone|tablet|container|cloud|termux|hetzner
