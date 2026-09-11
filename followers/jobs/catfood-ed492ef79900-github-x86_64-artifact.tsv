@@ -9,7 +9,7 @@ leader_arch	armv7
 leader_evidence	-
 artifact	-
 artifact_sha256	-
-follower_platform	github-x86_64
+follower_platform	github-x86_64-artifact
 follower_arch	x86_64
 required	yes
 action	Validate the real published PR #32 phone and tablet DEX/JNI bundles on GitHub x86-64, including release SHA-256, target/ABI receipt, backend SHA, extraction, and wrapper installation; do not substitute the synthetic fixture contract.
