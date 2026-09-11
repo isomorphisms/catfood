@@ -14,7 +14,7 @@ jobs:
           for script in \
             catfood bootstrap.sh check-manifest.sh update-tools.ysh \
             provision.sh activate.sh build-tools.sh refresh.sh doctor.sh import-config.sh \
-            tests/check-manifest.sh tests/entrypoint.sh
+            tests/check-manifest.sh tests/entrypoint.sh tests/targets.sh
           do
             if [ -f "$script" ]; then
               dash -n "$script"
@@ -30,6 +30,9 @@ jobs:
       - name: Exercise cloud and Termux entrypoints
         shell: sh
         run: sh tests/entrypoint.sh
+      - name: Verify named target profiles
+        shell: sh
+        run: sh tests/targets.sh
       - name: Exercise az through the stable command path
         shell: bash
         run: |
