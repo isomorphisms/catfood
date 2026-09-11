@@ -4,7 +4,7 @@ set -eu
 script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 manifest=${CATFOOD_PHONE_MANIFEST:-"$script_dir/tools.tsv"}
 workspace=${CATFOOD_PHONE_ROOT:-${CATFOOD_ROOT:-"$HOME/opt"}}
-prefix=${CATFOOD_PHONE_PREFIX:-"$workspace/phone"}
+state_root=${CATFOOD_PHONE_PREFIX:-"$workspace"}
 bin_dir=${CATFOOD_PHONE_BIN:-"$workspace/bin"}
 
 [ -f "$manifest" ] || {
@@ -32,7 +32,7 @@ case "$phone_abi" in
         ;;
 esac
 
-mkdir -p "$prefix/downloads" "$prefix/tools" "$prefix/receipts" "$bin_dir"
+mkdir -p "$state_root/downloads" "$state_root/tools" "$state_root/receipts" "$bin_dir"
 
 tab=$(printf '\t')
 missing=0
@@ -70,8 +70,8 @@ while IFS="$tab" read -r name mode command abi source ref url sha256 entrypoint;
         continue
     fi
 
-    receipt="$prefix/receipts/$name.tsv"
-    tool_dir="$prefix/tools/$name"
+    receipt="$state_root/receipts/$name.tsv"
+    tool_dir="$state_root/tools/$name"
     wrapper="$bin_dir/$command"
     expected_url=$(printf 'url\t%s' "$url")
     expected_sha256=$(printf 'sha256\t%s' "$sha256")
@@ -82,70 +82,82 @@ while IFS="$tab" read -r name mode command abi source ref url sha256 entrypoint;
         continue
     fi
 
-    download="$prefix/downloads/$name.download.$$"
-    unpack="$prefix/tools/.$name.unpack.$$"
-    rm -rf "$download" "$unpack"
+    if [ -e "$wrapper" ] || [ -L "$wrapper" ]; then
+        if [ ! -f "$receipt" ] || [ ! -f "$wrapper" ] ||
+           ! grep -F '# catfood phone artifact wrapper' "$wrapper" >/dev/null 2>&1; then
+            printf '%s exists and is not a Cat Food phone artifact wrapper; leaving it alone\n' "$wrapper" >&2
+            exit 3
+        fi
+    fi
+
+    download="$state_root/downloads/$name.download.$$"
+    staging="$state_root/tools/.$name.staging.$$"
+    rm -rf "$download" "$staging"
 
     printf '%-10s fetch %s@%s\n' "$name" "$source" "$ref"
     curl -fL --retry 2 "$url" -o "$download"
     printf '%s  %s\n' "$sha256" "$download" | sha256sum -c -
 
-    rm -rf "$tool_dir"
-    mkdir -p "$tool_dir"
+    mkdir -p "$staging"
     case "$mode" in
         file)
-            mkdir -p "$(dirname -- "$tool_dir/$entrypoint")"
-            mv "$download" "$tool_dir/$entrypoint"
+            mkdir -p "$(dirname -- "$staging/$entrypoint")"
+            mv "$download" "$staging/$entrypoint"
             ;;
         archive)
-            mkdir -p "$unpack"
-            tar -xzf "$download" -C "$unpack"
+            tar -xzf "$download" -C "$staging"
             rm -f "$download"
-            [ -e "$unpack/$entrypoint" ] || {
-                echo "$name archive does not contain $entrypoint" >&2
-                rm -rf "$unpack"
-                exit 3
-            }
-            rm -rf "$tool_dir"
-            mv "$unpack" "$tool_dir"
             ;;
         *)
             echo "unknown phone artifact mode: $mode" >&2
-            rm -rf "$download" "$unpack"
+            rm -rf "$download" "$staging"
             exit 3
             ;;
     esac
 
-    tool="$tool_dir/$entrypoint"
-    [ -f "$tool" ] || {
-        echo "$name artifact is missing entrypoint $entrypoint" >&2
+    [ -f "$staging/$entrypoint" ] || {
+        echo "$name artifact does not contain $entrypoint" >&2
+        rm -rf "$staging"
         exit 3
     }
-    chmod +x "$tool"
+    chmod +x "$staging/$entrypoint"
 
-    wrapper_tmp="$wrapper.tmp.$$"
-    printf '#!/bin/sh\nexec "%s" "$@"\n' "$tool" > "$wrapper_tmp"
+    rm -rf "$tool_dir"
+    mv "$staging" "$tool_dir"
+    tool="$tool_dir/$entrypoint"
+
+    wrapper_tmp="$bin_dir/.$command.tmp.$$"
+    {
+        printf '%s\n' '#!/bin/sh'
+        printf '%s\n' '# catfood phone artifact wrapper'
+        printf 'exec "%s" "$@"\n' "$tool"
+    } > "$wrapper_tmp"
     chmod +x "$wrapper_tmp"
     mv "$wrapper_tmp" "$wrapper"
 
+    receipt_tmp="$state_root/receipts/.$name.tmp.$$"
     {
         printf 'name\t%s\n' "$name"
+        printf 'command\t%s\n' "$command"
         printf 'source\t%s\n' "$source"
         printf 'ref\t%s\n' "$ref"
         printf 'abi\t%s\n' "$abi"
         printf 'url\t%s\n' "$url"
         printf 'sha256\t%s\n' "$sha256"
-    } > "$receipt"
+    } > "$receipt_tmp"
+    mv "$receipt_tmp" "$receipt"
 
     printf '%-10s installed %s\n' "$name" "$wrapper"
 done < "$manifest"
 
 printf '\nphone Cat Food root: %s\n' "$workspace"
-printf 'stable commands:     %s\n' "$bin_dir"
+printf 'artifact tools:       %s\n' "$state_root/tools"
+printf 'artifact receipts:    %s\n' "$state_root/receipts"
+printf 'stable commands:      %s\n' "$bin_dir"
 printf 'add to PATH if needed: export PATH="%s:$PATH"\n\n' "$bin_dir"
 
 CATFOOD_PHONE_MANIFEST="$manifest" \
 CATFOOD_PHONE_ROOT="$workspace" \
-CATFOOD_PHONE_PREFIX="$prefix" \
+CATFOOD_PHONE_PREFIX="$state_root" \
 CATFOOD_PHONE_BIN="$bin_dir" \
     sh "$script_dir/doctor.sh"
