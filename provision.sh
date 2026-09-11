@@ -89,7 +89,7 @@ install_packages() {
             printf '%s\n' 'cat food needs the Termux pkg command' >&2
             exit 127
         }
-        pkg install -y bash ca-certificates coreutils curl gawk git jq tar
+        pkg install -y bash ca-certificates coreutils curl gawk git grep jq libiconv sed tar
     elif command -v apt-get >/dev/null 2>&1; then
         as_root apt-get update
         as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y \
