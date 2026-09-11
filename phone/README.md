@@ -16,22 +16,29 @@ The first phone target is the current 32-bit `armeabi-v7a` device. Direct DEX pl
 
 ## Run
 
-From the Cat Food checkout:
+Keep the Cat Food checkout outside the runtime tree. For example:
 
 ```sh
+mkdir -p "$HOME/.cache"
+git clone --depth 1 https://github.com/isomorphisms/catfood.git "$HOME/.cache/catfood"
+cd "$HOME/.cache/catfood"
 ./catfood
 ```
 
-The defaults are:
+The phone runtime defaults to one flat `~/opt` tree:
 
 ```text
-workspace       ~/opt
-artifact prefix ~/opt/phone
-stable commands ~/opt/bin
+~/opt/
+├── bin/
+├── downloads/
+├── receipts/
+└── tools/
 ```
 
-Override them with `CATFOOD_PHONE_ROOT`, `CATFOOD_PHONE_PREFIX`, or `CATFOOD_PHONE_BIN`.
+There is deliberately no `~/opt/phone` directory. Installed artifacts live under `~/opt/tools/<name>`, their receipts under `~/opt/receipts`, temporary downloads under `~/opt/downloads`, and stable commands under `~/opt/bin`.
+
+Override the runtime root with `CATFOOD_PHONE_ROOT` or `CATFOOD_ROOT`. `CATFOOD_PHONE_PREFIX` remains available only when an explicitly separate artifact-state root is wanted; it is not used by default. `CATFOOD_PHONE_BIN` can override the stable-command directory.
 
 ## Receipts
 
-Each installed artifact records source, ref, ABI, URL, and SHA-256 under `~/opt/phone/receipts`. `phone/doctor.sh` reports the Android ABI, build fingerprint, emulator flag, storage, system prerequisites, installed artifacts, and still-pending artifacts.
+Each installed artifact records its command, source, ref, ABI, URL, and SHA-256 under `~/opt/receipts`. `phone/doctor.sh` checks those fields against the current manifest before accepting the command, then runs the artifact-specific executable smoke where one exists.
