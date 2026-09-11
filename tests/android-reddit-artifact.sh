@@ -8,6 +8,7 @@ trap 'rm -rf "$temporary"' EXIT HUP INT TERM
 backend_sha=b7d50d50bc1b11f3c470051a39693cfe5996608c
 fixture=$temporary/release
 fake_bin=$temporary/bin
+tab=$(printf '\t')
 mkdir -p "$fixture/phone" "$fixture/tablet" "$fake_bin"
 
 make_bundle() {
@@ -96,10 +97,10 @@ check_target() {
     test -f "$workspace/.catfood/$target/reddit/$backend_sha/libreddit_cli.so"
     receipt="$workspace/.catfood/receipts/$target-reddit.tsv"
     test -f "$receipt"
-    grep -Fqx "target\t$target" "$receipt"
-    grep -Fqx "abi\t$abi" "$receipt"
-    grep -Fqx "backend_sha\t$backend_sha" "$receipt"
-    grep -Fqx 'physical_device_execution\tPENDING' "$receipt"
+    grep -Fqx "target${tab}$target" "$receipt"
+    grep -Fqx "abi${tab}$abi" "$receipt"
+    grep -Fqx "backend_sha${tab}$backend_sha" "$receipt"
+    grep -Fqx "physical_device_execution${tab}PENDING" "$receipt"
     grep -Fq 'org.isomorphisms.reddit.RedditCli' "$workspace/bin/reddit"
 }
 
