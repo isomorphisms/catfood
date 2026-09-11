@@ -10,7 +10,7 @@ usage: ./catfood [--target]
 Fetch and prepare the Cat Food workbench.
 
 The target is detected automatically when possible:
-  phone      Termux on ARMv7; fetch the complete repository feed
+  phone      Termux on ARMv7; install pinned binaries only
   tablet     Termux on AArch64; fetch the complete repository feed
   container  disposable Debian/Ubuntu workbench; select explicitly
   cloud      persistent Debian/Ubuntu/Hetzner workbench

@@ -1,0 +1,13 @@
+# name	mode	command	abi	source	ref	url	sha256	entrypoint
+#
+# The phone profile is artifact-first. It never installs a compiler or selects
+# an unfinished Idriç backend merely because a prebuilt artifact is absent.
+# PENDING means that the cloud-built phone artifact has not been published yet.
+git	system	git	any	termux	system	-	-	-
+curl	system	curl	any	termux	system	-	-	-
+tar	system	tar	any	termux	system	-	-	-
+sha256sum	system	sha256sum	any	termux	system	-	-	-
+grep	system	grep	any	termux	system	-	-	-
+ike	file	ike	armeabi-v7a	dilapidated-shed/ike	depends-on-v1	PENDING	PENDING	ike
+grease	archive	grease	armeabi-v7a	isomorphisms/grease	6015e312ca05dd8103637e3f8bc19927b4e20dba	https://github.com/isomorphisms/grease/releases/download/phone-armv7-6015e312ca05/grease-armv7-termux.tar.gz	70ca729a150d849902d76623977af567f77a5b7e4f1ace4a17dda0e1623a175d	bin/grease
+icu	archive	icu	armeabi-v7a	dilapidated-shed/icu	icu	PENDING	PENDING	bin/icu

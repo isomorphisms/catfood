@@ -2,7 +2,7 @@
 
 Feed current copies of our own tools into a fresh development environment, then let those tools build and update one another.
 
-Cat Food is deliberately small. It is not a monorepo: working repositories live under `/opt` by default, not inside this checkout.
+Cat Food is deliberately small. It is not a monorepo: working repositories live under `/opt` by default, not inside this checkout. The phone is the deliberate exception: it is a binary runtime target rather than a repository workbench.
 
 ## Run Cat Food
 
@@ -12,9 +12,10 @@ After cloning the repository, the obvious entrypoint is the whole command:
 ./catfood
 ```
 
-It detects either a Debian/Ubuntu cloud head or Termux. The same command always
-feeds every repository in `tools.tsv`; the platform changes only the preparation
-and build policy around that feed.
+It detects Debian/Ubuntu and supported Termux architectures. Cloud, container,
+tablet, and generic Termux targets use the ordinary workbench feed; the
+storage-constrained phone is different and installs only pinned prebuilt
+artifacts from `phone/tools.tsv`.
 
 ### Fresh Hetzner / Ubuntu workbench
 
@@ -34,23 +35,25 @@ The cloud path installs the ordinary console/build dependencies used across the 
 
 ### Android phone / Termux
 
-From Termux on the 32-bit ARMv7 Android Go phone:
+From Termux on the 32-bit ARMv7 Android Go phone, keep the small Cat Food checkout outside the runtime tree:
 
 ```sh
-pkg install -y git ca-certificates
-git clone https://github.com/isomorphisms/catfood.git "$HOME/opt/catfood"
-cd "$HOME/opt/catfood"
+pkg install -y git ca-certificates curl coreutils grep tar
+mkdir -p "$HOME/.cache"
+git clone --depth 1 https://github.com/isomorphisms/catfood.git "$HOME/.cache/catfood"
+cd "$HOME/.cache/catfood"
 ./catfood
 ```
 
-The phone path installs only the small fetch-time command set and feeds every
-manifest repository under `$HOME/opt`. It does not claim that the current native
-Idriç, Ithon, IR, or YSH builds have passed on ARMv7; those builds remain a
-separate real-device acceptance problem. Override `CATFOOD_BUILD_TOOLS=1` or
-`CATFOOD_INSTALL_YSH=1` only when deliberately exercising those unfinished
-lanes.
+The phone path does not feed `tools.tsv`, clone project repositories, build
+compilers, or install a compiler toolchain. It checks the small system-command
+boundary and installs only exact prebuilt ARM artifacts whose URL and SHA-256
+are pinned in `phone/tools.tsv`. An artifact marked `PENDING` is skipped rather
+than triggering a source build.
 
-The native YSH release is downloaded from Oils, verified by SHA-256, built, and installed under `/usr/local` when provisioning as root. Override `CATFOOD_PREFIX` for another prefix. The source checkout under `grease/source` remains pinned separately for Grease development; the released YSH is the runnable stage-one shell.
+The phone runtime is flat under `~/opt`: stable commands are in `~/opt/bin`, artifacts in `~/opt/tools`, receipts in `~/opt/receipts`, and transient downloads in `~/opt/downloads`. There is deliberately no `~/opt/phone` layer. See `phone/README.md` for the receipt and storage policy.
+
+The native YSH release is downloaded from Oils, verified by SHA-256, built, and installed under `/usr/local` when provisioning as root. Override `CATFOOD_PREFIX` for another prefix. The source checkout under `grease/source` remains pinned separately for Grease development; the released YSH is the runnable stage-one shell. This source-build path is not used by the phone target.
 
 The core build currently exercises the repositories that need a real build before they are useful:
 
@@ -93,7 +96,7 @@ The importer also accepts the two files directly at the root of the private dire
 
 ## Repository feed
 
-`tools.tsv` is the authoritative current-workbench inventory. It includes:
+`tools.tsv` is the authoritative current-workbench inventory for repository-fed targets. The phone target deliberately does not consume it; its smaller artifact manifest is `phone/tools.tsv`. The workbench inventory includes:
 
 - the language/toolchain line: Oils (`grease/main`), IR, IRK, Ithon, Icky, ICK, Idriç, Fieldmouse (`edric-rewrite`), the ARM and shader backends, `sent.idr`, the programmer's keyboard, and ICU;
 - the browser/publication/workbench line: `az`, `ib`, Internet Archive, BookReader, PDF figure harvesting, DuckDuckGo, Chawan, Manimi, Wegert, `yt-shorts`, `ai-ci`, `computer-science`, and the Android phone utilities;
@@ -137,7 +140,7 @@ Updates are intentionally non-destructive: Cat Food fast-forwards clean checkout
 
 ## Stage zero only
 
-If the machine already has what you need and you only want to fetch/update repositories without building the core tools:
+If a repository-fed machine already has what you need and you only want to fetch/update repositories without building the core tools:
 
 ```sh
 ./bootstrap.sh
@@ -148,6 +151,8 @@ If `/opt` is not writable or you want a different workspace:
 ```sh
 CATFOOD_ROOT="$HOME/opt" ./bootstrap.sh
 ```
+
+The phone target does not use `bootstrap.sh`.
 
 `catfood`, `provision.sh`, `bootstrap.sh`, and `check-manifest.sh` stay POSIX
 `sh` because they must work before Grease exists. `bootstrap.sh` fetches Grease
