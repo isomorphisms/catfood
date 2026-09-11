@@ -1,0 +1,12 @@
+name: android-debug
+
+on:
+  push:
+    branches: [tablet-cli-pkg]
+
+jobs:
+  trace:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - run: sh -x tests/android-delivery.sh
