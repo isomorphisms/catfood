@@ -9,8 +9,9 @@ trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 fixture=$tmp/repo
 mkdir -p "$fixture/followers/jobs" "$fixture/followers/receipts" \
     "$fixture/tests" "$fixture/phone" "$fixture/tablet" "$fixture/.github/workflows"
-cp "$root/followers/manage.sh" "$root/followers/targets.tsv" \
-    "$root/followers/impact-rules.tsv" "$fixture/followers/"
+cp "$root/followers/manage.sh" "$root/followers/stale.sh" \
+    "$root/followers/targets.tsv" "$root/followers/impact-rules.tsv" \
+    "$fixture/followers/"
 
 cat > "$fixture/catfood" <<'EOF_CATFOOD'
 #!/bin/sh
@@ -98,6 +99,11 @@ EOF_RECEIPT
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
         prepare "$phone_trigger" phone armv7 - phone/example 2 >/dev/null
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh reconcile "$phone_trigger" >/dev/null
+
+    if sh followers/stale.sh >/dev/null 2>&1; then
+        echo 'unresolved follower work from an ancestor trigger was forgotten' >&2
+        exit 1
+    fi
 )
 
 printf '%s\n' 'cat food follower inference self-test passes'
