@@ -5,24 +5,49 @@ root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 
 usage() {
     cat <<'EOF'
-usage: ./catfood
+usage: ./catfood [--target]
 
 Fetch and prepare the Cat Food workbench.
 
-The target is detected automatically:
-  cloud    provision and build the complete Debian/Ubuntu workbench
-  termux   install the small fetch-time tool set and feed every repository
+The target is detected automatically when possible:
+  phone      Termux on ARMv7; fetch the complete repository feed
+  tablet     Termux on AArch64; fetch the complete repository feed
+  container  disposable Debian/Ubuntu workbench; select explicitly
+  cloud      persistent Debian/Ubuntu/Hetzner workbench
+
+Compatibility targets:
+  termux     generic Termux target when architecture is unknown or forced
+  hetzner    alias for cloud
+  CATFOOD_TARGET=cloud|termux remains valid
 
 Overrides:
-  CATFOOD_TARGET=cloud|termux
+  CATFOOD_TARGET=phone|tablet|container|cloud|termux|hetzner
   CATFOOD_ROOT=/path/to/workspace
   CATFOOD_BUILD_TOOLS=0|1
   CATFOOD_INSTALL_YSH=0|1
 EOF
 }
 
+detect_target() {
+    case ${PREFIX:-}:${TERMUX_VERSION:-} in
+        /data/data/com.termux/*:*|*:*?*)
+            machine=$(uname -m 2>/dev/null || printf '%s\n' unknown)
+            case $machine in
+                armv7*|armv8l|arm) printf '%s\n' phone ;;
+                aarch64|arm64) printf '%s\n' tablet ;;
+                *) printf '%s\n' termux ;;
+            esac
+            ;;
+        *) printf '%s\n' cloud ;;
+    esac
+}
+
+show_target=0
 case ${1:-} in
     '')
+        ;;
+    --target)
+        show_target=1
         ;;
     -h|--help)
         usage
@@ -36,10 +61,21 @@ esac
 
 target=${CATFOOD_TARGET:-auto}
 if [ "$target" = auto ]; then
-    case ${PREFIX:-}:${TERMUX_VERSION:-} in
-        /data/data/com.termux/*:*|*:*?*) target=termux ;;
-        *) target=cloud ;;
-    esac
+    target=$(detect_target)
+fi
+
+case $target in
+    hetzner) target=cloud ;;
+    phone|tablet|container|cloud|termux) ;;
+    *)
+        printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, or hetzner; found: %s\n' "$target" >&2
+        exit 2
+        ;;
+esac
+
+if [ "$show_target" -eq 1 ]; then
+    printf '%s\n' "$target"
+    exit 0
 fi
 
 case $target in
@@ -48,14 +84,23 @@ case $target in
         CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-1}
         CATFOOD_INSTALL_YSH=${CATFOOD_INSTALL_YSH:-1}
         ;;
-    termux)
+    container)
+        if [ -w /opt ]; then
+            default_root=/opt
+        else
+            default_root=$HOME/opt
+        fi
+        CATFOOD_ROOT=${CATFOOD_ROOT:-$default_root}
+        CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-1}
+        CATFOOD_INSTALL_YSH=${CATFOOD_INSTALL_YSH:-1}
+        CATFOOD_NO_PROFILE=${CATFOOD_NO_PROFILE:-1}
+        CATFOOD_DEPTH=${CATFOOD_DEPTH:-1}
+        export CATFOOD_NO_PROFILE CATFOOD_DEPTH
+        ;;
+    phone|tablet|termux)
         CATFOOD_ROOT=${CATFOOD_ROOT:-$HOME/opt}
         CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-0}
         CATFOOD_INSTALL_YSH=${CATFOOD_INSTALL_YSH:-0}
-        ;;
-    *)
-        printf 'CATFOOD_TARGET must be cloud or termux, found: %s\n' "$target" >&2
-        exit 2
         ;;
 esac
 

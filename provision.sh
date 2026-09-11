@@ -13,19 +13,47 @@ root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 target=${CATFOOD_TARGET:-auto}
 if [ "$target" = auto ]; then
     case ${PREFIX:-}:${TERMUX_VERSION:-} in
-        /data/data/com.termux/*:*|*:*?*) target=termux ;;
+        /data/data/com.termux/*:*|*:*?*)
+            machine=$(uname -m 2>/dev/null || printf '%s\n' unknown)
+            case $machine in
+                armv7*|armv8l|arm) target=phone ;;
+                aarch64|arm64) target=tablet ;;
+                *) target=termux ;;
+            esac
+            ;;
         *) target=cloud ;;
     esac
 fi
 
 case $target in
-    cloud) default_workspace=/opt ;;
-    termux) default_workspace=$HOME/opt ;;
+    hetzner) target=cloud ;;
+esac
+
+case $target in
+    cloud)
+        default_workspace=/opt
+        termux_target=0
+        ;;
+    container)
+        if [ -w /opt ]; then
+            default_workspace=/opt
+        else
+            default_workspace=$HOME/opt
+        fi
+        termux_target=0
+        ;;
+    phone|tablet|termux)
+        default_workspace=$HOME/opt
+        termux_target=1
+        ;;
     *)
-        printf 'CATFOOD_TARGET must be cloud or termux, found: %s\n' "$target" >&2
+        printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, or hetzner; found: %s\n' "$target" >&2
         exit 2
         ;;
 esac
+
+CATFOOD_TARGET=$target
+export CATFOOD_TARGET
 
 workspace=${CATFOOD_ROOT:-$default_workspace}
 cache=${CATFOOD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/catfood}
@@ -56,7 +84,7 @@ install_packages() {
         return 0
     fi
 
-    if [ "$target" = termux ]; then
+    if [ "$termux_target" -eq 1 ]; then
         command -v pkg >/dev/null 2>&1 || {
             printf '%s\n' 'cat food needs the Termux pkg command' >&2
             exit 127
@@ -137,10 +165,10 @@ fi
 PATH=$prefix/bin:$workspace/bin:$PATH
 export PATH
 
-if [ "$target" = termux ] && [ "${CATFOOD_BUILD_TOOLS:-0}" = 0 ]; then
+if [ "$termux_target" -eq 1 ] && [ "${CATFOOD_BUILD_TOOLS:-0}" = 0 ]; then
     CATFOOD_ROOT=$workspace CATFOOD_DEPTH=${CATFOOD_DEPTH:-12} \
         sh "$root/bootstrap.sh"
-    printf 'cat food phone feed is current under %s\n' "$workspace"
+    printf 'cat food %s feed is current under %s\n' "$target" "$workspace"
 else
     CATFOOD_ROOT=$workspace CATFOOD_PREFIX=$prefix \
     CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-1} \
