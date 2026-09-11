@@ -4,6 +4,7 @@ set -eu
 script_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 manifest=${CATFOOD_PHONE_MANIFEST:-"$script_dir/tools.tsv"}
 workspace=${CATFOOD_PHONE_ROOT:-${CATFOOD_ROOT:-"$HOME/opt"}}
+state_root=${CATFOOD_PHONE_PREFIX:-"$workspace"}
 bin_dir=${CATFOOD_PHONE_BIN:-"$workspace/bin"}
 
 abi=unknown
@@ -29,6 +30,7 @@ printf 'emulator    %s\n' "$emulator"
 printf 'fingerprint %s\n' "$fingerprint"
 printf 'storage     '
 df -h "$HOME" 2>/dev/null | tail -n 1 || true
+printf 'root        %s\n' "$workspace"
 printf '\n'
 
 tab=$(printf '\t')
@@ -62,24 +64,57 @@ while IFS="$tab" read -r name mode command wanted_abi source ref url sha256 entr
         continue
     fi
 
-    if [ ! -x "$bin_dir/$command" ]; then
-        printf '%-10s FAIL expected installed command %s\n' "$name" "$bin_dir/$command"
+    wrapper="$bin_dir/$command"
+    receipt="$state_root/receipts/$name.tsv"
+    if [ ! -x "$wrapper" ]; then
+        printf '%-10s FAIL expected installed command %s\n' "$name" "$wrapper"
+        failed=1
+        continue
+    fi
+    if [ ! -f "$receipt" ]; then
+        printf '%-10s FAIL missing receipt %s\n' "$name" "$receipt"
+        failed=1
+        continue
+    fi
+    if ! grep -F '# catfood phone artifact wrapper' "$wrapper" >/dev/null 2>&1; then
+        printf '%-10s FAIL stable command is not the managed phone wrapper\n' "$name"
+        failed=1
+        continue
+    fi
+
+    receipt_ok=1
+    for expected in \
+        "name${tab}$name" \
+        "command${tab}$command" \
+        "source${tab}$source" \
+        "ref${tab}$ref" \
+        "abi${tab}$wanted_abi" \
+        "url${tab}$url" \
+        "sha256${tab}$sha256"
+    do
+        if ! grep -Fqx "$expected" "$receipt" 2>/dev/null; then
+            receipt_ok=0
+            break
+        fi
+    done
+    if [ "$receipt_ok" -ne 1 ]; then
+        printf '%-10s FAIL receipt does not match manifest\n' "$name"
         failed=1
         continue
     fi
 
     case "$name" in
         grease)
-            if result=$("$bin_dir/$command" -c 'false ∨ echo grease-phone-ok' 2>&1) &&
+            if result=$("$wrapper" -c 'false ∨ echo grease-phone-ok' 2>&1) &&
                [ "$result" = grease-phone-ok ]; then
-                printf '%-10s PASS executable readable-syntax smoke\n' "$name"
+                printf '%-10s PASS exact receipt + executable smoke\n' "$name"
             else
                 printf '%-10s FAIL executable smoke: %s\n' "$name" "$result"
                 failed=1
             fi
             ;;
         *)
-            printf '%-10s PASS %s\n' "$name" "$bin_dir/$command"
+            printf '%-10s PASS exact receipt + %s\n' "$name" "$wrapper"
             ;;
     esac
 done < "$manifest"
