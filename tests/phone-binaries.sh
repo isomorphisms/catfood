@@ -45,6 +45,15 @@ printf '%s\n' "$output" | grep -F 'grease     PENDING prebuilt artifact' >/dev/n
 printf '%s\n' "$output" | grep -F 'abi         armeabi-v7a' >/dev/null
 printf '%s\n' "$output" | grep -F 'cat food phone binaries are current' >/dev/null
 
+# ~/opt is already the phone runtime root. Do not create a second phone layer.
+for directory in bin downloads receipts tools; do
+    test -d "$workspace/$directory"
+done
+if [ -e "$workspace/phone" ]; then
+    printf '%s\n' 'phone profile created redundant workspace/phone state' >&2
+    exit 1
+fi
+
 if find "$workspace" -type d -name .git -print -quit | grep . >/dev/null; then
     printf '%s\n' 'phone profile created a source checkout' >&2
     exit 1
@@ -65,4 +74,4 @@ fi
 grep -F '[ "$target" = phone ]' "$root/provision.sh" >/dev/null
 grep -F 'sh "$root/phone/build.sh"' "$root/provision.sh" >/dev/null
 
-echo 'phone profile is binary-only'
+echo 'phone profile is binary-only with flat runtime state'
