@@ -19,6 +19,7 @@ The first phone target is the current 32-bit `armeabi-v7a` device. Direct DEX pl
 Keep the Cat Food checkout outside the runtime tree. For example:
 
 ```sh
+pkg install -y git ca-certificates curl coreutils grep tar
 mkdir -p "$HOME/.cache"
 git clone --depth 1 https://github.com/isomorphisms/catfood.git "$HOME/.cache/catfood"
 cd "$HOME/.cache/catfood"
