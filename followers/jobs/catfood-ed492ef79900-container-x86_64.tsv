@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-ed492ef79900-container-x86_64
+repository	isomorphisms/catfood
+branch	android/reddit-dex-jni
+pr	32
+trigger_commit	ed492ef799003a67d8ca824ba518151682c87a23
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	container-x86_64
+follower_arch	x86_64
+required	conditional
+action	No independent container runtime acceptance is required for the Android-only Reddit installer path in PR #32.
+acceptance_kind	runtime
+acceptance_action	-
+state	n/a
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	The provision.sh change is inside termux_target=1 and dispatches android/install-reddit.sh only for target phone|tablet; the installer itself rejects all other targets.
+superseded_by	-
+follow_policy	exact

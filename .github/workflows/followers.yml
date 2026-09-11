@@ -1,0 +1,86 @@
+name: follower-reconciliation
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  follower-reconciliation:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: isomorphisms/ai-ci
+          ref: 8410839b2e2197cfc51466972c478470332a3456
+          path: _ai-ci
+      - name: Compile the follower verifier
+        shell: sh
+        run: |
+          cc -std=c17 -Wall -Wextra -Werror -pedantic -O2 \
+            -o "$RUNNER_TEMP/aici-followers" _ai-ci/src/aici_followers.c
+      - name: Prove inference and receipt transitions
+        shell: sh
+        run: sh tests/followers.sh "$RUNNER_TEMP/aici-followers"
+      - name: Reconcile the current source trigger
+        shell: sh
+        env:
+          AICI_FOLLOWERS: ${{ runner.temp }}/aici-followers
+        run: |
+          trigger=$(sh followers/manage.sh latest)
+          sh followers/manage.sh reconcile "$trigger"
+          sh followers/manage.sh pending "$trigger"
+          sh followers/stale.sh
+      - name: Run GitHub x86 acceptance against the exact trigger
+        id: github_follower
+        shell: sh
+        env:
+          AICI_FOLLOWERS: ${{ runner.temp }}/aici-followers
+        run: |
+          trigger=$(sh followers/manage.sh latest)
+          short=$(printf '%s' "$trigger" | cut -c1-12)
+          job_id="catfood-$short-github-x86_64"
+          job="followers/jobs/$job_id.tsv"
+          test -f "$job"
+
+          source_root="$RUNNER_TEMP/catfood-trigger-$short"
+          git worktree add --detach "$source_root" "$trigger"
+          sh followers/accept-x86.sh github "$source_root"
+
+          artifact=$(awk -F '\t' '$1 == "artifact" {print $2}' "$job")
+          artifact_sha256=$(awk -F '\t' '$1 == "artifact_sha256" {print $2}' "$job")
+          receipt="$RUNNER_TEMP/$job_id.tsv"
+          cat > "$receipt" <<EOF_RECEIPT
+          schema	aici-follower-receipt-v1
+          job_id	$job_id
+          repository	isomorphisms/catfood
+          trigger_commit	$trigger
+          follower_platform	github-x86_64
+          follower_arch	x86_64
+          acceptance_kind	runtime
+          result	pass
+          attempt_commit	$trigger
+          os_runtime	$(uname -srmo)
+          build_command	-
+          test_command	sh followers/accept-x86.sh github <worktree-at-$trigger>
+          artifact	$artifact
+          artifact_sha256	$artifact_sha256
+          evidence_url	${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
+          recorded_at	$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          note	GitHub-hosted x86-64 runtime follower; does not claim local/container, Hetzner, or physical Android acceptance.
+          EOF_RECEIPT
+          sed 's/^          //' "$receipt" > "$receipt.clean"
+          mv "$receipt.clean" "$receipt"
+          printf 'receipt=%s\n' "$receipt" >> "$GITHUB_OUTPUT"
+      - name: Publish exact GitHub follower receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: github-x86_64-follower-receipt
+          path: ${{ steps.github_follower.outputs.receipt }}
+          if-no-files-found: error

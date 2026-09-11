@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-ae9273520c01-phone
+repository	isomorphisms/catfood
+branch	main
+pr	31
+trigger_commit	ae9273520c01d358723e6e5e2886fccd44caed6f
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	phone
+follower_arch	armv7
+required	yes
+action	Leader target for Cat Food commit ae9273520c01d358723e6e5e2886fccd44caed6f on the physical ARMv7 phone; run the exact commit and record the phone receipt.
+acceptance_kind	physical-device
+acceptance_action	./catfood && phone/doctor.sh
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	-
+follow_policy	exact

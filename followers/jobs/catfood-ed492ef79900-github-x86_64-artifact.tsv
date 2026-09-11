@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-ed492ef79900-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	android/reddit-dex-jni
+pr	32
+trigger_commit	ed492ef799003a67d8ca824ba518151682c87a23
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	Validate the real published PR #32 phone and tablet DEX/JNI bundles on GitHub x86-64, including release SHA-256, target/ABI receipt, backend SHA, extraction, and wrapper installation; do not substitute the synthetic fixture contract.
+acceptance_kind	artifact
+acceptance_action	Download reddit-phone.tar.gz, reddit-tablet.tar.gz, and SHA256SUMS from release reddit-android-b7d50d50bc1b; verify hashes and bundle receipts against backend b7d50d50bc1b11f3c470051a39693cfe5996608c.
+state	blocked
+last_attempt_commit	ed492ef799003a67d8ca824ba518151682c87a23
+blocker	GitHub run 34556888909 passed synthetic phone/tablet installer fixtures, but that run did not validate the real published bundle identities/hashes required by this artifact job.
+evidence	-
+depends_on	-
+reason	GitHub is relevant here for artifact validation, not as Android physical-device acceptance.
+superseded_by	-
+follow_policy	exact
