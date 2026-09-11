@@ -35,6 +35,7 @@ jobs:
           trigger=$(sh followers/manage.sh latest)
           sh followers/manage.sh reconcile "$trigger"
           sh followers/manage.sh pending "$trigger"
+          sh followers/stale.sh
       - name: Run GitHub x86 acceptance against the exact trigger
         id: github_follower
         shell: sh
@@ -73,7 +74,6 @@ jobs:
           recorded_at	$(date -u +%Y-%m-%dT%H:%M:%SZ)
           note	GitHub-hosted x86-64 runtime follower; does not claim local/container, Hetzner, or physical Android acceptance.
           EOF_RECEIPT
-          # The heredoc is indented for YAML; strip only its fixed leading spaces.
           sed 's/^          //' "$receipt" > "$receipt.clean"
           mv "$receipt.clean" "$receipt"
           printf 'receipt=%s\n' "$receipt" >> "$GITHUB_OUTPUT"
