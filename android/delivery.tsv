@@ -1,6 +1,6 @@
 # name	role	phone	tablet	note
 # role: runtime | host | reference | review
-# target disposition: package:<package-id> | gap:<reason> | n/a
+# target disposition: package:<package-id> | packages:<package-id>,<package-id> | gap:<reason> | n/a
 # `review` is explicit unresolved classification debt and blocks readiness.
 grease	runtime	package:grease-phone	package:grease-tablet	separate-bootstrap-runtime
 
@@ -20,7 +20,7 @@ sent.idr	review	gap:classification	gap:classification	intent-needs-explicit-clas
 programmers-keyboard	runtime	gap:android-package-missing	gap:android-package-missing	android-application
 icu	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
 
-az	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
+az	runtime	gap:android-package-missing	packages:az-tablet,abe-tablet	stable-command-suite
 ib	runtime	gap:android-package-missing	gap:android-package-missing	browser-application
 internetarchive	runtime	gap:android-package-missing	gap:android-package-missing	user-facing-tool
 bookreader	runtime	gap:android-package-missing	gap:android-package-missing	browser-application
