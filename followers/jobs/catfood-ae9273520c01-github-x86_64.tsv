@@ -15,10 +15,10 @@ required	yes
 action	Follow Cat Food commit ae9273520c01d358723e6e5e2886fccd44caed6f on GitHub-hosted x86-64 Linux with the runtime bootstrap acceptance, not only syntax checks.
 acceptance_kind	runtime
 acceptance_action	Run the bootstrap workflow at the exact commit: exercise cloud and Termux entrypoints, feed the toolchain with POSIX sh, and exercise stable commands.
-state	pending
-last_attempt_commit	-
+state	accepted
+last_attempt_commit	ae9273520c01d358723e6e5e2886fccd44caed6f
 blocker	-
-evidence	-
+evidence	catfood-ae9273520c01-github-x86_64.tsv
 depends_on	-
 reason	shared-portable
 superseded_by	-
