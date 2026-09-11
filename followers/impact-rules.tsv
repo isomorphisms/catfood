@@ -6,5 +6,8 @@ exact	docs/followers.md	-	follower-policy
 exact	tests/followers.sh	-	follower-control-plane
 prefix	phone/	phone	phone-specific
 prefix	tablet/	tablet	tablet-specific
+prefix	android/	phone@physical-device,tablet@physical-device,github-x86_64@artifact	android-artifact-and-device
+prefix	tests/android-	github-x86_64@artifact	android-artifact-contract
+prefix	.github/workflows/android-	github-x86_64@artifact	android-artifact-ci
 prefix	.github/	github-x86_64	github-only
 default	*	phone,tablet,github-x86_64,container-x86_64,hetzner-x86_64	shared-portable
