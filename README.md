@@ -38,7 +38,7 @@ The cloud path installs the ordinary console/build dependencies used across the 
 From Termux on the 32-bit ARMv7 Android Go phone, keep the small Cat Food checkout outside the runtime tree:
 
 ```sh
-pkg install -y git ca-certificates
+pkg install -y git ca-certificates curl coreutils grep tar
 mkdir -p "$HOME/.cache"
 git clone --depth 1 https://github.com/isomorphisms/catfood.git "$HOME/.cache/catfood"
 cd "$HOME/.cache/catfood"
