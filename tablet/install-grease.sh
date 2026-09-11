@@ -36,13 +36,14 @@ receipt="$receipt_dir/tablet-grease.tsv"
 bin_dir="$workspace/bin"
 archive="$cache/$archive_name.$packaging_sha"
 temporary="$install_dir.tmp.$$"
+tab=$(printf '\t')
 
 mkdir -p "$cache" "$receipt_dir" "$bin_dir" "$(dirname -- "$install_dir")"
 
 if [ -x "$install_dir/bin/grease" ] && [ -x "$install_dir/bin/ysh" ] &&
    [ -f "$receipt" ] &&
-   grep -Fqx "packaging_sha\t$packaging_sha" "$receipt" 2>/dev/null &&
-   grep -Fqx "artifact_sha256\t$artifact_sha256" "$receipt" 2>/dev/null; then
+   grep -Fqx "packaging_sha${tab}$packaging_sha" "$receipt" 2>/dev/null &&
+   grep -Fqx "artifact_sha256${tab}$artifact_sha256" "$receipt" 2>/dev/null; then
     printf 'tablet Grease artifact is already installed at %s\n' "$install_dir"
 else
     rm -f "$archive.tmp"
