@@ -1,9 +1,6 @@
 #!/bin/sh
 set -eu
 
-# Root consoles and sudo may start in the ASCII C locale.  The toolchain
-# sources and generated documentation contain Unicode syntax, so make a
-# configurable UTF-8 locale explicit for every provisioning step.
 catfood_locale=${CATFOOD_LOCALE:-C.UTF-8}
 LANG=$catfood_locale
 LC_ALL=$catfood_locale
@@ -24,10 +21,7 @@ if [ "$target" = auto ]; then
         *) target=cloud ;;
     esac
 fi
-
-case $target in
-    hetzner) target=cloud ;;
-esac
+case $target in hetzner) target=cloud ;; esac
 
 case $target in
     cloud)
@@ -35,11 +29,7 @@ case $target in
         termux_target=0
         ;;
     container)
-        if [ -w /opt ]; then
-            default_workspace=/opt
-        else
-            default_workspace=$HOME/opt
-        fi
+        if [ -w /opt ]; then default_workspace=/opt; else default_workspace=$HOME/opt; fi
         termux_target=0
         ;;
     phone|tablet|termux)
@@ -54,7 +44,6 @@ esac
 
 CATFOOD_TARGET=$target
 export CATFOOD_TARGET
-
 workspace=${CATFOOD_ROOT:-$default_workspace}
 cache=${CATFOOD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/catfood}
 oils_version=${CATFOOD_OILS_VERSION:-0.37.0}
@@ -68,6 +57,20 @@ else
     prefix=$HOME/.local
 fi
 
+# Android devices are consumers of host-built runtime packages. Keep this exit
+# before package managers, compiler bootstraps, repository feeds, and host builds.
+case $target in
+    phone|tablet)
+        if [ -n "${CATFOOD_CONFIG_DIR:-}" ]; then
+            CATFOOD_CONFIG_DIR=$CATFOOD_CONFIG_DIR sh "$root/import-config.sh"
+        fi
+        CATFOOD_ROOT=$workspace CATFOOD_CACHE=$cache CATFOOD_TARGET=$target \
+            sh "$root/android/install.sh"
+        printf 'cat food %s runtime packages are current under %s\n' "$target" "$workspace"
+        exit 0
+        ;;
+esac
+
 as_root() {
     if [ "$(id -u)" -eq 0 ]; then
         "$@"
@@ -80,7 +83,7 @@ as_root() {
 }
 
 install_packages() {
-    if [ "${CATFOOD_NO_PACKAGES:-0}" = 1 ] || [ "$target" = phone ]; then
+    if [ "${CATFOOD_NO_PACKAGES:-0}" = 1 ]; then
         return 0
     fi
 
@@ -99,12 +102,6 @@ install_packages() {
             libsqlite3-dev libssl-dev make ninja-build default-jdk-headless perl \
             pkg-config python3-venv rsync tk-dev tmux texinfo unzip uuid-dev vim w3m \
             xz-utils zlib1g-dev
-
-        # PDF image/figure extraction candidates; leave disabled until one is chosen.
-        # apt-get install -y poppler-utils  # pdfimages
-        # apt-get install -y mupdf-tools  # mutool extract
-        # apt-get install -y libpoppler-private-dev libleptonica-dev  # build AllenAI pdffigures v1 from source
-        # PDFFigures2 itself is not packaged by Debian; use its upstream Scala/sbt build.
     else
         printf '%s\n' 'cat food: no apt-get; expecting build dependencies to already exist' >&2
     fi
@@ -114,47 +111,32 @@ install_ysh() {
     if command -v ysh >/dev/null 2>&1 && ysh -c 'echo' >/dev/null 2>&1; then
         return 0
     fi
-
-    command -v curl >/dev/null 2>&1 || {
-        printf '%s\n' 'cat food needs curl to install YSH' >&2
-        exit 127
-    }
-    command -v sha256sum >/dev/null 2>&1 || {
-        printf '%s\n' 'cat food needs sha256sum to verify YSH' >&2
-        exit 127
-    }
+    command -v curl >/dev/null 2>&1 || { printf '%s\n' 'cat food needs curl to install YSH' >&2; exit 127; }
+    command -v sha256sum >/dev/null 2>&1 || { printf '%s\n' 'cat food needs sha256sum to verify YSH' >&2; exit 127; }
 
     mkdir -p "$cache" "$prefix"
     archive=$cache/oils-for-unix-$oils_version.tar.gz
     source_dir=$cache/oils-for-unix-$oils_version
     url=https://oils.pub/download/oils-for-unix-$oils_version.tar.gz
-
     if [ ! -f "$archive" ] || ! printf '%s  %s\n' "$oils_sha256" "$archive" | sha256sum -c - >/dev/null 2>&1; then
         rm -f "$archive.tmp"
         curl -fL "$url" -o "$archive.tmp"
         printf '%s  %s\n' "$oils_sha256" "$archive.tmp" | sha256sum -c -
         mv "$archive.tmp" "$archive"
     fi
-
     rm -rf "$source_dir"
     tar --no-same-owner -xzf "$archive" -C "$cache"
-
     (
         cd "$source_dir"
-        ./configure --prefix "$prefix" --datarootdir "$prefix/share"
+        ./configure --prefix "$prefix" --datarootdir="$prefix/share"
         _build/oils.sh
-        if [ -w "$prefix" ]; then
-            ./install
-        else
-            as_root ./install
-        fi
+        if [ -w "$prefix" ]; then ./install; else as_root ./install; fi
     )
-
     "$prefix/bin/ysh" -c 'echo' >/dev/null
 }
 
 install_packages
-if [ "$target" != phone ] && [ "${CATFOOD_INSTALL_YSH:-1}" != 0 ]; then
+if [ "${CATFOOD_INSTALL_YSH:-1}" != 0 ]; then
     install_ysh
 fi
 
@@ -165,20 +147,10 @@ fi
 PATH=$prefix/bin:$workspace/bin:$PATH
 export PATH
 
-if [ "$target" = phone ]; then
-    CATFOOD_PHONE_ROOT=$workspace \
-        sh "$root/phone/build.sh"
-    printf 'cat food phone binaries are current under %s\n' "$workspace"
-elif [ "$termux_target" -eq 1 ] && [ "${CATFOOD_BUILD_TOOLS:-0}" = 0 ]; then
-    CATFOOD_ROOT=$workspace CATFOOD_DEPTH=${CATFOOD_DEPTH:-12} \
-        sh "$root/bootstrap.sh"
-    if [ "$target" = tablet ]; then
-        CATFOOD_ROOT=$workspace CATFOOD_CACHE=$cache \
-            sh "$root/tablet/install-grease.sh"
-    fi
-    printf 'cat food %s feed is current under %s\n' "$target" "$workspace"
+if [ "$termux_target" -eq 1 ] && [ "${CATFOOD_BUILD_TOOLS:-0}" = 0 ]; then
+    CATFOOD_ROOT=$workspace CATFOOD_DEPTH=${CATFOOD_DEPTH:-12} sh "$root/bootstrap.sh"
+    printf 'cat food generic Termux feed is current under %s\n' "$workspace"
 else
     CATFOOD_ROOT=$workspace CATFOOD_PREFIX=$prefix \
-    CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-1} \
-        sh "$root/refresh.sh"
+    CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-1} sh "$root/refresh.sh"
 fi

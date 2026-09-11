@@ -2,23 +2,23 @@
 
 Cat Food lets phone or tablet work lead, but every affected maintained target must either produce independent acceptance evidence or remain durable unfinished work.
 
-The target meanings remain defined in [`TARGETS.md`](../TARGETS.md). In particular, physical phone, physical tablet, disposable/container Linux, GitHub-hosted Linux, and persistent Hetzner/cloud acceptance are not interchangeable.
+The target meanings remain defined in [`TARGETS.md`](../TARGETS.md). Physical phone, physical tablet, disposable/container Linux, GitHub-hosted Linux, and persistent Hetzner/cloud acceptance are not interchangeable.
 
 ## Source state and bookkeeping
 
-Follower jobs bind to an exact source commit. The later commits that add jobs, receipts, or policy do not change the source state being followed. Version 1 therefore uses `follow_policy=exact`: moving a follower to a descendant requires an explicit new job or recorded supersession.
+Follower jobs bind to an exact source commit. Later commits that add jobs, receipts, or policy do not change the source state being followed. Version 1 therefore uses `follow_policy=exact`: moving a follower to a descendant requires an explicit new job or recorded supersession.
 
 `followers/targets.tsv` is the concrete maintained target registry. `termux-generic` remains a compatibility selector rather than a concrete independently accepted machine. If it becomes a maintained concrete environment, give it a real acceptance action and promote it in the registry rather than treating generic Termux selection as proof.
 
 `followers/impact-rules.tsv` maps changed paths to affected targets. Rules are first-match and conservative:
 
 - follower-control and policy files do not create product follower debt;
-- `phone/` changes affect the phone unless shared files also changed;
-- `tablet/` changes affect the tablet unless shared files also changed;
+- `android/` changes affect the physical phone, physical tablet, and GitHub artifact-contract follower;
+- Android contract tests affect the GitHub artifact-contract follower;
 - ordinary GitHub workflow changes affect GitHub-hosted x86-64;
 - everything else defaults to the concrete phone, tablet, GitHub x86-64, independent container/local x86-64, and Hetzner x86-64 targets.
 
-That default is intentional for shared source, command-line tools, parsers, build/install code, native boundaries, packaging, tests, and other portable mechanics. Add a narrower rule only when the design really is platform-specific.
+That default is intentional for shared source, command-line tools, parsers, host build/install code, native boundaries, packaging, tests, and other portable mechanics. Add a narrower rule only when the design really is platform-specific.
 
 ## Jobs and receipts
 
@@ -28,7 +28,7 @@ A job carries the exact trigger commit, leader, follower, architecture, required
 
 Build, runtime, artifact, physical-device, and publication acceptance are separate evidence kinds. `unsupported`, `blocked`, and `not run` are not green. Conditional `n/a` requires an explicit reason.
 
-For architecture-specific Cat Food artifacts, record the artifact name and SHA-256 in the follower job. A receipt for a different artifact cannot satisfy it. The phone remains binary-only: missing ARMv7 output stays pending rather than turning the phone into a source build farm. Tablet capacity to build does not substitute for x86, Hetzner, GitHub, or phone acceptance.
+For architecture-specific Cat Food artifacts, record the artifact name and SHA-256 in the follower job. A receipt for a different artifact cannot satisfy it. Both Android targets are runtime-only consumers in the normal Cat Food path: missing ARMv7 or AArch64 output stays explicit rather than turning either device into a source build farm. Android delivery gaps do not authorize unrelated experimental compiler/backend gates, and Android capacity does not substitute for x86, Hetzner, or GitHub acceptance.
 
 ## Operations
 
@@ -64,4 +64,4 @@ Hetzner is the persistent `cloud` acceptance environment, not an alias for a Git
 
 ## Current bootstrap
 
-The initial ledger concentrates on current `main` rather than manufacturing historical chores. It records the mobile-led current source state and its concrete followers. Existing exact GitHub-hosted evidence can be recorded independently; physical phone/tablet, independent container/local x86-64, and Hetzner remain pending or blocked until actually exercised.
+The initial ledger concentrates on current `main` rather than manufacturing historical chores. Existing exact GitHub-hosted evidence can be recorded independently; physical phone/tablet, independent container/local x86-64, and Hetzner remain pending or blocked until actually exercised.

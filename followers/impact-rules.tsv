@@ -4,8 +4,6 @@ prefix	followers/	-	follower-control-plane
 exact	AGENTS.md	-	follower-policy
 exact	docs/followers.md	-	follower-policy
 exact	tests/followers.sh	-	follower-control-plane
-prefix	phone/	phone	phone-specific
-prefix	tablet/	tablet	tablet-specific
 prefix	android/	phone,tablet,github-x86_64-artifact	android-artifact-and-device
 prefix	tests/android-	github-x86_64-artifact	android-artifact-contract
 prefix	.github/workflows/android-	github-x86_64-artifact	android-artifact-ci

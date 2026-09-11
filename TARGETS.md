@@ -1,51 +1,39 @@
 # Cat Food targets
 
-Cat Food has one implementation and four named acceptance targets. Shared mechanics do not imply shared acceptance.
+Cat Food has one control plane and four concrete acceptance targets. Shared mechanics do not imply shared acceptance.
 
-| Target | Environment | Default workbench policy | What a passing receipt proves |
+| Target | Environment | Normal policy | What a passing target receipt may prove |
 | --- | --- | --- | --- |
-| `phone` | Termux on 32-bit ARMv7 Android | `$HOME/opt`, no project repository feed; install only exact prebuilt ARM artifacts whose URL and SHA-256 are pinned in `phone/tools.tsv` | The exact available phone artifacts were verified and installed on the physical phone. Pending artifacts remain unclaimed. |
-| `tablet` | Termux on AArch64 Android | `$HOME/opt`, fetch every repository, no native tool build by default | The repository feed and stage-zero path work on the actual tablet. A tablet receipt is not a phone/ARMv7 receipt. Native builds remain unclaimed until exercised on the tablet. |
-| `container` | Disposable Debian/Ubuntu container or sandbox | full workbench build, depth 1, no shell-profile modification; `/opt` when writable, otherwise `$HOME/opt` | A clean ephemeral Linux workbench can provision and build. It does not prove persistent-host, systemd, reboot, SSH, or provider-specific behavior. |
-| `cloud` | Persistent Debian/Ubuntu host, including Hetzner | `/opt`, full workbench build and YSH install | The persistent cloud workbench path provisions and builds. Hetzner-specific acceptance may add resource, boot, SSH, or provider checks beyond ordinary Linux provisioning. |
+| `phone` | Termux on 32-bit ARMv7 Android | `$HOME/opt`; download, verify, and install published `armeabi-v7a` runtime packages only | The exact available phone packages installed and the recorded physical-phone checks ran. It does not erase explicit inventory gaps or accept the tablet. |
+| `tablet` | Termux on AArch64 Android | `$HOME/opt`; download, verify, and install published `arm64-v8a` runtime packages only | The exact available tablet packages installed and the recorded physical-tablet checks ran. It does not erase explicit inventory gaps or accept the phone. |
+| `container` | Disposable Debian/Ubuntu container or sandbox | full source workbench; depth 1; no shell-profile modification | A clean ephemeral Linux workbench can provision and build. It does not prove persistent-host or Android behavior. |
+| `cloud` | Persistent Debian/Ubuntu host, including Hetzner | `/opt`; full source workbench and host tool builds | The persistent cloud workbench path provisions and builds. Hetzner-specific acceptance may add provider checks. |
 
-`termux` remains a compatibility target for an unknown or explicitly generic Termux architecture. `hetzner` is accepted as an alias for `cloud`.
+`termux` remains a compatibility source-workbench target for an unknown or explicitly generic Termux architecture. `hetzner` is an alias for `cloud`.
 
 ## Selection
-
-Run the normal entrypoint and let Cat Food identify supported Termux architectures:
 
 ```sh
 ./catfood
 ```
 
-On Termux, `armv7*`/`armv8l` selects `phone` and `aarch64`/`arm64` selects `tablet`. Non-Termux systems continue to select `cloud` automatically for compatibility. Container detection is deliberately not guessed because container and sandbox signals vary; select it explicitly:
+On Termux, `armv7*`/`armv8l` selects `phone` and `aarch64`/`arm64` selects `tablet`. Non-Termux systems continue to select `cloud` automatically. Container detection is deliberately not guessed; select it explicitly:
 
 ```sh
 CATFOOD_TARGET=container ./catfood
 ```
 
-Likewise, any target can be forced explicitly:
+Any target can be forced explicitly, and `./catfood --target` reports selection without provisioning.
 
-```sh
-CATFOOD_TARGET=phone ./catfood
-CATFOOD_TARGET=tablet ./catfood
-CATFOOD_TARGET=cloud ./catfood
-```
+## Android rule
 
-To inspect selection without provisioning anything:
+Both concrete Android targets are runtime-only consumers. Their normal Cat Food path must not:
 
-```sh
-./catfood --target
-CATFOOD_TARGET=container ./catfood --target
-```
+- clone the project source fleet;
+- install or bootstrap compiler/build toolchains;
+- use an unfinished native compiler backend as a prerequisite for an unrelated package;
+- repair a missing package by building from source on the device.
 
-## Acceptance rule
+`android/delivery.tsv` accounts for the entire declared inventory plus Grease. `android/packages.tsv` contains only actual packages. `android/check.sh ready phone|tablet` is the whole-inventory manifest readiness gate and must stay red while intended runtime deliverables or classifications are unresolved.
 
-Do not substitute receipts across these targets. In particular:
-
-- AArch64 tablet success does not establish ARMv7 phone success.
-- Linux container success does not establish the persistent Hetzner/cloud machine.
-- GitHub Actions simulation of Termux does not replace execution on either Android device.
-- The phone target must not clone the ordinary project feed or install/build a compiler toolchain when a prebuilt artifact is missing.
-- A tablet repository-feed receipt does not establish execution of its native compiler/runtime artifacts.
+Do not substitute receipts across targets or evidence kinds. In particular, AArch64 tablet success is not ARMv7 phone success; GitHub/container execution is not physical Android execution; installation is not application behavior; and an experimental compiler/backend result is not an Android application delivery result.

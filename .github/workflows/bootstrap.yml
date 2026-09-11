@@ -20,8 +20,15 @@ jobs:
           dash -n bootstrap.sh
           dash -n update-tools.ysh
           dash -n catfood
+          dash -n provision.sh
+          dash -n android/check.sh
+          dash -n android/install.sh
+          dash -n tests/android-delivery.sh
           dash -n tests/entrypoint.sh
-      - name: Exercise cloud and Termux entrypoints
+      - name: Exercise Android delivery contracts
+        shell: sh
+        run: sh tests/android-delivery.sh
+      - name: Exercise cloud and generic Termux entrypoints
         shell: sh
         run: sh tests/entrypoint.sh
       - name: Feed toolchain with POSIX sh

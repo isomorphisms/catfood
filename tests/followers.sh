@@ -8,8 +8,7 @@ tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 fixture=$tmp/repo
 mkdir -p "$fixture/followers/jobs" "$fixture/followers/receipts" \
-    "$fixture/tests" "$fixture/phone" "$fixture/tablet" "$fixture/android" \
-    "$fixture/.github/workflows"
+    "$fixture/tests" "$fixture/android" "$fixture/.github/workflows"
 cp "$root/followers/manage.sh" "$root/followers/stale.sh" \
     "$root/followers/targets.tsv" "$root/followers/impact-rules.tsv" \
     "$fixture/followers/"
@@ -21,11 +20,10 @@ if [ "${1:-}" = --target ]; then
 fi
 EOF_CATFOOD
 chmod +x "$fixture/catfood"
-for name in entrypoint targets phone-binaries; do
+for name in entrypoint targets android-delivery; do
     printf '%s\n' '#!/bin/sh' 'exit 0' > "$fixture/tests/$name.sh"
 done
 printf '%s\n' '# base provision' > "$fixture/provision.sh"
-printf '%s\n' '# phone base' > "$fixture/phone/README.md"
 printf '%s\n' '# android base' > "$fixture/android/install-example.sh"
 
 (
@@ -36,7 +34,7 @@ printf '%s\n' '# android base' > "$fixture/android/install-example.sh"
     git add .
     git commit -qm base
 
-    printf '%s\n' '# shared phone-led change' >> provision.sh
+    printf '%s\n' '# shared mobile-led change' >> provision.sh
     git add provision.sh
     git commit -qm shared-change
     trigger=$(git rev-parse HEAD)
@@ -91,19 +89,6 @@ EOF_RECEIPT
 
     git add followers
     git commit -qm follower-ledger
-    printf '%s\n' '# phone-only change' >> phone/README.md
-    git add phone/README.md
-    git commit -qm phone-only
-    phone_trigger=$(git rev-parse HEAD)
-    phone_affected=$(sh followers/manage.sh affected "$phone_trigger")
-    [ "$(printf '%s\n' "$phone_affected" | wc -l | tr -d ' ')" -eq 1 ]
-    printf '%s\n' "$phone_affected" | grep '^phone[[:space:]]' >/dev/null
-    AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
-        prepare "$phone_trigger" phone armv7 - phone/example 2 >/dev/null
-    AICI_FOLLOWERS="$verifier" sh followers/manage.sh reconcile "$phone_trigger" >/dev/null
-
-    git add followers
-    git commit -qm phone-ledger
     printf '%s\n' '# Android artifact change' >> android/install-example.sh
     git add android/install-example.sh
     git commit -qm android-artifact
@@ -118,7 +103,7 @@ EOF_RECEIPT
         exit 1
     fi
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
-        prepare "$android_trigger" phone armv7 - phone/example 3 >/dev/null
+        prepare "$android_trigger" phone armv7 - phone/example 2 >/dev/null
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh reconcile "$android_trigger" >/dev/null
 
     if sh followers/stale.sh >/dev/null 2>&1; then
