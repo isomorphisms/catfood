@@ -28,16 +28,22 @@ grep	system	grep	any	termux	system	-	-	-
 grease	archive	grease	armeabi-v7a	isomorphisms/grease	test	PENDING	PENDING	bin/grease
 EOF
 
+# Deliberately request YSH installation and normal package handling. The phone
+# target must still bypass both source/package paths and hand directly to the
+# binary artifact profile.
 output=$(
     HOME="$home" \
     PATH="$fake_bin:$PATH" \
+    CATFOOD_TARGET=phone \
     CATFOOD_ROOT="$workspace" \
     CATFOOD_PHONE_MANIFEST="$manifest" \
-        sh "$root/phone/build.sh"
+    CATFOOD_INSTALL_YSH=1 \
+        sh "$root/provision.sh"
 )
 printf '%s\n' "$output"
 printf '%s\n' "$output" | grep -F 'grease     PENDING prebuilt artifact' >/dev/null
 printf '%s\n' "$output" | grep -F 'abi         armeabi-v7a' >/dev/null
+printf '%s\n' "$output" | grep -F 'cat food phone binaries are current' >/dev/null
 
 if find "$workspace" -type d -name .git -print -quit | grep . >/dev/null; then
     printf '%s\n' 'phone profile created a source checkout' >&2
