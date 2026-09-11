@@ -2,11 +2,13 @@
 set -eu
 
 mode=${1:-container}
-root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
+controller_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
+root=${2:-$controller_root}
+root=$(CDPATH='' cd -- "$root" && pwd)
 
 case $mode in
     github|container|cloud) ;;
-    *) printf 'usage: %s github|container|cloud\n' "$0" >&2; exit 2 ;;
+    *) printf 'usage: %s github|container|cloud [SOURCE_ROOT]\n' "$0" >&2; exit 2 ;;
 esac
 
 # Portable runtime checks are deliberately stronger than syntax-only CI. They
@@ -27,4 +29,4 @@ case $mode in
         ;;
 esac
 
-printf 'x86 follower acceptance passed: %s\n' "$mode"
+printf 'x86 follower acceptance passed: %s at %s\n' "$mode" "$root"
