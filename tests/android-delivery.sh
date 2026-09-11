@@ -35,6 +35,7 @@ bundle=$tmp/bundle
 fake_bin=$tmp/bin
 backend_log=$tmp/backend.log
 app_log=$tmp/app.log
+pkg_log=$tmp/pkg.log
 mkdir -p "$fixture" "$bundle/lib" "$fake_bin"
 printf '%s\n' 'direct-dex-fixture' > "$bundle/classes.dex"
 printf '%s\n' 'jni-fixture' > "$bundle/lib/libapp.so"
@@ -66,6 +67,12 @@ case $url in
 esac
 EOF_CURL
 
+cat > "$fake_bin/pkg" <<'EOF_PKG'
+#!/bin/sh
+set -eu
+printf '%s\n' "$*" >> "$CATFOOD_PKG_LOG"
+EOF_PKG
+
 cat > "$fake_bin/idris-arm-backend" <<'EOF_BACKEND'
 #!/bin/sh
 printf '%s\n' called >> "$CATFOOD_BACKEND_LOG"
@@ -78,7 +85,7 @@ printf 'CLASSPATH=%s\n' "${CLASSPATH:-}" >> "$CATFOOD_APP_LOG"
 printf 'ARGS=%s\n' "$*" >> "$CATFOOD_APP_LOG"
 exit 0
 EOF_APP_PROCESS
-chmod 0755 "$fake_bin/curl" "$fake_bin/idris-arm-backend" "$fake_bin/app_process"
+chmod 0755 "$fake_bin/curl" "$fake_bin/pkg" "$fake_bin/idris-arm-backend" "$fake_bin/app_process"
 
 # Establish a known-bad experimental backend, then prove package delivery does
 # not invoke or depend on it.
@@ -87,6 +94,7 @@ if CATFOOD_BACKEND_LOG="$backend_log" "$fake_bin/idris-arm-backend" >/dev/null 2
     exit 1
 fi
 : > "$backend_log"
+: > "$pkg_log"
 
 fixture_tools=$tmp/tools.tsv
 fixture_delivery=$tmp/delivery.tsv
@@ -102,14 +110,33 @@ app	runtime	package:app-phone	gap:not-published	fixture-runtime
 idris-arm-backend	host	n/a	n/a	known-bad-experimental-backend
 EOF_DELIVERY
 cat > "$fixture_packages" <<EOF_PACKAGES
-# package	target	abi	mode	source	source_ref	package_ref	url	sha256	command	entrypoint	main_class	jni_library	jni_property	install_requires	runtime_requires	package_requires
-app-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	-	-
+# package	target	abi	mode	source	source_ref	package_ref	url	sha256	command	entrypoint	main_class	jni_library	jni_property	install_requires	termux_packages	runtime_requires	package_requires
+app-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,jq	-	-
 EOF_PACKAGES
 
 CATFOOD_TOOLS="$fixture_tools" \
 CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
 CATFOOD_ANDROID_PACKAGES="$fixture_packages" \
     sh "$root/android/check.sh" ready phone >/dev/null
+
+# One inventory entry may expose several independently packaged commands.
+suite_delivery=$tmp/suite-delivery.tsv
+suite_packages=$tmp/suite-packages.tsv
+cat > "$suite_delivery" <<'EOF_SUITE_DELIVERY'
+# name	role	phone	tablet	note
+grease	reference	n/a	n/a	fixture-not-under-test
+app	runtime	packages:app-phone,helper-phone	gap:not-published	fixture-command-suite
+idris-arm-backend	host	n/a	n/a	known-bad-experimental-backend
+EOF_SUITE_DELIVERY
+cat > "$suite_packages" <<EOF_SUITE_PACKAGES
+# package	target	abi	mode	source	source_ref	package_ref	url	sha256	command	entrypoint	main_class	jni_library	jni_property	install_requires	termux_packages	runtime_requires	package_requires
+app-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,jq	-	-
+helper-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	helper	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,jq	-	-
+EOF_SUITE_PACKAGES
+CATFOOD_TOOLS="$fixture_tools" \
+CATFOOD_ANDROID_DELIVERY="$suite_delivery" \
+CATFOOD_ANDROID_PACKAGES="$suite_packages" \
+    sh "$root/android/check.sh" check >/dev/null
 
 # DEX/JNI metadata becomes a generated shell command. Reject shell syntax in
 # every manifest field that is interpolated into that wrapper.
@@ -132,6 +159,7 @@ assert_package_manifest_rejected 11 'classes.dex;echo'
 assert_package_manifest_rejected 12 'org.isomorphisms.app.Main$Injected'
 assert_package_manifest_rejected 13 'lib/libapp.so;echo'
 assert_package_manifest_rejected 14 'app.library;echo'
+assert_package_manifest_rejected 16 'curl;echo'
 
 # A workspace path is local configuration, not manifest syntax. The installed
 # wrapper must preserve it literally instead of embedding it as shell source.
@@ -142,6 +170,7 @@ PATH="$fake_bin:$PATH" \
 CATFOOD_TEST_RELEASE="$fixture" \
 CATFOOD_BACKEND_LOG="$backend_log" \
 CATFOOD_APP_LOG="$app_log" \
+CATFOOD_PKG_LOG="$pkg_log" \
 CATFOOD_APP_PROCESS="$fake_bin/app_process" \
 CATFOOD_DEVICE_ABI=armeabi-v7a \
 CATFOOD_TARGET=phone \
@@ -160,14 +189,16 @@ grep -F '# catfood android dex-jni wrapper' "$workspace/bin/app" >/dev/null
 grep -F "source_ref	$source_ref" "$workspace/receipts/phone-app-phone.tsv" >/dev/null
 grep -F "package_ref	$package_ref" "$workspace/receipts/phone-app-phone.tsv" >/dev/null
 grep -F 'physical_device_execution	PENDING' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
+grep -Fx 'install -y curl jq' "$pkg_log" >/dev/null
 test ! -s "$backend_log"
 CATFOOD_APP_LOG="$app_log" CATFOOD_APP_PROCESS="$fake_bin/app_process" \
     "$workspace/bin/app" fixture-argument
 grep -F "CLASSPATH=$workspace/packages/app-phone/$package_ref/classes.dex" "$app_log" >/dev/null
 grep -F 'ARGS=-Dapp.library=' "$app_log" >/dev/null
 
-# The normal device provisioner must enter the same runtime-only path. It must
-# not install packages, clone sources, bootstrap a compiler, or use a backend.
+# The normal device provisioner must enter the same runtime-only path. It may
+# install manifest-declared commodity Termux packages, but it must not clone
+# sources, bootstrap a compiler/toolchain, or use a compiler backend.
 for forbidden in git make clang cmake javac gradle d8; do
     cat > "$fake_bin/$forbidden" <<'EOF_FORBIDDEN'
 #!/bin/sh
@@ -177,11 +208,13 @@ EOF_FORBIDDEN
     chmod 0755 "$fake_bin/$forbidden"
 done
 : > "$backend_log"
+: > "$pkg_log"
 provision_workspace=$tmp/provision-workspace
 PATH="$fake_bin:$PATH" \
 CATFOOD_TEST_RELEASE="$fixture" \
 CATFOOD_BACKEND_LOG="$backend_log" \
 CATFOOD_APP_LOG="$app_log" \
+CATFOOD_PKG_LOG="$pkg_log" \
 CATFOOD_APP_PROCESS="$fake_bin/app_process" \
 CATFOOD_DEVICE_ABI=armeabi-v7a \
 CATFOOD_TARGET=phone \
@@ -192,6 +225,7 @@ CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
 CATFOOD_ANDROID_PACKAGES="$fixture_packages" \
     sh "$root/provision.sh" >/dev/null
 test -x "$provision_workspace/bin/app"
+grep -Fx 'install -y curl jq' "$pkg_log" >/dev/null
 test ! -s "$backend_log"
 if find "$provision_workspace" -type d -name .git -print -quit | grep . >/dev/null; then
     printf '%s\n' 'Android provisioner created a source checkout' >&2
@@ -237,6 +271,7 @@ sed "s/$digest/0000000000000000000000000000000000000000000000000000000000000000/
     "$fixture_packages" > "$bad_packages"
 if PATH="$fake_bin:$PATH" \
    CATFOOD_TEST_RELEASE="$fixture" \
+   CATFOOD_PKG_LOG="$pkg_log" \
    CATFOOD_APP_PROCESS="$fake_bin/app_process" \
    CATFOOD_DEVICE_ABI=armeabi-v7a \
    CATFOOD_TARGET=phone \
