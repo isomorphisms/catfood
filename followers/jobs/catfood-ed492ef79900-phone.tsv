@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-ed492ef79900-phone
+repository	isomorphisms/catfood
+branch	android/reddit-dex-jni
+pr	32
+trigger_commit	ed492ef799003a67d8ca824ba518151682c87a23
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	phone
+follower_arch	armv7
+required	yes
+action	Run the exact PR #32 Reddit DEX/JNI phone bundle on the physical ARMv7 phone; first record the published reddit-phone.tar.gz SHA-256 in this job, then install, invoke reddit search, and preserve the physical-device receipt.
+acceptance_kind	physical-device
+acceptance_action	CATFOOD_TARGET=phone ./catfood; run the installed reddit command on the physical ARMv7 device and verify backend SHA b7d50d50bc1b11f3c470051a39693cfe5996608c plus the exact published bundle hash.
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	PR #32 explicitly leaves physical phone execution pending.
+superseded_by	-
+follow_policy	exact
