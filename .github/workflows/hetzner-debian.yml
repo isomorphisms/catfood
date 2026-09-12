@@ -1,0 +1,70 @@
+name: hetzner-debian
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/hetzner-debian.yml'
+      - 'provision.sh'
+      - 'refresh.sh'
+      - 'activate.sh'
+      - 'bootstrap.sh'
+      - 'build-tools.sh'
+      - 'doctor.sh'
+      - 'check-manifest.sh'
+      - 'tools.tsv'
+  pull_request:
+    paths:
+      - '.github/workflows/hetzner-debian.yml'
+      - 'provision.sh'
+      - 'refresh.sh'
+      - 'activate.sh'
+      - 'bootstrap.sh'
+      - 'build-tools.sh'
+      - 'doctor.sh'
+      - 'check-manifest.sh'
+      - 'tools.tsv'
+  workflow_dispatch:
+
+jobs:
+  fresh-debian-13-workbench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - name: Provision from the Hetzner-style root console
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v "$PWD:/catfood:ro" \
+            debian:13-slim \
+            sh -euxc '
+              printf "%s\n" "=== Debian receipt ==="
+              cat /etc/os-release
+              uname -a
+              dpkg --print-architecture
+              id
+
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update
+              apt-get install -y git ca-certificates
+
+              CATFOOD_ROOT=/opt \
+              CATFOOD_PREFIX=/usr/local \
+              CATFOOD_CACHE=/var/cache/catfood \
+              CATFOOD_DEPTH=1 \
+              CATFOOD_NO_PROFILE=1 \
+                sh /catfood/provision.sh
+
+              PATH=/usr/local/bin:/opt/bin:$PATH
+              export PATH
+
+              printf "%s\n" "=== Workbench receipt ==="
+              command -v java
+              java -version
+              command -v catfood-doctor
+              test -x /opt/bin/catfood-doctor
+              catfood-doctor
+              printf "%s\n" "PASS fresh-debian-13-workbench"
+            '
