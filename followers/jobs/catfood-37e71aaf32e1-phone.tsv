@@ -15,11 +15,11 @@ required	yes
 action	follower target for Cat Food commit 37e71aaf32e154a87c73b81a69f0b436ecff39fa on phone; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	physical-device
 acceptance_action	./catfood && sh android/check.sh gaps phone
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	shared-portable
-superseded_by	-
+superseded_by	catfood-9119baeb0963-phone
 follow_policy	exact

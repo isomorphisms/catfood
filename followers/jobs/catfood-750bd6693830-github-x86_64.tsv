@@ -15,11 +15,11 @@ required	yes
 action	carry forward the GitHub x86 runtime obligation to Cat Food commit 750bd669383043c3a981fb731bbe768e1b92f62f and record exact acceptance.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh github
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	carried-forward-from-8651-source-trigger
-superseded_by	-
+superseded_by	catfood-9119baeb0963-github-x86_64
 follow_policy	exact

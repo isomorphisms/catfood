@@ -1,0 +1,17 @@
+schema	aici-follower-receipt-v1
+job_id	catfood-9119baeb0963-container-x86_64
+repository	isomorphisms/catfood
+trigger_commit	9119baeb096323c3333281b05dfe688428d2b013
+follower_platform	container-x86_64
+follower_arch	x86_64
+acceptance_kind	runtime
+result	pass
+attempt_commit	9119baeb096323c3333281b05dfe688428d2b013
+os_runtime	Linux 6.18.35 x86_64 GNU/Linux
+build_command	-
+test_command	sh followers/accept-x86.sh container <detached-worktree-at-9119baeb096323c3333281b05dfe688428d2b013>
+artifact	-
+artifact_sha256	-
+evidence_url	-
+recorded_at	2026-09-12T20:42:46Z
+note	Independent container x86-64 runtime acceptance; does not claim GitHub, Hetzner, package publication, emulator, or physical Android evidence.

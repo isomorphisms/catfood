@@ -43,7 +43,7 @@ sh android/check.sh ready phone   # fails while intended phone runtime gaps rema
 sh android/check.sh ready tablet  # likewise for tablet
 ```
 
-Installation, publication, launch, behavior, emulator evidence, and physical-device evidence remain separate. An install receipt records exact package identity and leaves physical execution `PENDING` until the real device is exercised.
+Build, package, publication, installation, launch, runtime behavior, emulator execution, and physical-device execution remain separate. The machine-checked evidence receipt names every stage explicitly; the installer records only the package, publication, and installation results it actually observed and leaves the others `NOT_VERIFIED`.
 
 ### Android bootstrap
 

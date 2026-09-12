@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-9119baeb0963-github-x86_64
+repository	isomorphisms/catfood
+branch	fix/android-evidence-boundaries
+pr	37
+trigger_commit	9119baeb096323c3333281b05dfe688428d2b013
+leader_platform	github-x86_64-artifact
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit 9119baeb096323c3333281b05dfe688428d2b013 on github-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh github
+state	accepted
+last_attempt_commit	9119baeb096323c3333281b05dfe688428d2b013
+blocker	-
+evidence	catfood-9119baeb0963-github-x86_64.tsv
+depends_on	-
+reason	shared-portable
+superseded_by	-
+follow_policy	exact
