@@ -124,7 +124,11 @@ check_package_requirements() {
             exit 3
         }
         receipt="$workspace/receipts/$target-$required.tsv"
-        [ -f "$receipt" ] && grep -Fqx "package_ref${tab}$expected_ref" "$receipt" 2>/dev/null || {
+        [ -f "$receipt" ] &&
+        CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" \
+            sh "$root/android/check.sh" receipt "$receipt" >/dev/null 2>&1 &&
+        grep -Fqx "package_ref${tab}$expected_ref" "$receipt" 2>/dev/null &&
+        grep -Fqx "installation_result${tab}PASS" "$receipt" 2>/dev/null || {
             printf '%s requires package %s at %s before installation\n' "$package" "$required" "$expected_ref" >&2
             exit 3
         }
@@ -160,6 +164,8 @@ package_ids=$(awk -F '\t' -v target="$target" '
 ' "$packages")
 
 for package in $package_ids; do
+    publication_result=NOT_VERIFIED
+    publication_evidence=-
     row=$(awk -F '\t' -v package="$package" '
         /^[[:space:]]*($|#)/ { next }
         $1 == package { print; exit }
@@ -190,9 +196,9 @@ EOF_ROW
     receipt="$workspace/receipts/$target-$package.tsv"
     current=0
     if [ -d "$package_dir" ] && [ -f "$receipt" ] &&
-       grep -Fqx "package_ref${tab}$package_ref" "$receipt" 2>/dev/null &&
-       grep -Fqx "sha256${tab}$sha256" "$receipt" 2>/dev/null &&
-       grep -Fqx "termux_packages${tab}$termux_packages" "$receipt" 2>/dev/null; then
+       CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" \
+           sh "$root/android/check.sh" receipt "$receipt" >/dev/null 2>&1 &&
+       grep -Fqx "installation_result${tab}PASS" "$receipt" 2>/dev/null; then
         current=1
         while IFS="$tab" read -r command entrypoint; do
             [ -f "$package_dir/$entrypoint" ] || current=0
@@ -203,6 +209,7 @@ EOF_ROW
     fi
 
     if [ "$current" -eq 0 ]; then
+        rm -f "$receipt"
         if [ ! -f "$workspace/downloads/$package-$sha256" ] ||
            ! printf '%s  %s\n' "$sha256" "$workspace/downloads/$package-$sha256" | sha256sum -c - >/dev/null 2>&1; then
             download="$workspace/downloads/$package-$sha256"
@@ -212,6 +219,8 @@ EOF_ROW
             curl -fL --retry 2 "$url" -o "$temporary_download"
             printf '%s  %s\n' "$sha256" "$temporary_download" | sha256sum -c -
             mv "$temporary_download" "$download"
+            publication_result=PASS
+            publication_evidence=$url
         else
             download="$workspace/downloads/$package-$sha256"
         fi
@@ -263,22 +272,6 @@ EOF_ROW
         mkdir -p "$(dirname -- "$package_dir")"
         rm -rf "$package_dir"
         mv "$staging" "$package_dir"
-        {
-            printf 'package\t%s\n' "$package"
-            printf 'target\t%s\n' "$target"
-            printf 'abi\t%s\n' "$abi"
-            printf 'mode\t%s\n' "$mode"
-            printf 'source\t%s\n' "$source"
-            printf 'source_ref\t%s\n' "$source_ref"
-            printf 'package_ref\t%s\n' "$package_ref"
-            printf 'url\t%s\n' "$url"
-            printf 'sha256\t%s\n' "$sha256"
-            printf 'termux_packages\t%s\n' "$termux_packages"
-            printf 'runtime_requires\t%s\n' "$runtime_requires"
-            printf 'package_requires\t%s\n' "$package_requires"
-            printf 'physical_device_execution\tPENDING\n'
-        } > "$receipt.tmp.$$"
-        mv "$receipt.tmp.$$" "$receipt"
     else
         printf '%-24s current %s\n' "$package" "$package_ref"
     fi
@@ -317,6 +310,43 @@ EOF_WRAPPER
         printf '%-24s command %s\n' "$package" "$destination"
     done < "$entries_file"
     rm -f "$entries_file"
+
+    if [ "$current" -eq 0 ]; then
+        {
+            printf 'schema\tcatfood-android-evidence-v1\n'
+            printf 'package\t%s\n' "$package"
+            printf 'target\t%s\n' "$target"
+            printf 'abi\t%s\n' "$abi"
+            printf 'mode\t%s\n' "$mode"
+            printf 'source\t%s\n' "$source"
+            printf 'source_ref\t%s\n' "$source_ref"
+            printf 'package_ref\t%s\n' "$package_ref"
+            printf 'url\t%s\n' "$url"
+            printf 'sha256\t%s\n' "$sha256"
+            printf 'termux_packages\t%s\n' "$termux_packages"
+            printf 'runtime_requires\t%s\n' "$runtime_requires"
+            printf 'package_requires\t%s\n' "$package_requires"
+            printf 'build_result\tNOT_VERIFIED\n'
+            printf 'build_evidence\t-\n'
+            printf 'package_result\tPASS\n'
+            printf 'package_evidence\tsha256:%s\n' "$sha256"
+            printf 'publication_result\t%s\n' "$publication_result"
+            printf 'publication_evidence\t%s\n' "$publication_evidence"
+            printf 'installation_result\tPASS\n'
+            printf 'installation_evidence\t%s\n' "$package_dir"
+            printf 'launch_result\tNOT_VERIFIED\n'
+            printf 'launch_evidence\t-\n'
+            printf 'runtime_result\tNOT_VERIFIED\n'
+            printf 'runtime_evidence\t-\n'
+            printf 'emulator_result\tNOT_VERIFIED\n'
+            printf 'emulator_evidence\t-\n'
+            printf 'physical_device_result\tNOT_VERIFIED\n'
+            printf 'physical_device_evidence\t-\n'
+        } > "$receipt.tmp.$$"
+        CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" \
+            sh "$root/android/check.sh" receipt "$receipt.tmp.$$" >/dev/null
+        mv "$receipt.tmp.$$" "$receipt"
+    fi
 done
 
 printf '\nCat Food %s installed all currently published packages.\n' "$target"

@@ -23,10 +23,11 @@ printf '%s\n' 'new-runtime https://github.com/isomorphisms/new-runtime.git main 
 if CATFOOD_TOOLS="$tmp/tools-drift.tsv" \
    CATFOOD_ANDROID_DELIVERY="$tmp/delivery-drift.tsv" \
    CATFOOD_ANDROID_PACKAGES="$tmp/packages-drift.tsv" \
-       sh "$root/android/check.sh" check >/dev/null 2>&1; then
+       sh "$root/android/check.sh" check >"$tmp/inventory-drift.out" 2>&1; then
     printf '%s\n' 'an unclassified inventory addition escaped Android coverage checking' >&2
     exit 1
 fi
+grep -F 'missing declared inventory entry: new-runtime' "$tmp/inventory-drift.out" >/dev/null
 
 source_ref=1111111111111111111111111111111111111111
 package_ref=2222222222222222222222222222222222222222
@@ -188,13 +189,113 @@ test -f "$workspace/receipts/phone-app-phone.tsv"
 grep -F '# catfood android dex-jni wrapper' "$workspace/bin/app" >/dev/null
 grep -F "source_ref	$source_ref" "$workspace/receipts/phone-app-phone.tsv" >/dev/null
 grep -F "package_ref	$package_ref" "$workspace/receipts/phone-app-phone.tsv" >/dev/null
-grep -F 'physical_device_execution	PENDING' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
+grep -F 'build_result	NOT_VERIFIED' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
+grep -F 'package_result	PASS' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
+grep -F 'publication_result	PASS' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
+grep -F 'installation_result	PASS' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
+grep -F 'launch_result	NOT_VERIFIED' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
+grep -F 'runtime_result	NOT_VERIFIED' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
+grep -F 'emulator_result	NOT_VERIFIED' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
+grep -F 'physical_device_result	NOT_VERIFIED' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
+CATFOOD_TOOLS="$fixture_tools" \
+CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
+CATFOOD_ANDROID_PACKAGES="$fixture_packages" \
+    sh "$root/android/check.sh" receipt "$workspace/receipts/phone-app-phone.tsv" >/dev/null
+
+assert_receipt_rejected() {
+    name=$1
+    expected=$2
+    candidate=$3
+    if CATFOOD_TOOLS="$fixture_tools" \
+       CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
+       CATFOOD_ANDROID_PACKAGES="$fixture_packages" \
+           sh "$root/android/check.sh" receipt "$candidate" >"$tmp/$name.out" 2>&1; then
+        printf 'invalid evidence receipt unexpectedly passed: %s\n' "$name" >&2
+        exit 1
+    fi
+    grep -F "$expected" "$tmp/$name.out" >/dev/null
+}
+
+rewrite_receipt() {
+    field=$1
+    value=$2
+    output=$3
+    awk -F '\t' -v OFS='\t' -v field="$field" -v value="$value" \
+        '$1 == field { $2=value } { print }' \
+        "$workspace/receipts/phone-app-phone.tsv" > "$output"
+}
+
+# Evidence stages are mandatory and cannot be promoted through another stage.
+missing_stage_receipt=$tmp/missing-stage-receipt.tsv
+grep -v '^launch_result	' "$workspace/receipts/phone-app-phone.tsv" > "$missing_stage_receipt"
+assert_receipt_rejected missing-stage 'missing required field: launch_result' "$missing_stage_receipt"
+
+promoted_runtime_receipt=$tmp/promoted-runtime-receipt.tsv
+sed \
+    -e 's/^runtime_result	NOT_VERIFIED$/runtime_result	PASS/' \
+    -e 's/^runtime_evidence	-$/runtime_evidence	package-was-installed/' \
+    "$workspace/receipts/phone-app-phone.tsv" > "$promoted_runtime_receipt"
+assert_receipt_rejected promoted-runtime 'runtime PASS requires launch PASS' "$promoted_runtime_receipt"
+
+rewrite_receipt target tablet "$tmp/wrong-identity.tsv"
+assert_receipt_rejected wrong-identity 'target does not match packages.tsv' "$tmp/wrong-identity.tsv"
+rewrite_receipt build_result PENDING "$tmp/invalid-result.tsv"
+assert_receipt_rejected invalid-result 'invalid build_result: PENDING' "$tmp/invalid-result.tsv"
+rewrite_receipt build_evidence build.log "$tmp/unverified-with-evidence.tsv"
+assert_receipt_rejected unverified-with-evidence \
+    'build_evidence must be - when build_result is NOT_VERIFIED' "$tmp/unverified-with-evidence.tsv"
+rewrite_receipt installation_evidence - "$tmp/pass-without-evidence.tsv"
+assert_receipt_rejected pass-without-evidence \
+    'installation_evidence must identify evidence' "$tmp/pass-without-evidence.tsv"
+rewrite_receipt package_evidence sha256:bad "$tmp/wrong-package-evidence.tsv"
+assert_receipt_rejected wrong-package-evidence \
+    'package PASS must cite the declared SHA-256' "$tmp/wrong-package-evidence.tsv"
+rewrite_receipt publication_evidence https://example.invalid/other "$tmp/wrong-publication-evidence.tsv"
+assert_receipt_rejected wrong-publication-evidence \
+    'publication PASS must cite the declared URL' "$tmp/wrong-publication-evidence.tsv"
+
+sed \
+    -e 's/^package_result	PASS$/package_result	FAIL/' \
+    -e 's/^package_evidence	.*$/package_evidence	package-check-failed/' \
+    "$workspace/receipts/phone-app-phone.tsv" > "$tmp/promoted-installation.tsv"
+assert_receipt_rejected promoted-installation \
+    'installation PASS requires package PASS' "$tmp/promoted-installation.tsv"
+
+sed \
+    -e 's/^installation_result	PASS$/installation_result	FAIL/' \
+    -e 's|^installation_evidence	.*$|installation_evidence	installation-failed|' \
+    -e 's/^launch_result	NOT_VERIFIED$/launch_result	PASS/' \
+    -e 's/^launch_evidence	-$/launch_evidence	launch.log/' \
+    "$workspace/receipts/phone-app-phone.tsv" > "$tmp/promoted-launch.tsv"
+assert_receipt_rejected promoted-launch 'launch PASS requires installation PASS' "$tmp/promoted-launch.tsv"
+
+sed \
+    -e 's/^physical_device_result	NOT_VERIFIED$/physical_device_result	PASS/' \
+    -e 's/^physical_device_evidence	-$/physical_device_evidence	device.log/' \
+    "$workspace/receipts/phone-app-phone.tsv" > "$tmp/promoted-device.tsv"
+assert_receipt_rejected promoted-device \
+    'emulator/physical-device PASS requires runtime PASS' "$tmp/promoted-device.tsv"
+
+cp "$workspace/receipts/phone-app-phone.tsv" "$tmp/unknown-field.tsv"
+printf 'combined_success\tPASS\n' >> "$tmp/unknown-field.tsv"
+assert_receipt_rejected unknown-field 'unknown field: combined_success' "$tmp/unknown-field.tsv"
+
+rewrite_receipt schema catfood-android-evidence-v0 "$tmp/old-schema.tsv"
+assert_receipt_rejected old-schema 'unsupported schema: catfood-android-evidence-v0' "$tmp/old-schema.tsv"
+cp "$workspace/receipts/phone-app-phone.tsv" "$tmp/duplicate-field.tsv"
+printf 'runtime_result\tPASS\n' >> "$tmp/duplicate-field.tsv"
+assert_receipt_rejected duplicate-field 'duplicate field: runtime_result' "$tmp/duplicate-field.tsv"
+rewrite_receipt package absent-phone "$tmp/unknown-package.tsv"
+assert_receipt_rejected unknown-package \
+    'package is not declared in packages.tsv: absent-phone' "$tmp/unknown-package.tsv"
 grep -Fx 'install -y curl jq' "$pkg_log" >/dev/null
 test ! -s "$backend_log"
 CATFOOD_APP_LOG="$app_log" CATFOOD_APP_PROCESS="$fake_bin/app_process" \
     "$workspace/bin/app" fixture-argument
 grep -F "CLASSPATH=$workspace/packages/app-phone/$package_ref/classes.dex" "$app_log" >/dev/null
 grep -F 'ARGS=-Dapp.library=' "$app_log" >/dev/null
+grep -F 'runtime_result	NOT_VERIFIED' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
+grep -F 'physical_device_result	NOT_VERIFIED' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
 
 # The normal device provisioner must enter the same runtime-only path. It may
 # install manifest-declared commodity Termux packages, but it must not clone

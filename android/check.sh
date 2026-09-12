@@ -184,6 +184,141 @@ END {
 ' "$packages" "$tools" "$delivery"
 
 command=${1:-check}
+
+check_receipt() {
+    receipt=$1
+    [ -f "$receipt" ] || {
+        printf 'Cat Food Android evidence receipt is missing: %s\n' "$receipt" >&2
+        exit 1
+    }
+
+    awk -v packages="$packages" -v receipt="$receipt" '
+    function fail(message) {
+        print receipt ": " message > "/dev/stderr"
+        failed = 1
+    }
+    function remember_package() {
+        id=$1
+        if (!(id in package_seen)) {
+            package_seen[id] = 1
+            package_target[id]=$2
+            package_abi[id]=$3
+            package_mode[id]=$4
+            package_source[id]=$5
+            package_source_ref[id]=$6
+            package_ref[id]=$7
+            package_url[id]=$8
+            package_sha256[id]=$9
+            package_termux_packages[id]=$16
+            package_runtime_requires[id]=$17
+            package_requires[id]=$18
+        }
+    }
+    function require_field(name) {
+        required[name] = 1
+        if (!(name in value)) fail("missing required field: " name)
+    }
+    function require_identity(name, expected) {
+        require_field(name)
+        if ((name in value) && value[name] != expected)
+            fail(name " does not match packages.tsv: " value[name])
+    }
+    function check_stage(stage,    result_key, evidence_key, result, evidence) {
+        result_key = stage "_result"
+        evidence_key = stage "_evidence"
+        require_field(result_key)
+        require_field(evidence_key)
+        result = value[result_key]
+        evidence = value[evidence_key]
+        if (result != "PASS" && result != "FAIL" && result != "SKIP" && result != "NOT_VERIFIED")
+            fail("invalid " result_key ": " result)
+        if (result == "NOT_VERIFIED" && evidence != "-")
+            fail(evidence_key " must be - when " result_key " is NOT_VERIFIED")
+        if (result != "NOT_VERIFIED" && evidence == "-")
+            fail(evidence_key " must identify evidence or a reason when " result_key " is " result)
+    }
+
+    BEGIN { FS = "\t" }
+
+    FILENAME == packages {
+        if ($0 ~ /^[[:space:]]*($|#)/) next
+        remember_package()
+        next
+    }
+
+    FILENAME == receipt {
+        if ($0 ~ /^[[:space:]]*($|#)/) next
+        if (NF != 2) {
+            fail("expected two tab-separated fields on line " FNR)
+            next
+        }
+        if ($1 in value) fail("duplicate field: " $1)
+        value[$1] = $2
+        next
+    }
+
+    END {
+        require_field("schema")
+        require_field("package")
+        if (value["schema"] != "catfood-android-evidence-v1")
+            fail("unsupported schema: " value["schema"])
+
+        package = value["package"]
+        if (!(package in package_seen)) {
+            fail("package is not declared in packages.tsv: " package)
+        } else {
+            require_identity("target", package_target[package])
+            require_identity("abi", package_abi[package])
+            require_identity("mode", package_mode[package])
+            require_identity("source", package_source[package])
+            require_identity("source_ref", package_source_ref[package])
+            require_identity("package_ref", package_ref[package])
+            require_identity("url", package_url[package])
+            require_identity("sha256", package_sha256[package])
+            require_identity("termux_packages", package_termux_packages[package])
+            require_identity("runtime_requires", package_runtime_requires[package])
+            require_identity("package_requires", package_requires[package])
+        }
+
+        check_stage("build")
+        check_stage("package")
+        check_stage("publication")
+        check_stage("installation")
+        check_stage("launch")
+        check_stage("runtime")
+        check_stage("emulator")
+        check_stage("physical_device")
+
+        if (value["package_result"] == "PASS" &&
+            value["package_evidence"] != "sha256:" value["sha256"])
+            fail("package PASS must cite the declared SHA-256")
+        if (value["publication_result"] == "PASS" &&
+            value["publication_evidence"] != value["url"])
+            fail("publication PASS must cite the declared URL")
+        if (value["installation_result"] == "PASS" && value["package_result"] != "PASS")
+            fail("installation PASS requires package PASS")
+        if (value["launch_result"] == "PASS" && value["installation_result"] != "PASS")
+            fail("launch PASS requires installation PASS")
+        if (value["runtime_result"] == "PASS" && value["launch_result"] != "PASS")
+            fail("runtime PASS requires launch PASS")
+        if ((value["emulator_result"] == "PASS" || value["physical_device_result"] == "PASS") &&
+            value["runtime_result"] != "PASS")
+            fail("emulator/physical-device PASS requires runtime PASS")
+
+        allowed["schema"] = allowed["package"] = 1
+        split("target abi mode source source_ref package_ref url sha256 termux_packages runtime_requires package_requires", identity, / /)
+        for (i in identity) allowed[identity[i]] = 1
+        split("build package publication installation launch runtime emulator physical_device", stages, / /)
+        for (i in stages) {
+            allowed[stages[i] "_result"] = 1
+            allowed[stages[i] "_evidence"] = 1
+        }
+        for (name in value) if (!(name in allowed)) fail("unknown field: " name)
+        exit failed
+    }
+    ' "$packages" "$receipt"
+}
+
 case "$command" in
     check)
         printf '%s\n' 'Cat Food Android delivery manifests are structurally valid'
@@ -208,8 +343,13 @@ case "$command" in
             printf 'Cat Food %s distribution manifest is ready for package/runtime acceptance\n' "$target"
         fi
         ;;
+    receipt)
+        [ "$#" -eq 2 ] || { printf 'usage: %s receipt RECEIPT\n' "$0" >&2; exit 2; }
+        check_receipt "$2"
+        printf '%s\n' 'Cat Food Android evidence receipt is valid'
+        ;;
     *)
-        printf 'usage: %s [check | gaps phone|tablet | ready phone|tablet]\n' "$0" >&2
+        printf 'usage: %s [check | gaps phone|tablet | ready phone|tablet | receipt RECEIPT]\n' "$0" >&2
         exit 2
         ;;
 esac
