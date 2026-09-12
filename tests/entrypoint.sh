@@ -50,6 +50,20 @@ if grep -F 'forbidden' "$log" >/dev/null; then
     exit 1
 fi
 
+git -C "$termux_home/opt/grease" remote set-url origin https://github.com/isomorphisms/grease
+git -C "$termux_home/opt/catfood-fixture" remote set-url origin https://github.com/isomorphisms/catfood
+HOME=$termux_home \
+PREFIX=/data/data/com.termux/files/usr \
+TERMUX_VERSION=0.118.3 \
+PATH=$fake_bin:$PATH \
+CATFOOD_TEST_LOG=$log \
+CATFOOD_TARGET=termux \
+CATFOOD_MANIFEST=$manifest \
+CATFOOD_DEPTH=1 \
+CATFOOD_NO_PACKAGES=1 \
+CATFOOD_NO_PROFILE=1 \
+    sh "$root/catfood" >/dev/null
+
 cloud_root=$termux_home/opt
 mkdir -p "$cloud_root/bin"
 cat > "$cloud_root/bin/ysh" <<'EOF'

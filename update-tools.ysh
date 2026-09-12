@@ -12,6 +12,10 @@ manifest=${3:-${CATFOOD_MANIFEST:-$root/tools.tsv}}
 links_only=${4:-${CATFOOD_LINKS_ONLY:-0}}
 failures=0
 
+same_repository_url() {
+    test "${1%.git}" = "${2%.git}"
+}
+
 feed_repository() {
     name=$1
     repository=$2
@@ -23,7 +27,7 @@ feed_repository() {
 
     if test -e "$target/.git"; then
         origin=$(git -C "$target" remote get-url origin 2>/dev/null || true)
-        if test "$origin" != "$repository"; then
+        if ! same_repository_url "$origin" "$repository"; then
             printf '  origin is %s, expected %s; leaving it alone\n' "${origin:-<missing>}" "$repository" >&2
             failures=1
             return 0

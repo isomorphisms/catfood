@@ -16,10 +16,14 @@ need() {
     }
 }
 
+same_repository_url() {
+    [ "${1%.git}" = "${2%.git}" ]
+}
+
 update_grease() {
     if [ -e "$grease/.git" ]; then
         origin=$(git -C "$grease" remote get-url origin 2>/dev/null || true)
-        if [ "$origin" != "$grease_url" ]; then
+        if ! same_repository_url "$origin" "$grease_url"; then
             printf 'grease origin is %s, expected %s; leaving it alone\n' "${origin:-<missing>}" "$grease_url" >&2
             return 1
         fi
