@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-aff9a226ae51-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	add-gopeed
+pr	40
+trigger_commit	aff9a226ae51399bddeda506ac428215d9a040d1
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	carried-forward artifact follower for Cat Food commit aff9a226ae51399bddeda506ac428215d9a040d1; validate the unresolved Android artifact contract without treating the local gdl client feed as Gopeed app/package evidence.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	carried-forward unresolved Android artifact validation from 81af99c73e7549cc38b646135c219447d87238ed; the newer source trigger does not erase that obligation
+superseded_by	-
+follow_policy	exact
