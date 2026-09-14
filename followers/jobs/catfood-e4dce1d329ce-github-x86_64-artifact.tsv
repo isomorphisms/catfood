@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-e4dce1d329ce-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	android/powervr-runners
+pr	41
+trigger_commit	e4dce1d329ce6562466e12a2dfcd1490684b0deb
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	Validate the exact published phone and tablet PowerVR runner packages referenced by Cat Food commit e4dce1d329ce6562466e12a2dfcd1490684b0deb, including URL, SHA-256, metadata, extraction, and install contract.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device
+superseded_by	-
+follow_policy	exact
