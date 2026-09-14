@@ -1,25 +1,31 @@
-# Cat Food help pages
+# Cat Food help
 
-Cat Food help is part of delivery, not an afterthought. When a Cat Food entry exposes a command, API, protocol, or other user-facing control surface, keep a short checked-in reference here and expose it through `./catfood help`.
+Every Cat Food tool has a discoverable help topic.
 
-A help page should record, where applicable:
+`./catfood help` lists Grease plus every current `tools.tsv` entry. `./catfood help TOOL` first looks for a checked-in `docs/help/TOOL.md` page; if none exists, it generates a compact reference from the inventory with the repository, branch, submodule policy, and workbench checkout location.
 
-- the commands or API endpoints;
-- arguments, methods, request shapes, and important response shapes;
+That makes help total over the Cat Food inventory: adding a new `tools.tsv` row automatically adds a help topic. A richer checked-in page is appropriate when the tool exposes an API, protocol, important environment variables, target-specific behavior, or useful runnable examples.
+
+A detailed page should record, where applicable:
+
+- commands or API endpoints;
+- arguments, methods, request and response shapes;
 - authentication and configuration;
 - small phone/Termux examples that can actually be copied and run;
 - target-specific limitations and evidence boundaries;
-- the implementation files that are the source of truth.
+- implementation files that are the source of truth.
 
-Do not claim availability merely because an implementation exists. If a listener, package, Android permission, device behavior, or other runtime condition still needs enabling or verification, say so on the help page.
+Do not claim runtime availability merely because an implementation exists. If a listener, package, Android permission, device behavior, or other runtime condition still needs verification, say so.
 
-Current topics:
+Current detailed pages:
 
-- `gopeed` — [Gopeed REST API](gopeed.md): optional local REST listener, task/config/extension endpoints, authentication, and Termux examples.
+- `gopeed` — [Gopeed REST API](gopeed.md): local REST listener, Cat Food client aliases, task/config/extension endpoints, authentication, and Termux examples.
 
-From a Cat Food checkout:
+Examples:
 
 ```sh
 ./catfood help
 ./catfood help gopeed
+./catfood help Idric
+./catfood help ib
 ```
