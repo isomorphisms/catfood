@@ -66,6 +66,7 @@ case $target in
         fi
         CATFOOD_ROOT=$workspace CATFOOD_CACHE=$cache CATFOOD_TARGET=$target \
             sh "$root/android/install.sh"
+        CATFOOD_ROOT=$workspace sh "$root/android/install-local-clients.sh"
         printf 'cat food %s runtime packages are current under %s\n' "$target" "$workspace"
         exit 0
         ;;
@@ -128,7 +129,7 @@ install_ysh() {
     tar --no-same-owner -xzf "$archive" -C "$cache"
     (
         cd "$source_dir"
-        ./configure --prefix "$prefix" --datarootdir="$prefix/share"
+        ./configure --prefix="$prefix" --datarootdir="$prefix/share"
         _build/oils.sh
         if [ -w "$prefix" ]; then ./install; else as_root ./install; fi
     )
