@@ -16,6 +16,7 @@ issh https://github.com/isomorphisms/issh.git master none
 fieldmouse https://github.com/isomorphisms/fieldmouse.git edric-rewrite none
 idris-arm-backend https://github.com/isomorphisms/idris-arm-backend.git main none
 idris-shader-backend https://github.com/isomorphisms/idris-shader-backend.git main none
+powervr-acceptance https://github.com/isomorphisms/idris-shader-backend.git powervr-hello-x none
 sent.idr https://github.com/isomorphisms/sent.idr.git main none
 programmers-keyboard https://github.com/isomorphisms/programmers-keyboard.git main none
 icu https://github.com/dilapidated-shed/icu.git icu none
