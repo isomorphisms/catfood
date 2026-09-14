@@ -3,12 +3,9 @@
 # target disposition: package:<package-id> | packages:<package-id>,<package-id> | gap:<reason> | n/a
 # `review` is explicit unresolved classification debt and blocks readiness.
 grease	runtime	package:grease-phone	package:grease-tablet	separate-bootstrap-runtime
-ysh	runtime	package:grease-phone	package:grease-tablet	Oils-YSH-applet-from-pinned-native-runtime
-osh	runtime	package:grease-phone	package:grease-tablet	Oils-OSH-applet-from-pinned-native-runtime
-oils-for-unix	runtime	package:grease-phone	package:grease-tablet	actual-Oils-multicall-binary-interface
 ish	runtime	gap:android-package-missing	gap:android-package-missing	maintained-Idric-implementation-needs-honest-mobile-artifacts
 
-oils	host	n/a	n/a	project-source-and-host-build-input; mobile-runtime-is-oils-for-unix-plus-applets
+oils	host	n/a	n/a	project-source-and-host-build-input; Android package exposes ysh,osh,oils-for-unix
 ir	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
 irk	review	gap:classification	gap:classification	intent-needs-explicit-classification
 ithon	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
