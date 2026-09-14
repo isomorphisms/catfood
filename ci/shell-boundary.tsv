@@ -15,5 +15,6 @@ tests/entrypoint.sh	test	sh	Cloud and generic Termux dispatch fixtures
 tests/targets.sh	test	sh	Target selection fixtures
 tests/android-delivery.sh	test	sh	Whole-inventory Android runtime delivery fixtures
 update-tools.ysh	grease	ysh	Repository feed after the Grease bootstrap
+gopeed.ysh	grease	ysh	User-facing Gopeed REST client after the Grease bootstrap
 fdroid-deploy.ysh	grease	ysh	F-Droid publication command
 fdroid-check-deployed.ysh	grease	ysh	F-Droid publication status command
