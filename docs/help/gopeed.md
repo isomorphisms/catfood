@@ -4,15 +4,16 @@ Cat Food carries this page as the quick reference for controlling Gopeed from Te
 
 ## Availability on Android
 
-The native Gopeed app does **not** need HTTP to operate internally; current native builds invoke the Go backend directly. The same backend can also start its optional REST server when its stored API configuration has `enable: true`.
+The native Gopeed app does **not** need HTTP to operate internally; native builds invoke the Go backend directly. The same backend also exposes its REST server. In the current `isomorphisms/gopeed` mirror, native startup enables that REST server by default when no API configuration has been stored yet. An existing stored API configuration still wins, so an explicit `enable: false` remains disabled.
 
 The initialized REST defaults are:
 
+- enabled: `true` for a fresh/unset native API configuration
 - network: `tcp`
 - address: `127.0.0.1:9999`
 - token: empty unless configured
 
-So installing or launching the Android app does not by itself prove that `127.0.0.1:9999` is listening. Enable the API server in Gopeed before using these Termux examples, then verify it with `GET /api/v1/info`.
+The default listener is therefore loopback-only: Termux on the same Android device can reach it, but it is not exposed to the LAN. A particular installed Android build still needs runtime verification; check it with `GET /api/v1/info` or `gopeed info` rather than treating source configuration as a physical-device receipt.
 
 ```sh
 GOPEED=http://127.0.0.1:9999
