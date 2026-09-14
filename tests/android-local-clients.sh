@@ -39,6 +39,7 @@ grep -Fx 'install -y curl jq' "$pkg_log" >/dev/null
 
 # Re-feeding may refresh Cat Food's own files, but must not overwrite a user's
 # unrelated command occupying one of the stable names.
+rm -f "$workspace/bin/gdl"
 printf '%s\n' '#!/bin/sh' > "$workspace/bin/gdl"
 chmod 0755 "$workspace/bin/gdl"
 if PATH="$fake_bin:$PATH" \
