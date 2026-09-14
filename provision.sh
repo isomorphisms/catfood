@@ -129,7 +129,7 @@ install_ysh() {
     tar --no-same-owner -xzf "$archive" -C "$cache"
     (
         cd "$source_dir"
-        ./configure --prefix="$prefix" --datarootdir="$prefix/share"
+        ./configure --prefix "$prefix" --datarootdir="$prefix/share"
         _build/oils.sh
         if [ -w "$prefix" ]; then ./install; else as_root ./install; fi
     )
