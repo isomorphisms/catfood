@@ -100,7 +100,9 @@ Amazon and AbeBooks credentials stay outside Git. A private config directory can
 
 ## Stable commands
 
-Workbenches keep stable command names under `$CATFOOD_ROOT/bin`. Current host names include `R`, `Rscript`, `grease`, `edric`, `idris2`, `fieldmouse`, `icu`, `ib-smoke`, `ithon`, `osh`, `ysh`, `az`, `abe`, `fdroid-deploy`, and `fdroid-check-deployed` when their targets are present. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`.
+Workbenches keep stable command names under `$CATFOOD_ROOT/bin`. Current host names include `R`, `Rscript`, `grease`, `edric`, `idris2`, `fieldmouse`, `icu`, `ib-smoke`, `ithon`, `osh`, `ysh`, `az`, `abe`, `gopeed`, `gdl`, `go_down_load`, `fdroid-deploy`, and `fdroid-check-deployed` when their targets are present. `aa` is installed when the fed `az` checkout contains `bin/aa`. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`.
+
+`gdl` and `go_down_load` are aliases of the `gopeed` REST client. It accepts a direct URL or one URL on standard input, so `aa resolve MD5 | gdl` hands a resolved Anna's Archive member URL to Gopeed without making Gopeed part of AA's HTTP transport.
 
 Android exposes only commands from successfully installed runtime packages. The checked-in package inventory currently includes the existing Grease/YSH phone and tablet artifacts; all other intended runtime gaps stay explicit in `android/delivery.tsv` until actual packages exist.
 
