@@ -15,7 +15,7 @@ idric-cli	runtime	gap:android-package-missing	gap:android-package-missing	comman
 issh	runtime	gap:android-package-missing	gap:android-package-missing	shell-runtime
 fieldmouse	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
 idris-arm-backend	host	n/a	n/a	experimental-compiler-backend-not-delivery-prerequisite
-idris-shader-backend	host	n/a	n/a	experimental-compiler-backend-not-delivery-prerequisite
+idris-shader-backend	runtime	package:powervr-runner-phone	package:powervr-runner-tablet	android-package-is-prebuilt-acceptance-runner;compiler-backend-remains-host-side
 sent.idr	review	gap:classification	gap:classification	intent-needs-explicit-classification
 programmers-keyboard	runtime	gap:android-package-missing	gap:android-package-missing	android-application
 icu	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command

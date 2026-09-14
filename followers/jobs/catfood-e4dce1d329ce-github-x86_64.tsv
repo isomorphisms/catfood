@@ -1,9 +1,9 @@
 schema	aici-follower-job-v1
-job_id	catfood-81af99c73e75-github-x86_64
+job_id	catfood-e4dce1d329ce-github-x86_64
 repository	isomorphisms/catfood
-branch	add-gopeed
-pr	39
-trigger_commit	81af99c73e7549cc38b646135c219447d87238ed
+branch	android/powervr-runners
+pr	41
+trigger_commit	e4dce1d329ce6562466e12a2dfcd1490684b0deb
 leader_platform	phone
 leader_arch	armv7
 leader_evidence	-
@@ -12,14 +12,14 @@ artifact_sha256	-
 follower_platform	github-x86_64
 follower_arch	x86_64
 required	yes
-action	follower target for Cat Food commit 81af99c73e7549cc38b646135c219447d87238ed on github-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+action	Run the exact Cat Food commit e4dce1d329ce6562466e12a2dfcd1490684b0deb through the GitHub-hosted x86_64 follower acceptance action and preserve an exact receipt.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh github
-state	superseded
+state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	shared-portable
-superseded_by	catfood-e4dce1d329ce-github-x86_64
+superseded_by	-
 follow_policy	exact
