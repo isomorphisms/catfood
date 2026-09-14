@@ -12,14 +12,14 @@ artifact_sha256	4dba2cd39d7a0fc440f8f1c09b379e2712c78411cbd8a648cc411fcfcce54ba7
 follower_platform	tablet
 follower_arch	aarch64
 required	yes
-action	Install the exact Cat Food tablet package for source commit e4dce1d329ce6562466e12a2dfcd1490684b0deb on the physical AArch64 tablet and record its independent installation/runtime result without substituting it for the PowerVR phone receipt.
+action	Run the current whole-inventory Cat Food tablet acceptance carried forward from 81af99c73e7549cc38b646135c219447d87238ed, then verify the exact packaged PowerVR acceptance runner on the physical AArch64 tablet without substituting tablet evidence for the PowerVR phone receipt.
 acceptance_kind	physical-device
-acceptance_action	CATFOOD_TARGET=tablet ./catfood; verify the installed powervr-accept package identity and package hash 4dba2cd39d7a0fc440f8f1c09b379e2712c78411cbd8a648cc411fcfcce54ba7 on the physical AArch64 tablet; do not promote tablet evidence into phone hardware evidence.
+acceptance_action	CATFOOD_TARGET=tablet ./catfood; sh android/check.sh gaps tablet; verify the installed powervr-accept package identity and package hash 4dba2cd39d7a0fc440f8f1c09b379e2712c78411cbd8a648cc411fcfcce54ba7 on the physical AArch64 tablet; do not promote tablet evidence into phone hardware evidence.
 state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
-reason	android-artifact-and-device
+reason	carries forward catfood-81af99c73e75-tablet and adds the PowerVR package/device follower; neither obligation is accepted yet
 superseded_by	-
 follow_policy	exact
