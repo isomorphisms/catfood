@@ -20,6 +20,6 @@ last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
-reason	carried-forward unresolved Android artifact validation from 9119baeb096323c3333281b05dfe688428d2b013; superseded here only because the obligation is carried forward, not because artifact evidence exists
-superseded_by	catfood-aff9a226ae51-github-x86_64-artifact
+reason	carried-forward unresolved Android artifact validation from 9119baeb096323c3333281b05dfe688428d2b013; the newer source trigger does not erase that obligation
+superseded_by	catfood-2ac3b68a3136-github-x86_64-artifact
 follow_policy	exact

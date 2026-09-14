@@ -1,9 +1,9 @@
 schema	aici-follower-job-v1
-job_id	catfood-81af99c73e75-hetzner-x86_64
+job_id	catfood-2ac3b68a3136-hetzner-x86_64
 repository	isomorphisms/catfood
-branch	add-gopeed
-pr	39
-trigger_commit	81af99c73e7549cc38b646135c219447d87238ed
+branch	fix/android-inventory-dispositions
+pr	38
+trigger_commit	2ac3b68a3136f23873ad5d8ad08f0fc11870cef3
 leader_platform	phone
 leader_arch	armv7
 leader_evidence	-
@@ -12,14 +12,14 @@ artifact_sha256	-
 follower_platform	hetzner-x86_64
 follower_arch	x86_64
 required	yes
-action	follower target for Cat Food commit 81af99c73e7549cc38b646135c219447d87238ed on hetzner-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+action	follower target for Cat Food commit 2ac3b68a3136f23873ad5d8ad08f0fc11870cef3 on hetzner-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh cloud
-state	superseded
+state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	shared-portable
-superseded_by	catfood-2ac3b68a3136-hetzner-x86_64
+superseded_by	-
 follow_policy	exact
