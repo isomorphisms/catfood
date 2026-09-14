@@ -6,6 +6,7 @@ root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 usage() {
     cat <<'EOF'
 usage: ./catfood [--target]
+       ./catfood help [topic]
 
 Feed the selected Cat Food target.
 
@@ -20,12 +21,36 @@ Compatibility targets:
   hetzner    alias for cloud
   CATFOOD_TARGET=cloud|termux remains valid
 
+Help pages:
+  gopeed     Gopeed REST API endpoints and Termux examples
+
 Overrides:
   CATFOOD_TARGET=phone|tablet|container|cloud|termux|hetzner
   CATFOOD_ROOT=/path/to/workspace
   CATFOOD_BUILD_TOOLS=0|1
   CATFOOD_INSTALL_YSH=0|1
 EOF
+}
+
+help_index() {
+    cat <<'EOF'
+Cat Food help pages:
+  gopeed     Gopeed REST API endpoints and Termux examples
+
+Use: ./catfood help TOPIC
+EOF
+}
+
+show_help_page() {
+    case ${1:-} in
+        '') help_index ;;
+        gopeed) cat "$root/docs/help/gopeed.md" ;;
+        *)
+            printf 'unknown Cat Food help topic: %s\n\n' "$1" >&2
+            help_index >&2
+            return 2
+            ;;
+    esac
 }
 
 detect_target() {
@@ -47,6 +72,10 @@ case ${1:-} in
     '') ;;
     --target) show_target=1 ;;
     -h|--help) usage; exit 0 ;;
+    help)
+        show_help_page "${2:-}"
+        exit $?
+        ;;
     *) usage >&2; exit 2 ;;
 esac
 
