@@ -6,6 +6,7 @@ root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 usage() {
     cat <<'EOF'
 usage: ./catfood [--target]
+       ./catfood help [tool]
 
 Feed the selected Cat Food target.
 
@@ -20,12 +21,82 @@ Compatibility targets:
   hetzner    alias for cloud
   CATFOOD_TARGET=cloud|termux remains valid
 
+Help:
+  ./catfood help          list every Cat Food tool
+  ./catfood help TOOL     show that tool's Cat Food reference
+
 Overrides:
   CATFOOD_TARGET=phone|tablet|container|cloud|termux|hetzner
   CATFOOD_ROOT=/path/to/workspace
   CATFOOD_BUILD_TOOLS=0|1
   CATFOOD_INSTALL_YSH=0|1
 EOF
+}
+
+help_index() {
+    printf '%s\n' 'Cat Food help topics:'
+    printf '  %s\n' grease
+    awk '$1 !~ /^#/ && NF >= 4 { print "  " $1 }' "$root/tools.tsv"
+    cat <<'EOF'
+
+Use: ./catfood help TOOL
+A checked-in docs/help/TOOL.md page overrides the generic inventory reference.
+EOF
+}
+
+show_inventory_help() {
+    topic=$1
+
+    if [ "$topic" = grease ]; then
+        cat <<'EOF'
+# grease
+
+Repository: https://github.com/isomorphisms/grease.git
+Branch: main
+Workbench checkout: $CATFOOD_ROOT/grease
+Cat Food role: stage-one shell bootstrap, fed separately before tools.tsv.
+
+Cat Food keeps Grease outside tools.tsv because it supplies the shell used to feed the remaining workbench. See bootstrap.sh for the exact bootstrap path and the Grease checkout itself for repository-specific command help.
+EOF
+        return 0
+    fi
+
+    line=$(awk -v topic="$topic" '$1 !~ /^#/ && NF >= 4 && $1 == topic { print; found=1; exit } END { if (!found) exit 1 }' "$root/tools.tsv") || return 1
+    set -- $line
+    name=$1
+    repository=$2
+    branch=$3
+    submodules=$4
+
+    printf '# %s\n\n' "$name"
+    printf 'Repository: %s\n' "$repository"
+    printf 'Branch: %s\n' "$branch"
+    printf 'Submodules: %s\n' "$submodules"
+    printf 'Workbench checkout: $CATFOOD_ROOT/%s\n' "$name"
+    printf '%s\n\n' 'Cat Food role: workbench inventory entry.'
+    printf '%s\n' 'This generic page records where Cat Food gets the tool and how it is fed. For repository-specific commands, use the tool or checkout help/README. A docs/help/TOOL.md page can provide a richer Cat Food reference for APIs, protocols, environment variables, examples, or target-specific constraints.'
+}
+
+show_help_page() {
+    topic=${1:-}
+    if [ -z "$topic" ]; then
+        help_index
+        return 0
+    fi
+
+    page=$root/docs/help/$topic.md
+    if [ -f "$page" ]; then
+        cat "$page"
+        return 0
+    fi
+
+    if show_inventory_help "$topic"; then
+        return 0
+    fi
+
+    printf 'unknown Cat Food help topic: %s\n\n' "$topic" >&2
+    help_index >&2
+    return 2
 }
 
 detect_target() {
@@ -47,6 +118,10 @@ case ${1:-} in
     '') ;;
     --target) show_target=1 ;;
     -h|--help) usage; exit 0 ;;
+    help)
+        show_help_page "${2:-}"
+        exit $?
+        ;;
     *) usage >&2; exit 2 ;;
 esac
 

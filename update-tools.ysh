@@ -170,6 +170,83 @@ EOF
     fi
 }
 
+install_gopeed_command() {
+    script=$root/gopeed.ysh
+    wrapper=$workspace/bin/gopeed
+
+    test -f "$script" || return 0
+
+    if test -e "$wrapper" || test -L "$wrapper"; then
+        if test -f "$wrapper" && \
+           grep -F "# Cat Food's small command-line client for the local Gopeed REST service." \
+               "$wrapper" >/dev/null 2>&1; then
+            true
+        elif test -L "$wrapper"; then
+            if ! rm -f "$wrapper"; then
+                failures=1
+                return 0
+            fi
+        else
+            printf '  %s exists and is not the Cat Food Gopeed command; leaving it alone\n' \
+                "$wrapper" >&2
+            failures=1
+            return 0
+        fi
+    fi
+
+    if ! cp "$script" "$wrapper" || ! chmod 0755 "$wrapper"; then
+        failures=1
+    fi
+}
+
+install_aa_wrapper() {
+    script=$workspace/az/bin/aa
+    wrapper=$workspace/bin/aa
+
+    test -f "$script" || return 0
+
+    if test -e "$wrapper" || test -L "$wrapper"; then
+        if test -f "$wrapper" && grep -F '# catfood aa wrapper' "$wrapper" >/dev/null 2>&1; then
+            true
+        elif test -L "$wrapper"; then
+            if ! rm -f "$wrapper"; then
+                failures=1
+                return 0
+            fi
+        else
+            printf '  %s exists and is not a Cat Food wrapper; leaving it alone\n' "$wrapper" >&2
+            failures=1
+            return 0
+        fi
+    fi
+
+    if ! cat > "$wrapper" <<'EOF'
+#!/bin/sh
+# catfood aa wrapper
+set -u
+bin_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+workspace=$(dirname -- "$bin_dir")
+script=$workspace/az/bin/aa
+command=${1:-}
+status=0
+
+"$workspace/bin/ysh" "$script" "$@" || status=$?
+
+if test "$command" = search && test "$status" -eq 0; then
+    printf '%s\n' 'next: aa resolve <MD5> | gdl    # gdl = go_down_load = gopeed' >&2
+fi
+
+exit "$status"
+EOF
+    then
+        failures=1
+        return 0
+    fi
+    if ! chmod 0755 "$wrapper"; then
+        failures=1
+    fi
+}
+
 install_command_links() {
     if ! mkdir -p "$workspace/bin"; then
         failures=1
@@ -214,8 +291,13 @@ install_command_links() {
         "$workspace/grease/source/_bin/cxx-sh/ysh" \
         "$workspace/grease/source/bin/ysh"
 
+    install_gopeed_command
+    link_first go_down_load "$workspace/bin/gopeed"
+    link_first gdl "$workspace/bin/gopeed"
+
     install_az_wrapper az
     install_az_wrapper abe
+    install_aa_wrapper
 }
 
 command -v git >/dev/null 2>&1 || {

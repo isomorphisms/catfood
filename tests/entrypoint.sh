@@ -91,4 +91,17 @@ grep -F 'exec "$bin_dir/ysh"' "$cloud_root/bin/fdroid-deploy" >/dev/null
 grep -F 'exec "$bin_dir/ysh"' "$cloud_root/bin/fdroid-check-deployed" >/dev/null
 sh "$root/catfood" --help | grep -F 'CATFOOD_TARGET=cloud|termux' >/dev/null
 
-printf '%s\n' 'cat food cloud and generic Termux entrypoints pass'
+help_index=$temporary/help-index
+sh "$root/catfood" help > "$help_index"
+grep -Fx '  grease' "$help_index" >/dev/null
+awk '$1 !~ /^#/ && NF >= 4 { print $1 }' "$root/tools.tsv" | while IFS= read -r tool; do
+    grep -Fx "  $tool" "$help_index" >/dev/null || {
+        printf 'missing Cat Food help topic for %s\n' "$tool" >&2
+        exit 1
+    }
+done
+sh "$root/catfood" help gopeed | grep -F '# Gopeed REST API' >/dev/null
+sh "$root/catfood" help ib | grep -F 'Repository: https://github.com/isomorphisms/ib.git' >/dev/null
+sh "$root/catfood" help grease | grep -F 'stage-one shell bootstrap' >/dev/null
+
+printf '%s\n' 'cat food cloud, generic Termux, and inventory help entrypoints pass'

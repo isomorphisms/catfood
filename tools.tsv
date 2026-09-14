@@ -28,6 +28,7 @@ bookreader https://github.com/isomorphisms/bookreader.git master none
 harvest-images-from-pdf https://github.com/isomorphisms/harvest-images-from-pdf.git main none
 ddg https://github.com/isomorphisms/ddg.git develop recursive
 chawan https://github.com/isomorphisms/chawan.git master recursive
+gopeed https://github.com/isomorphisms/gopeed.git main none
 manimi https://github.com/isomorphisms/manimi.git master none
 wegert https://github.com/isomorphisms/wegert.git main none
 yt-shorts https://github.com/isomorphisms/yt-shorts.git main none
