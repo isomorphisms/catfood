@@ -12,14 +12,14 @@ artifact_sha256	714e5f706a05224ff4f43188a6fb043e7fa39f6a7f7f6ea7b0ef0dcb424502de
 follower_platform	phone
 follower_arch	armv7
 required	yes
-action	Install the exact Cat Food phone package for source commit e4dce1d329ce6562466e12a2dfcd1490684b0deb on the physical ARMv7 phone and run the packaged powervr-accept command; preserve the unchanged PowerVR hardware receipt.
+action	Run the current whole-inventory Cat Food phone acceptance carried forward from 81af99c73e7549cc38b646135c219447d87238ed, then run the exact packaged PowerVR acceptance runner on the physical ARMv7 phone and preserve the unchanged hardware receipt.
 acceptance_kind	physical-device
-acceptance_action	CATFOOD_TARGET=phone ./catfood; run powervr-accept on the physical ARMv7 PowerVR phone and verify package hash 714e5f706a05224ff4f43188a6fb043e7fa39f6a7f7f6ea7b0ef0dcb424502de plus all six compile/link and framebuffer passes.
+acceptance_action	CATFOOD_TARGET=phone ./catfood; sh android/check.sh gaps phone; run powervr-accept on the physical ARMv7 PowerVR phone and verify package hash 714e5f706a05224ff4f43188a6fb043e7fa39f6a7f7f6ea7b0ef0dcb424502de plus all six compile/link and framebuffer passes.
 state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
-reason	android-artifact-and-device
+reason	carries forward catfood-81af99c73e75-phone and adds the PowerVR package/device gate; neither obligation is accepted yet
 superseded_by	-
 follow_policy	exact
