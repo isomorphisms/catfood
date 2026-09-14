@@ -27,6 +27,7 @@ bookreader	runtime	gap:android-package-missing	gap:android-package-missing	brows
 harvest-images-from-pdf	runtime	gap:android-package-missing	gap:android-package-missing	user-facing-tool
 ddg	runtime	gap:android-package-missing	gap:android-package-missing	user-facing-tool
 chawan	runtime	gap:android-package-missing	gap:android-package-missing	browser-application
+gopeed	runtime	gap:android-package-missing	gap:android-package-missing	optional-download-service-via-rest-api-not-bootstrap-prerequisite
 manimi	review	gap:classification	gap:classification	intent-needs-explicit-classification
 wegert	review	gap:classification	gap:classification	library-or-application-role-needs-explicit-classification
 yt-shorts	host	n/a	n/a	publication-build-tool
