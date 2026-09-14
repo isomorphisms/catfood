@@ -1,0 +1,210 @@
+#!/usr/bin/env python3
+"""Tiny Codex quota meter for tmux, Waybar, and shell status lines."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import sys
+import urllib.error
+import urllib.request
+from datetime import datetime
+from pathlib import Path
+from typing import Any
+
+DEFAULT_BASE = "https://chatgpt.com/backend-api"
+
+
+def auth_path() -> Path:
+    codex_home = Path(os.environ.get("CODEX_HOME", Path.home() / ".codex"))
+    return codex_home / "auth.json"
+
+
+def load_auth() -> dict[str, Any]:
+    path = auth_path()
+    try:
+        return json.loads(path.read_text())
+    except FileNotFoundError:
+        raise RuntimeError(f"no Codex auth file at {path}; run `codex login`")
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"invalid JSON in {path}: {exc}") from exc
+
+
+def headers(auth: dict[str, Any]) -> dict[str, str]:
+    tokens = auth.get("tokens") or {}
+    access = tokens.get("access_token") or auth.get("access_token")
+    account = tokens.get("account_id") or auth.get("account_id")
+    if not access:
+        raise RuntimeError("Codex OAuth access token not found; run `codex login`")
+
+    result = {
+        "Authorization": f"Bearer {access}",
+        "Accept": "application/json",
+        "User-Agent": "codex-meter/0.2",
+    }
+    if account:
+        result["ChatGPT-Account-Id"] = str(account)
+    return result
+
+
+def usage_url(base: str) -> str:
+    base = base.rstrip("/")
+    if "/backend-api" in base:
+        return f"{base}/wham/usage"
+    return f"{base}/api/codex/usage"
+
+
+def fetch_usage(timeout: float = 5.0) -> dict[str, Any]:
+    auth = load_auth()
+    base = (
+        os.environ.get("CODEX_METER_BASE_URL")
+        or os.environ.get("CODEX_CHATGPT_BASE_URL")
+        or DEFAULT_BASE
+    )
+    url = usage_url(base)
+    request = urllib.request.Request(url, headers=headers(auth))
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            return json.load(response)
+    except urllib.error.HTTPError as exc:
+        if exc.code == 401:
+            raise RuntimeError("Codex login expired; run `codex` or `codex login`") from exc
+        raise RuntimeError(f"Codex usage request failed: HTTP {exc.code}") from exc
+    except urllib.error.URLError as exc:
+        raise RuntimeError(f"Codex usage request failed: {exc.reason}") from exc
+
+
+def duration_label(seconds: Any) -> str:
+    try:
+        value = int(seconds)
+    except (TypeError, ValueError):
+        return "quota"
+    if 4 * 3600 <= value <= 6 * 3600:
+        return "5h"
+    if 23 * 3600 <= value <= 25 * 3600:
+        return "1d"
+    if 6 * 86400 <= value <= 8 * 86400:
+        return "7d"
+    days, remainder = divmod(value, 86400)
+    hours = remainder // 3600
+    if days and hours == 0:
+        return f"{days}d"
+    if days:
+        return f"{days}d{hours}h"
+    return f"{max(1, round(value / 3600))}h"
+
+
+def normalize_window(window: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not window:
+        return None
+    try:
+        used = float(window.get("used_percent"))
+    except (TypeError, ValueError):
+        return None
+    remaining = max(0.0, min(100.0, 100.0 - used))
+    seconds = window.get("limit_window_seconds")
+    return {
+        "label": duration_label(seconds),
+        "window_seconds": seconds,
+        "used_percent": used,
+        "remaining_percent": remaining,
+        "reset_at": window.get("reset_at"),
+    }
+
+
+def normalized(payload: dict[str, Any]) -> dict[str, Any]:
+    rate = payload.get("rate_limit") or payload.get("rate_limits") or {}
+    windows = []
+    for key in ("primary_window", "secondary_window"):
+        window = normalize_window(rate.get(key))
+        if window:
+            windows.append(window)
+    windows.sort(key=lambda window: window.get("window_seconds") or 10**18)
+    return {
+        "plan": payload.get("plan_type"),
+        "allowed": rate.get("allowed"),
+        "limit_reached": rate.get("limit_reached"),
+        "windows": windows,
+        "credits": payload.get("credits"),
+    }
+
+
+def pct(value: float) -> str:
+    if abs(value - round(value)) < 0.05:
+        return str(int(round(value)))
+    return f"{value:.1f}"
+
+
+def reset_text(timestamp: Any) -> str:
+    try:
+        dt = datetime.fromtimestamp(float(timestamp)).astimezone()
+    except (TypeError, ValueError, OSError):
+        return "unknown"
+    return dt.strftime("%a %H:%M")
+
+
+def plain(data: dict[str, Any]) -> str:
+    windows = data["windows"]
+    if not windows:
+        return "Codex ?"
+    return "Codex " + " · ".join(
+        f"{window['label']} {pct(window['remaining_percent'])}%" for window in windows
+    )
+
+
+def waybar(data: dict[str, Any]) -> dict[str, Any]:
+    windows = data["windows"]
+    if not windows:
+        return {
+            "text": "Codex ?",
+            "class": "unknown",
+            "tooltip": "No Codex quota windows returned",
+        }
+
+    remaining = min(window["remaining_percent"] for window in windows)
+    css_class = "critical" if remaining <= 10 else "warning" if remaining <= 25 else "normal"
+    tooltip = [
+        f"{window['label']}: {pct(window['remaining_percent'])}% remaining · resets {reset_text(window.get('reset_at'))}"
+        for window in windows
+    ]
+    if data.get("plan"):
+        tooltip.append(f"plan: {data['plan']}")
+    return {
+        "text": plain(data),
+        "class": css_class,
+        "percentage": int(round(remaining)),
+        "tooltip": "\n".join(tooltip),
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--json", action="store_true", help="normalized JSON")
+    mode.add_argument("--waybar", action="store_true", help="Waybar JSON")
+    parser.add_argument("--timeout", type=float, default=5.0)
+    args = parser.parse_args()
+
+    try:
+        data = normalized(fetch_usage(args.timeout))
+        if args.json:
+            print(json.dumps(data, indent=2, sort_keys=True))
+        elif args.waybar:
+            print(json.dumps(waybar(data), separators=(",", ":")))
+        else:
+            print(plain(data))
+        return 0
+    except Exception as exc:
+        if args.waybar:
+            print(json.dumps({"text": "Codex ?", "class": "error", "tooltip": str(exc)}, separators=(",", ":")))
+        elif args.json:
+            print(json.dumps({"error": str(exc)}))
+        else:
+            print("Codex ?")
+            print(str(exc), file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

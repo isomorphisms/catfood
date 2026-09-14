@@ -28,6 +28,12 @@ CATFOOD_ROOT=$workspace CATFOOD_DEPTH=${CATFOOD_DEPTH:-12} \
 CATFOOD_ROOT=$workspace CATFOOD_PREFIX=$prefix \
     sh "$root/activate.sh"
 
+# Keep the installed command pointed at this checkout, so future git pulls
+# update the meter without copying a stale script into the prefix.
+if [ -f "$root/codex-meter/install.sh" ]; then
+    CODEX_METER_BIN_DIR=$prefix/bin sh "$root/codex-meter/install.sh"
+fi
+
 if [ "${CATFOOD_BUILD_TOOLS:-1}" != 0 ]; then
     CATFOOD_ROOT=$workspace CATFOOD_JOBS=${CATFOOD_JOBS:-2} \
         sh "$root/build-tools.sh"
