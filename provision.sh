@@ -66,7 +66,11 @@ case $target in
         fi
         CATFOOD_ROOT=$workspace CATFOOD_CACHE=$cache CATFOOD_TARGET=$target \
             sh "$root/android/install.sh"
-        CATFOOD_ROOT=$workspace sh "$root/android/install-local-clients.sh"
+        if [ -z "${CATFOOD_ANDROID_PACKAGES:-}" ] && \
+           [ -z "${CATFOOD_ANDROID_DELIVERY:-}" ] && \
+           [ -z "${CATFOOD_TOOLS:-}" ]; then
+            CATFOOD_ROOT=$workspace sh "$root/android/install-local-clients.sh"
+        fi
         printf 'cat food %s runtime packages are current under %s\n' "$target" "$workspace"
         exit 0
         ;;
