@@ -27,6 +27,32 @@ If an API token is configured, add either:
 
 or `Authorization: Bearer $GOPEED_API_TOKEN` to requests. With no API token and no web authentication configured, the REST API has no token check.
 
+## Cat Food command
+
+Cat Food installs a small `gopeed` command that submits a URL to the local REST service. `gdl` and `go_down_load` are aliases of the same command.
+
+```sh
+gopeed https://example.com/file
+gdl https://example.com/file
+go_down_load https://example.com/file
+```
+
+With no URL argument the command reads one URL from standard input, so a resolved Anna's Archive member URL can go straight to Gopeed:
+
+```sh
+aa resolve MD5 | gdl
+```
+
+`gopeed info` checks `/api/v1/info`. Set `GOPEED_URL` to use a nondefault REST base URL and `GOPEED_API_TOKEN` when the server requires a token. The command uses `curl` only for the small REST control request; Gopeed performs the actual file transfer.
+
+Cat Food's conditional `aa` wrapper also carries a future handoff: after a successful `aa search`, it prints
+
+```text
+next: aa resolve <MD5> | gdl    # gdl = go_down_load = gopeed
+```
+
+The current `az` `AA` branch intentionally does **not** implement `aa search`; it only has the stable member fast-download resolver. The hook therefore stays dormant rather than inventing an HTML scraper or claiming search support that does not exist.
+
 ## Endpoints
 
 These are the routes registered by the current `isomorphisms/gopeed` mirror.
