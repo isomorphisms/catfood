@@ -1,0 +1,159 @@
+#!/usr/bin/env ysh
+set -eu
+
+# Cat Food's small command-line client for the local Gopeed REST service.
+# curl carries only the local control request; Gopeed performs the download.
+
+gopeed_url=${GOPEED_URL:-${GOPEED:-http://127.0.0.1:9999}}
+
+usage() {
+    cat <<'EOF'
+gopeed -- submit a URL to the local Gopeed service
+
+usage:
+  gopeed URL
+  gopeed add URL
+  gopeed info
+  URL_PRODUCER | gopeed
+
+Aliases installed by Cat Food:
+  gdl
+  go_down_load
+
+Environment:
+  GOPEED_URL        REST base URL (default http://127.0.0.1:9999)
+  GOPEED_API_TOKEN  optional API token
+EOF
+}
+
+need() {
+    command -v "$1" >/dev/null 2>&1 || {
+        printf 'gopeed: required command not found: %s\n' "$1" >&2
+        return 127
+    }
+}
+
+api_request() {
+    method=$1
+    path=$2
+    payload=${3:-}
+    endpoint="${gopeed_url%/}$path"
+
+    if test -n "${GOPEED_API_TOKEN:-}"; then
+        if test -n "$payload"; then
+            curl -fsS \
+                -H 'Accept: application/json' \
+                -H 'Content-Type: application/json' \
+                -H "X-Api-Token: $GOPEED_API_TOKEN" \
+                -X "$method" --data-binary "$payload" "$endpoint"
+        else
+            curl -fsS \
+                -H 'Accept: application/json' \
+                -H "X-Api-Token: $GOPEED_API_TOKEN" \
+                -X "$method" "$endpoint"
+        fi
+    else
+        if test -n "$payload"; then
+            curl -fsS \
+                -H 'Accept: application/json' \
+                -H 'Content-Type: application/json' \
+                -X "$method" --data-binary "$payload" "$endpoint"
+        else
+            curl -fsS \
+                -H 'Accept: application/json' \
+                -X "$method" "$endpoint"
+        fi
+    fi
+}
+
+read_download_url() {
+    if test "$#" -eq 1; then
+        printf '%s\n' "$1"
+        return 0
+    fi
+    if test "$#" -ne 0; then
+        usage >&2
+        return 2
+    fi
+    if test -t 0; then
+        usage >&2
+        return 2
+    fi
+
+    IFS= read -r url || {
+        printf '%s\n' 'gopeed: expected a URL on stdin' >&2
+        return 2
+    }
+    printf '%s\n' "$url"
+}
+
+submit_download() {
+    url=$(read_download_url "$@") || return
+    case "$url" in
+        http://*|https://*) ;;
+        *)
+            printf 'gopeed: expected an HTTP(S) URL: %s\n' "$url" >&2
+            return 2
+            ;;
+    esac
+
+    need curl || return
+    need jq || return
+    payload=$(jq -cn --arg url "$url" '{req:{url:$url}}')
+    response=$(api_request POST /api/v1/tasks "$payload") || {
+        printf 'gopeed: request to %s failed\n' "$gopeed_url" >&2
+        return 1
+    }
+
+    printf '%s\n' "$response" | jq -er '
+        if .code == 0 then
+            .data |
+            if type == "string" then .
+            elif type == "null" then "ok"
+            else tojson
+            end
+        else
+            error(.msg // "Gopeed rejected the task")
+        end
+    '
+}
+
+show_info() {
+    need curl || return
+    need jq || return
+    response=$(api_request GET /api/v1/info) || {
+        printf 'gopeed: request to %s failed\n' "$gopeed_url" >&2
+        return 1
+    }
+    printf '%s\n' "$response" | jq -e '
+        if .code == 0 then .data
+        else error(.msg // "Gopeed info request failed")
+        end
+    '
+}
+
+case ${1:-} in
+    help|-h|--help)
+        usage
+        ;;
+    info|doctor)
+        shift
+        test "$#" -eq 0 || { usage >&2; exit 2; }
+        show_info
+        ;;
+    add|download)
+        shift
+        submit_download "$@"
+        ;;
+    http://*|https://*)
+        test "$#" -eq 1 || { usage >&2; exit 2; }
+        submit_download "$1"
+        ;;
+    '')
+        submit_download
+        ;;
+    *)
+        usage >&2
+        exit 2
+        ;;
+esac
