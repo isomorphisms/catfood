@@ -20,7 +20,7 @@ sent.idr	runtime	gap:android-package-missing	gap:android-package-missing	present
 programmers-keyboard	runtime	gap:android-package-missing	gap:android-package-missing	android-application
 icu	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
 
-az	runtime	gap:android-package-missing	packages:az-tablet,abe-tablet	stable-command-suite
+az	runtime	packages:az-phone,abe-phone	packages:az-tablet,abe-tablet	stable-command-suite
 ib	runtime	gap:android-package-missing	gap:android-package-missing	browser-application
 internetarchive	runtime	gap:android-package-missing	gap:android-package-missing	user-facing-tool
 bookreader	runtime	gap:android-package-missing	gap:android-package-missing	browser-application
