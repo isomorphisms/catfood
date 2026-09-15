@@ -8,6 +8,7 @@ oils	host	n/a	n/a	grease-source-and-host-build-input
 ir	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
 irk	review	gap:classification	gap:classification	intent-needs-explicit-classification
 ithon	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
+ike	runtime	gap:android-package-missing	gap:android-package-missing	native-build-tool-command
 icky	review	gap:classification	gap:classification	intent-needs-explicit-classification
 ick	review	gap:classification	gap:classification	intent-needs-explicit-classification
 Idric	runtime	gap:android-package-missing	gap:android-package-missing	compiler-interpreter-runtime
