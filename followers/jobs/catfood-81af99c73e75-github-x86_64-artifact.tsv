@@ -15,7 +15,7 @@ required	yes
 action	carried-forward artifact follower for Cat Food commit 81af99c73e7549cc38b646135c219447d87238ed; validate the unresolved Android artifact contract without treating the help-only source change as artifact evidence.
 acceptance_kind	artifact
 acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
