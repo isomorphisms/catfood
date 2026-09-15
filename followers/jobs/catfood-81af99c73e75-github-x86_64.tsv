@@ -21,5 +21,5 @@ blocker	-
 evidence	-
 depends_on	-
 reason	shared-portable
-superseded_by	catfood-aff9a226ae51-github-x86_64
+superseded_by	catfood-2ac3b68a3136-github-x86_64
 follow_policy	exact
