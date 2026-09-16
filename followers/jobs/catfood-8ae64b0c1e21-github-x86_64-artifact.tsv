@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-8ae64b0c1e21-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	grease/minimal-python2-bootstrap
+pr	49
+trigger_commit	8ae64b0c1e211d13e3ae0472f98dc7277ececf9e
+leader_platform	github-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	carried-forward artifact follower for Cat Food commit 8ae64b0c1e211d13e3ae0472f98dc7277ececf9e; validate the unresolved Android artifact contract without treating the Grease bootstrap source change as artifact evidence.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	carried-forward unresolved Android artifact validation from 549ce4283b5da857971ddd017e660e1e1a87189e; the newer source trigger does not erase that obligation
+superseded_by	-
+follow_policy	exact

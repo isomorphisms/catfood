@@ -15,11 +15,11 @@ required	yes
 action	follower target for Cat Food commit 549ce4283b5da857971ddd017e660e1e1a87189e on github-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh github
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	shared-portable
-superseded_by	-
+superseded_by	catfood-42bfce2d12c6-github-x86_64
 follow_policy	exact
