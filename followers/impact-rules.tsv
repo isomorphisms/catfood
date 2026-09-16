@@ -8,4 +8,4 @@ prefix	android/	phone,tablet,github-x86_64-artifact	android-artifact-and-device
 prefix	tests/android-	github-x86_64-artifact	android-artifact-contract
 prefix	.github/workflows/android-	github-x86_64-artifact	android-artifact-ci
 prefix	.github/	github-x86_64	github-only
-default	*	phone,tablet,github-x86_64,container-x86_64,hetzner-x86_64	shared-portable
+default	*	phone,tablet,github-x86_64,container-x86_64,hetzner-x86_64,void-x86_64	shared-portable

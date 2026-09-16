@@ -5,6 +5,8 @@ check-manifest.sh	stage-zero	sh	Validates the workbench feed before workspace mu
 provision.sh	stage-zero	sh	Dispatches runtime-only Android delivery before host provisioning
 android/check.sh	stage-zero	sh	Validates total Android inventory coverage and package metadata
 android/install.sh	stage-zero	sh	Installs verified Android runtime packages without a compiler
+followers/accept-device.sh	stage-zero	sh	Physical Android acceptance must begin before Grease can be assumed installed
+followers/accept-x86.sh	stage-zero	sh	Host follower acceptance provisions the workbench before executing Grease/YSH commands
 activate.sh	transition	sh	Creates stable command links after bootstrap
 refresh.sh	transition	sh	Hands YSH files to a runnable Grease or YSH
 build-tools.sh	transition	sh	Existing post-bootstrap build driver pending Grease migration

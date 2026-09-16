@@ -40,14 +40,14 @@ printf '%s\n' '# android base' > "$fixture/android/install-example.sh"
     trigger=$(git rev-parse HEAD)
 
     affected=$(sh followers/manage.sh affected "$trigger")
-    for target in phone tablet github-x86_64 container-x86_64 hetzner-x86_64; do
+    for target in phone tablet github-x86_64 container-x86_64 hetzner-x86_64 void-x86_64; do
         printf '%s\n' "$affected" | grep "^$target[[:space:]]" >/dev/null
     done
 
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
         prepare "$trigger" phone armv7 - phone/example 1 >/dev/null
     count=$(find followers/jobs -name '*.tsv' -type f | wc -l | tr -d ' ')
-    [ "$count" -eq 5 ]
+    [ "$count" -eq 6 ]
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh reconcile "$trigger" >/dev/null
 
     id=catfood-$(printf '%s' "$trigger" | cut -c1-12)-github-x86_64
@@ -78,6 +78,7 @@ EOF_RECEIPT
         exit 1
     fi
     printf '%s\n' "$pending" | grep 'hetzner-x86_64' >/dev/null
+    printf '%s\n' "$pending" | grep 'void-x86_64' >/dev/null
 
     tablet=followers/jobs/catfood-$(printf '%s' "$trigger" | cut -c1-12)-tablet.tsv
     mv "$tablet" "$tablet.hold"
@@ -100,6 +101,10 @@ EOF_RECEIPT
     printf '%s\n' "$android_affected" | grep '^github-x86_64-artifact[[:space:]].*artifact' >/dev/null
     if printf '%s\n' "$android_affected" | grep 'hetzner-x86_64' >/dev/null; then
         echo 'Android-only path incorrectly required Hetzner runtime' >&2
+        exit 1
+    fi
+    if printf '%s\n' "$android_affected" | grep 'void-x86_64' >/dev/null; then
+        echo 'Android-only path incorrectly required Void runtime' >&2
         exit 1
     fi
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
