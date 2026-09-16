@@ -1,9 +1,9 @@
 schema	aici-follower-job-v1
-job_id	catfood-81af99c73e75-phone
+job_id	catfood-549ce4283b5d-phone
 repository	isomorphisms/catfood
-branch	add-gopeed
-pr	39
-trigger_commit	81af99c73e7549cc38b646135c219447d87238ed
+branch	tidy/pr38-inventory-main
+pr	48
+trigger_commit	549ce4283b5da857971ddd017e660e1e1a87189e
 leader_platform	phone
 leader_arch	armv7
 leader_evidence	-
@@ -12,14 +12,14 @@ artifact_sha256	-
 follower_platform	phone
 follower_arch	armv7
 required	yes
-action	leader target for Cat Food commit 81af99c73e7549cc38b646135c219447d87238ed on phone; fetch that exact commit, run the named acceptance action, and record a receipt.
+action	leader target for Cat Food commit 549ce4283b5da857971ddd017e660e1e1a87189e on phone; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	physical-device
 acceptance_action	./catfood && sh android/check.sh gaps phone
-state	superseded
+state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
-reason	shared-portable
-superseded_by	catfood-549ce4283b5d-phone
+reason	android-artifact-and-device
+superseded_by	-
 follow_policy	exact
