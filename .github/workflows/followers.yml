@@ -33,7 +33,12 @@ jobs:
         env:
           AICI_FOLLOWERS: ${{ runner.temp }}/aici-followers
         run: |
-          trigger=$(sh followers/manage.sh latest)
+          source_trigger=$(sh followers/manage.sh latest)
+          trigger=$(sh followers/manage.sh resolve "$source_trigger")
+          if [ "$source_trigger" != "$trigger" ]; then
+            printf 'integrated source commit %s resolves to exact follower trigger %s\n' \
+              "$source_trigger" "$trigger"
+          fi
           sh followers/manage.sh reconcile "$trigger"
           sh followers/manage.sh pending "$trigger"
           sh followers/stale.sh
@@ -43,7 +48,8 @@ jobs:
         env:
           AICI_FOLLOWERS: ${{ runner.temp }}/aici-followers
         run: |
-          trigger=$(sh followers/manage.sh latest)
+          source_trigger=$(sh followers/manage.sh latest)
+          trigger=$(sh followers/manage.sh resolve "$source_trigger")
           short=$(printf '%s' "$trigger" | cut -c1-12)
           job_id="catfood-$short-github-x86_64"
           job="followers/jobs/$job_id.tsv"
