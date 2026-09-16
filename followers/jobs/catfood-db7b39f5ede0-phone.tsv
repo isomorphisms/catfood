@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-db7b39f5ede0-phone
+repository	isomorphisms/catfood
+branch	cloud-storage-api-delivery
+pr	47
+trigger_commit	db7b39f5ede0858041771989e04659ca8781157b
+leader_platform	github-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	phone
+follower_arch	armv7
+required	yes
+action	follower target for Cat Food commit db7b39f5ede0858041771989e04659ca8781157b on the physical ARMv7 phone; fetch that exact commit, install its exact packages, execute the installed cloud-storage command, and record a receipt.
+acceptance_kind	physical-device
+acceptance_action	sh followers/accept-device.sh phone
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device
+superseded_by	-
+follow_policy	exact

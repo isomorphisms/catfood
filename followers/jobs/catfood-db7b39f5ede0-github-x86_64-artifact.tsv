@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-db7b39f5ede0-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	cloud-storage-api-delivery
+pr	47
+trigger_commit	db7b39f5ede0858041771989e04659ca8781157b
+leader_platform	github-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	artifact follower for Cat Food commit db7b39f5ede0858041771989e04659ca8781157b; validate the exact phone/tablet cloud-storage package identity, hash, metadata, download, and install contract without promoting it to runtime evidence.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device
+superseded_by	-
+follow_policy	exact
