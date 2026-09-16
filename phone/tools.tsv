@@ -10,5 +10,5 @@ sha256sum	system	sha256sum	any	termux	system	-	-	-
 grep	system	grep	any	termux	system	-	-	-
 unzip	system	unzip	any	termux	system	-	-	-
 ike	file	ike	armeabi-v7a	dilapidated-shed/ike	depends-on-v1	PENDING	PENDING	ike
-grease	archive	grease	armeabi-v7a	isomorphisms/grease	6015e312ca05dd8103637e3f8bc19927b4e20dba	https://github.com/isomorphisms/grease/releases/download/phone-armv7-6015e312ca05/grease-armv7-termux.tar.gz	70ca729a150d849902d76623977af567f77a5b7e4f1ace4a17dda0e1623a175d	bin/grease
+grease	archive	grease	armeabi-v7a	isomorphisms/grease	9b2500ce701b11ed0c0dc141f7aee24adacd1d4c	https://github.com/isomorphisms/grease/releases/download/phone-armv7-9b2500ce701b/grease-armv7-termux.tar.gz	b277dbcf303cebd19aa02be9e4af9ac2780fa8b526247b613affeb3615a6488b	bin/grease
 icu	archive	icu	armeabi-v7a	dilapidated-shed/icu	icu	PENDING	PENDING	bin/icu
