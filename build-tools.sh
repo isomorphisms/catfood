@@ -148,7 +148,7 @@ build_fieldmouse() {
             IDRIS2_PREFIX="$idric/bootstrap-build" \
                 "$compiler" --build fieldmouse.ipkg
         )
-        mark_built fieldmouse "$repo"
+        mark_state_built fieldmouse "$state"
     fi
 
     expected=$(printf 'sum 10.0\nok')
