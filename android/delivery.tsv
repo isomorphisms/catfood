@@ -11,6 +11,7 @@ ithon	runtime	gap:android-package-missing	gap:android-package-missing	stable-run
 icky	review	gap:classification	gap:classification	intent-needs-explicit-classification
 ick	review	gap:classification	gap:classification	intent-needs-explicit-classification
 Idric	runtime	gap:android-package-missing	gap:android-package-missing	compiler-interpreter-runtime
+Idric-Net	host	n/a	n/a	compiler-package-dependency-for-icu
 idric-cli	runtime	gap:android-package-missing	gap:android-package-missing	command-line-runtime
 issh	runtime	gap:android-package-missing	gap:android-package-missing	shell-runtime
 fieldmouse	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
