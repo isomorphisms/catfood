@@ -2,7 +2,8 @@
 set -eu
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
-latest=$(sh "$root/followers/manage.sh" latest)
+source_trigger=$(sh "$root/followers/manage.sh" latest)
+latest=$(sh "$root/followers/manage.sh" resolve "$source_trigger")
 found=0
 
 value() {
@@ -27,4 +28,7 @@ if [ "$found" -ne 0 ]; then
     exit 1
 fi
 
+if [ "$source_trigger" != "$latest" ]; then
+    printf 'integrated source commit %s resolves to exact follower trigger %s\n' "$source_trigger" "$latest"
+fi
 printf 'no unresolved ancestor follower drift behind %s\n' "$latest"
