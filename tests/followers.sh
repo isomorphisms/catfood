@@ -112,4 +112,101 @@ EOF_RECEIPT
     fi
 )
 
+make_integration_fixture() {
+    destination=$1
+    mkdir -p "$destination/followers/jobs" "$destination/followers/receipts" \
+        "$destination/tests" "$destination/android" "$destination/.github/workflows"
+    cp "$root/followers/manage.sh" "$root/followers/stale.sh" \
+        "$root/followers/targets.tsv" "$root/followers/impact-rules.tsv" \
+        "$destination/followers/"
+    cat > "$destination/catfood" <<'EOF_CATFOOD'
+#!/bin/sh
+if [ "${1:-}" = --target ]; then
+    printf '%s\n' "${CATFOOD_TARGET:-cloud}"
+fi
+EOF_CATFOOD
+    chmod +x "$destination/catfood"
+    for name in entrypoint targets android-delivery; do
+        printf '%s\n' '#!/bin/sh' 'exit 0' > "$destination/tests/$name.sh"
+    done
+    printf '%s\n' '# base provision' > "$destination/provision.sh"
+    printf '%s\n' '# android base' > "$destination/android/install-example.sh"
+}
+
+# A normal merge creates a new commit identity even when its non-control source
+# state is exactly the state for which the feature branch already recorded
+# follower jobs. The merge must resolve back to that exact trigger rather than
+# demanding jobs for a commit that did not exist before integration.
+merge_fixture=$tmp/merge-repo
+make_integration_fixture "$merge_fixture"
+(
+    cd "$merge_fixture"
+    git init -q
+    git config user.email follower-test@example.invalid
+    git config user.name follower-test
+    git add .
+    git commit -qm base
+    base_branch=$(git branch --show-current)
+
+    git checkout -qb feature
+    printf '%s\n' '# source change' >> provision.sh
+    git add provision.sh
+    git commit -qm source
+    source_trigger=$(git rev-parse HEAD)
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
+        prepare "$source_trigger" phone armv7 - feature 1 >/dev/null
+    git add followers
+    git commit -qm follower-ledger
+
+    git checkout -q "$base_branch"
+    git merge --no-ff feature -m integration >/dev/null
+    integration_trigger=$(git rev-parse HEAD)
+    [ "$(sh followers/manage.sh latest)" = "$integration_trigger" ]
+    [ "$(sh followers/manage.sh resolve "$integration_trigger")" = "$source_trigger" ]
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh reconcile "$integration_trigger" >/dev/null
+    sh followers/stale.sh >/dev/null
+
+    printf '%s\n' '# real post-integration source change' >> provision.sh
+    git add provision.sh
+    git commit -qm new-source
+    if sh followers/manage.sh resolve "$(git rev-parse HEAD)" >/dev/null 2>&1; then
+        echo 'different source state incorrectly reused an older follower trigger' >&2
+        exit 1
+    fi
+)
+
+# Squash integration has the same identity problem but no second parent. As
+# long as the exact source commit named by the checked-in jobs is available,
+# source-state equality is still sufficient to recover the canonical trigger.
+squash_fixture=$tmp/squash-repo
+make_integration_fixture "$squash_fixture"
+(
+    cd "$squash_fixture"
+    git init -q
+    git config user.email follower-test@example.invalid
+    git config user.name follower-test
+    git add .
+    git commit -qm base
+    base_branch=$(git branch --show-current)
+
+    git checkout -qb feature
+    printf '%s\n' '# source change' >> provision.sh
+    git add provision.sh
+    git commit -qm source
+    source_trigger=$(git rev-parse HEAD)
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
+        prepare "$source_trigger" phone armv7 - feature 2 >/dev/null
+    git add followers
+    git commit -qm follower-ledger
+
+    git checkout -q "$base_branch"
+    git merge --squash feature >/dev/null
+    git commit -qm squash-integration
+    integration_trigger=$(git rev-parse HEAD)
+    [ "$(sh followers/manage.sh latest)" = "$integration_trigger" ]
+    [ "$(sh followers/manage.sh resolve "$integration_trigger")" = "$source_trigger" ]
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh reconcile "$integration_trigger" >/dev/null
+    sh followers/stale.sh >/dev/null
+)
+
 printf '%s\n' 'cat food follower inference self-test passes'

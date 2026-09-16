@@ -89,9 +89,10 @@ control_path() {
     esac
 }
 
-latest_source() {
+latest_source_from() {
+    start=$1
     tmp=$(mktemp)
-    for candidate in $(git -C "$root" rev-list --first-parent HEAD); do
+    for candidate in $(git -C "$root" rev-list --first-parent "$start"); do
         changed_for_commit "$candidate" > "$tmp"
         while IFS= read -r path; do
             [ -n "$path" ] || continue
@@ -103,7 +104,11 @@ latest_source() {
         done < "$tmp"
     done
     rm -f "$tmp"
-    fatal 'no source-changing commit found on first-parent history'
+    fatal "no source-changing commit found on first-parent history from $start"
+}
+
+latest_source() {
+    latest_source_from HEAD
 }
 
 job_for() {
@@ -116,6 +121,71 @@ job_for() {
         return 0
     done
     return 1
+}
+
+trigger_has_jobs() {
+    trigger=$1
+    for file in "$jobs"/*.tsv; do
+        [ -f "$file" ] || continue
+        [ "$(record_value "$file" trigger_commit)" = "$trigger" ] || continue
+        return 0
+    done
+    return 1
+}
+
+job_triggers() {
+    for file in "$jobs"/*.tsv; do
+        [ -f "$file" ] || continue
+        record_value "$file" trigger_commit
+    done | sort -u
+}
+
+same_source_state() {
+    left=$1 right=$2
+    git -C "$root" cat-file -e "${left}^{commit}" 2>/dev/null || return 1
+    git -C "$root" cat-file -e "${right}^{commit}" 2>/dev/null || return 1
+    git -C "$root" diff --quiet "$left" "$right" -- . \
+        ':(exclude)followers/**' \
+        ':(exclude)AGENTS.md' \
+        ':(exclude)docs/followers.md' \
+        ':(exclude)tests/followers.sh' \
+        ':(exclude).github/workflows/followers.yml'
+}
+
+resolve_trigger() {
+    [ "$#" -eq 1 ] || fatal 'resolve TRIGGER'
+    requested=$1
+    git -C "$root" cat-file -e "${requested}^{commit}" 2>/dev/null || fatal "unknown trigger $requested"
+
+    if trigger_has_jobs "$requested"; then
+        printf '%s\n' "$requested"
+        return 0
+    fi
+
+    matches=$(mktemp)
+    for candidate in $(job_triggers); do
+        [ "$candidate" != "$requested" ] || continue
+        if same_source_state "$candidate" "$requested"; then
+            printf '%s\n' "$candidate" >> "$matches"
+        fi
+    done
+
+    count=$(wc -l < "$matches" | tr -d ' ')
+    case $count in
+        1)
+            cat "$matches"
+            rm -f "$matches"
+            ;;
+        0)
+            rm -f "$matches"
+            fatal "no follower records establish the leader for $requested, and no exact follower trigger has identical non-control source state"
+            ;;
+        *)
+            candidates=$(tr '\n' ' ' < "$matches")
+            rm -f "$matches"
+            fatal "multiple follower triggers have the same non-control source state as $requested: $candidates"
+            ;;
+    esac
 }
 
 prepare() {
@@ -203,7 +273,8 @@ infer_leader() {
 }
 
 reconcile() {
-    trigger=${1:-$(latest_source)}
+    requested=${1:-$(latest_source)}
+    trigger=$(resolve_trigger "$requested")
     tool=$(verifier)
     "$tool" verify "$jobs" "$receipts"
     leader=$(infer_leader "$trigger")
@@ -221,6 +292,9 @@ reconcile() {
         target=$(record_value "$file" follower_platform)
         target_line "$target" >/dev/null || fatal "$file references vanished target $target"
     done
+    if [ "$requested" != "$trigger" ]; then
+        printf 'integrated source commit %s resolves to exact follower trigger %s\n' "$requested" "$trigger"
+    fi
     printf 'follower reconciliation passes for %s\n' "$trigger"
 }
 
@@ -319,11 +393,12 @@ matrix() {
 case ${1:-} in
     affected) [ "$#" -eq 2 ] || fatal 'affected TRIGGER'; affected "$2" ;;
     latest) [ "$#" -eq 1 ] || fatal 'latest takes no arguments'; latest_source ;;
+    resolve) [ "$#" -eq 2 ] || fatal 'resolve TRIGGER'; resolve_trigger "$2" ;;
     prepare) shift; prepare "$@" ;;
     reconcile) shift; reconcile "$@" ;;
     pending) shift; pending "$@" ;;
     matrix) shift; matrix "$@" ;;
     record) shift; record_receipt "$@" ;;
     block) shift; mark_blocked "$@" ;;
-    *) fatal 'usage: manage.sh affected|latest|prepare|reconcile|pending|matrix|record|block ...' ;;
+    *) fatal 'usage: manage.sh affected|latest|resolve|prepare|reconcile|pending|matrix|record|block ...' ;;
 esac
