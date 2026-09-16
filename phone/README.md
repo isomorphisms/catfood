@@ -4,14 +4,16 @@ This profile keeps the phone small and makes the physical device an acceptance t
 
 It does not run the normal server/workstation `provision.sh`. It does not install Clang, a JDK, an Android SDK/NDK, Gradle, GNU Make, or an unfinished Idriç machine-code backend merely because a tool is missing.
 
+The phone profile exists primarily to support IB on the physical device. Grease is a first-class IB runtime and orchestration language, not merely a small glue layer. IB's shell-facing acquisition, storage, indexing, navigation, prefetch, and prepaint programs may be Grease programs. Android DEX/JNI remains a separate boundary for Android-native pieces; it does not replace Grease as the IB scripting/runtime layer.
+
 The intended phone set is deliberately small:
 
 - existing Termux system tools such as `git`, `curl`, `tar`, `sha256sum`, and `unzip`;
-- Ike as the small dependency build tool;
-- Grease as the working shell;
-- ICU as the network acquisition command.
+- Grease as the working IB shell/runtime;
+- ICU as the network acquisition command;
+- Ike as small build infrastructure when a phone-side dependency build actually needs it.
 
-Ike, Grease, and ICU are installed from exact prebuilt Android/ARM artifacts only after their URL and SHA-256 are entered in `tools.tsv`. A `PENDING` artifact is reported and skipped. Absence of a prebuilt artifact never causes a source compiler toolchain to be installed on the phone.
+Grease, ICU, and Ike are installed from exact prebuilt Android/ARM artifacts only after their URL and SHA-256 are entered in `tools.tsv`. A `PENDING` artifact is reported and skipped. Absence of a prebuilt artifact never causes a source compiler toolchain to be installed on the phone. Ike being pending must not block an otherwise runnable IB/Grease path.
 
 The first phone target is the current 32-bit `armeabi-v7a` device. Direct DEX plus JNI is the selected Android application path. Experimental ARM/Thumb compiler work remains separate and may still be exercised deliberately on the phone as compiler research, but it is not an application or Cat Food dependency.
 
@@ -53,4 +55,4 @@ Override them with `CATFOOD_PHONE_ROOT`, `CATFOOD_PHONE_PREFIX`, or `CATFOOD_PHO
 
 ## Receipts
 
-Each installed artifact records source, ref, ABI, URL, and SHA-256 under `~/opt/phone/receipts`. `phone/doctor.sh` also reports the physical Android ABI, build fingerprint, emulator flag, storage, system prerequisites, installed artifacts, and still-pending artifacts.
+Each installed artifact records source, ref, ABI, URL, and SHA-256 under `~/opt/phone/receipts`. `phone/doctor.sh` also reports the physical Android ABI, build fingerprint, emulator flag, storage, system prerequisites, installed artifacts, and still-pending artifacts. For Grease, doctor executes the installed runtime with current readable Grease syntax so an executable receipt is required rather than mere file presence.
