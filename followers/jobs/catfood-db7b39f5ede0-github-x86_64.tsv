@@ -15,11 +15,11 @@ required	yes
 action	leader target for Cat Food commit db7b39f5ede0858041771989e04659ca8781157b on GitHub-hosted Ubuntu x86-64; provision the exact source workbench, execute the installed cloud-storage command, and record a receipt.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh github
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	github-only and shared-portable
-superseded_by	-
+superseded_by	catfood-ae27f2938d40-github-x86_64
 follow_policy	exact

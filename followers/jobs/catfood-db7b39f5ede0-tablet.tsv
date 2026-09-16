@@ -15,11 +15,11 @@ required	yes
 action	follower target for Cat Food commit db7b39f5ede0858041771989e04659ca8781157b on the physical AArch64 tablet; fetch that exact commit, install its exact packages, execute the installed cloud-storage command, and record a receipt.
 acceptance_kind	physical-device
 acceptance_action	sh followers/accept-device.sh tablet
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	android-artifact-and-device
-superseded_by	-
+superseded_by	catfood-ae27f2938d40-tablet
 follow_policy	exact
