@@ -1,0 +1,17 @@
+schema	aici-follower-receipt-v1
+job_id	catfood-81af99c73e75-tablet
+repository	isomorphisms/catfood
+trigger_commit	81af99c73e7549cc38b646135c219447d87238ed
+follower_platform	tablet
+follower_arch	aarch64
+acceptance_kind	physical-device
+result	pass
+attempt_commit	81af99c73e7549cc38b646135c219447d87238ed
+os_runtime	Android 15; TAB_P10; aarch64; Termux
+build_command	-
+test_command	CATFOOD_TARGET=tablet ./catfood && sh android/check.sh gaps tablet
+artifact	-
+artifact_sha256	-
+evidence_url	-
+recorded_at	2026-09-16T15:48:17Z
+note	Physical AArch64 tablet run reported by the human. Cat Food detected tablet, installed current published Grease/YSH, az, and abe runtime packages, listed remaining inventory gaps explicitly, and reported that no source build fallback was attempted. This receipt does not accept or erase any listed gap.
