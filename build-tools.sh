@@ -65,12 +65,15 @@ build_grease() {
         # Grease's development interpreter is Python 2.  Its vendored source
         # is intentionally built outside the checkout so feeding a newer
         # Grease revision never mistakes generated files for local edits.
+        # Build only the interpreter core and headers here.  Generic Python
+        # shared modules such as math and curses are not part of Grease's
+        # runtime boundary; the native modules Grease actually uses are built
+        # explicitly from the pinned Oils source below.
         (
             cd "$python_build"
             touch Include/Python-ast.h Python/Python-ast.c
             ./configure --prefix="$python_prefix" --without-ensurepip
             make -j"$jobs" python
-            make -j"$jobs" sharedmods
             make inclinstall
         )
         ln -s "$python" "$grease_build/bin/python2"
@@ -176,7 +179,7 @@ build_icu() {
             IDRIS2_PREFIX="$idric/bootstrap-build" \
                 make -j"$jobs" IDRIC="$compiler"
         )
-        mark_state_built icu "$state"
+        mark_built icu "$repo"
     fi
 
     [ -x "$output" ] || {
@@ -206,7 +209,7 @@ build_ib() {
             IDRIS2_PREFIX="$idric/bootstrap-build" \
                 "$compiler" Smoke.idric -o ib-smoke
         )
-        mark_state_built ib "$state"
+        mark_built ib "$repo"
     fi
 
     "$output" >/dev/null
