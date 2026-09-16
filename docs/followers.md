@@ -8,6 +8,10 @@ The target meanings remain defined in [`TARGETS.md`](../TARGETS.md). Physical ph
 
 Follower jobs bind to an exact source commit. Later commits that add jobs, receipts, or policy do not change the source state being followed. Version 1 therefore uses `follow_policy=exact`: moving a follower to a descendant requires an explicit new job or recorded supersession.
 
+Git integration can create a different commit identity for source state that already has exact follower jobs. An ordinary merge has a new parent structure; a squash merge has a new commit entirely. `followers/manage.sh resolve <commit>` handles that integration boundary without weakening the evidence rule. If the requested commit already has jobs, it remains the trigger. Otherwise Cat Food may resolve it to one existing exact job trigger only when the two commits have identical non-control source state. `followers/`, this document, `AGENTS.md`, `tests/followers.sh`, and the follower workflow are excluded from that source-state comparison because they are follower control state.
+
+Resolution is deliberately fail-closed. No matching exact trigger stays red. More than one matching trigger stays red. A merge or later commit that changes any non-control source file stays red. The resolver therefore does not manufacture a receipt or claim that the integration commit itself ran on a follower; it identifies the exact source commit whose already-declared follower work describes the same product state.
+
 `followers/targets.tsv` is the concrete maintained target registry. `termux-generic` remains a compatibility selector rather than a concrete independently accepted machine. If it becomes a maintained concrete environment, give it a real acceptance action and promote it in the registry rather than treating generic Termux selection as proof.
 
 `followers/impact-rules.tsv` maps changed paths to affected targets. Rules are first-match and conservative:
@@ -36,6 +40,7 @@ With `AICI_FOLLOWERS` pointing to the compiled AICI verifier:
 
 ```sh
 sh followers/manage.sh affected <source-commit>
+sh followers/manage.sh resolve <integrated-or-exact-source-commit>
 AICI_FOLLOWERS=/path/to/aici-followers sh followers/manage.sh \
   prepare <source-commit> phone armv7 <leader-receipt-or-> <branch> <pr>
 AICI_FOLLOWERS=/path/to/aici-followers sh followers/manage.sh reconcile <source-commit>
@@ -48,11 +53,11 @@ sh followers/stale.sh
 
 `pending` is the direct answer to “what is still behind this phone/tablet work?” It is also available without the verifier as a read-only fallback; mutation and reconciliation require the verifier.
 
-`reconcile` re-infers the affected target set and fails if a required follower job disappeared or references a removed target. `stale.sh` fails when unresolved work remains on an ancestor of the latest source trigger. Finish it or record explicit supersession; moving the branch does not erase the dependency.
+`reconcile` first resolves an integration commit to its canonical exact follower trigger when necessary, then re-infers the affected target set and fails if a required follower job disappeared or references a removed target. `stale.sh` uses the same canonical trigger and fails when unresolved work remains on an ancestor of it. Finish it or record explicit supersession; moving or merging the branch does not erase the dependency.
 
 ## GitHub x86-64
 
-The follower workflow checks out the exact trigger into a detached worktree and runs `followers/accept-x86.sh` against that tree. This is runtime-oriented acceptance, not syntax-only CI. Its receipt is published as a workflow artifact and records the exact trigger, runner runtime, command, and evidence URL.
+The follower workflow resolves the current integrated source state to the exact follower trigger, checks out that trigger into a detached worktree, and runs `followers/accept-x86.sh` against that tree. This is runtime-oriented acceptance, not syntax-only CI. Its receipt is published as a workflow artifact and records the exact trigger, runner runtime, command, and evidence URL.
 
 A workflow artifact is evidence available for recording; it does not mutate the repository ledger by itself. The checked-in job becomes accepted only after a matching receipt is recorded. Thus GitHub cannot silently promote itself merely because some unrelated check is green.
 
