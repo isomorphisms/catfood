@@ -21,6 +21,7 @@ programmers-keyboard	runtime	gap:android-package-missing	gap:android-package-mis
 icu	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
 
 az	runtime	gap:android-package-missing	packages:az-tablet,abe-tablet	stable-command-suite
+cloud-storage-api	runtime	package:cloud-storage-api-phone	package:cloud-storage-api-tablet	google-drive-api-executable-client
 ib	runtime	gap:android-package-missing	gap:android-package-missing	browser-application
 internetarchive	runtime	gap:android-package-missing	gap:android-package-missing	user-facing-tool
 bookreader	runtime	gap:android-package-missing	gap:android-package-missing	browser-application

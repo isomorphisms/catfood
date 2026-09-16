@@ -18,13 +18,20 @@ if [ "$target" = auto ]; then
                 *) target=termux ;;
             esac
             ;;
-        *) target=cloud ;;
+        *)
+            os_release=${CATFOOD_OS_RELEASE:-/etc/os-release}
+            if [ -r "$os_release" ] && grep -Eq '^ID=(void|"void")$' "$os_release"; then
+                target=void
+            else
+                target=cloud
+            fi
+            ;;
     esac
 fi
 case $target in hetzner) target=cloud ;; esac
 
 case $target in
-    cloud)
+    cloud|void)
         default_workspace=/opt
         termux_target=0
         ;;
@@ -37,7 +44,7 @@ case $target in
         termux_target=1
         ;;
     *)
-        printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, or hetzner; found: %s\n' "$target" >&2
+        printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, void, termux, or hetzner; found: %s\n' "$target" >&2
         exit 2
         ;;
 esac
@@ -93,6 +100,17 @@ install_packages() {
             exit 127
         }
         pkg install -y bash ca-certificates coreutils curl gawk git grep jq libiconv sed tar
+    elif [ "$target" = void ]; then
+        command -v xbps-install >/dev/null 2>&1 || {
+            printf '%s\n' 'cat food Void target needs xbps-install' >&2
+            exit 127
+        }
+        as_root xbps-install -Sy \
+            base-devel bash ca-certificates cmake curl espeak-ng ffmpeg gcc-fortran git jq \
+            bzip2-devel libcurl-devel libdeflate-devel expat-devel libffi-devel \
+            gdbm-devel gmp-devel liblzma-devel ncurses-devel pcre2-devel readline-devel \
+            sqlite-devel openssl-devel ninja openjdk17 perl pkg-config python3 rsync \
+            tk-devel tmux texinfo unzip libuuid-devel vim w3m xz zlib-devel
     elif command -v apt-get >/dev/null 2>&1; then
         as_root apt-get update
         as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y \
@@ -103,7 +121,8 @@ install_packages() {
             pkg-config python3-venv rsync tk-dev tmux texinfo unzip uuid-dev vim w3m \
             xz-utils zlib1g-dev
     else
-        printf '%s\n' 'cat food: no apt-get; expecting build dependencies to already exist' >&2
+        printf '%s\n' 'cat food: unsupported host package manager' >&2
+        exit 127
     fi
 }
 

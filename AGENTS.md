@@ -16,6 +16,7 @@ Before changing phone/tablet delivery, read [`android/README.md`](android/README
 - Direct DEX/ART plus explicitly intended JNI/NDK code is the current Android path where needed. Do not substitute Java/Kotlin/Gradle/d8 or RefC/generated-C lowering.
 - Unfinished ARM/Thumb or other experimental native backends are not prerequisites for unrelated Android delivery.
 - Bind packages to exact source/package commits, ABI, URL, SHA-256, runtime dependencies, and package dependencies.
+- Architecture-neutral scripts or data may be byte-identical across target package rows. Do not manufacture per-ABI binaries when the real architecture-specific boundary is the declared runtime dependency.
 - Keep publication, digest verification, installation, launch, behavior, emulator evidence, and physical-device evidence separate.
 
 Run `sh tests/android-delivery.sh` for repository-side contract changes. `sh android/check.sh ready phone|tablet` is intentionally allowed to remain red while declared runtime gaps exist.
@@ -30,7 +31,7 @@ For the exact source commit being led from mobile:
 - run follower checks available in the current environment;
 - create durable follower jobs for every affected environment that cannot run here;
 - bind jobs and artifacts to exact commits and SHA-256 identities;
-- never claim GitHub, local/container x86-64, Hetzner, tablet, or phone acceptance from another target's receipt;
+- never claim GitHub Ubuntu, local/container x86-64, Hetzner, Void Linux, tablet, or phone acceptance from another target's receipt;
 - preserve build, runtime, artifact, publication, and physical-device evidence as separate acceptance kinds;
 - leave inaccessible or unsupported targets pending/blocked/unsupported rather than calling them green;
 - record explicit supersession when later work replaces an unfinished follower obligation.

@@ -87,6 +87,35 @@ write_fdroid_wrapper() {
     mv "$tmp" "$wrapper"
 }
 
+write_ysh_wrapper() {
+    name=$1
+    target=$2
+    wrapper=$bindir/$name
+    tmp=$bindir/.$name.tmp
+
+    [ -f "$target" ] || return 0
+
+    if [ -e "$wrapper" ] || [ -L "$wrapper" ]; then
+        if [ -f "$wrapper" ] && grep -F '# catfood ysh wrapper' "$wrapper" >/dev/null 2>&1; then
+            :
+        elif [ -L "$wrapper" ]; then
+            rm -f "$wrapper"
+        else
+            printf '%s exists and is not a Cat Food YSH wrapper; leaving it alone\n' "$wrapper" >&2
+            return 1
+        fi
+    fi
+
+    {
+        printf '%s\n' '#!/bin/sh'
+        printf '%s\n' '# catfood ysh wrapper'
+        printf '%s\n' "bin_dir=\$(CDPATH='' cd -- \"\$(dirname -- \"\$0\")\" && pwd)"
+        printf 'exec "$bin_dir/ysh" "%s" "$@"\n' "$target"
+    } > "$tmp"
+    chmod 0755 "$tmp"
+    mv "$tmp" "$wrapper"
+}
+
 # update-tools.ysh owns project/tool aliases. Provisioning deliberately replaces
 # only its osh/ysh symlinks with the verified native Oils installation.
 install_native_shell_link osh
@@ -96,6 +125,8 @@ write_wrapper catfood-doctor "$root/doctor.sh"
 write_wrapper catfood-import-config "$root/import-config.sh"
 write_fdroid_wrapper fdroid-deploy "$root/fdroid-deploy.ysh"
 write_fdroid_wrapper fdroid-check-deployed "$root/fdroid-check-deployed.ysh"
+write_ysh_wrapper google-drive-unzip \
+    "$workspace/cloud-storage-api/commands/google-drive-unzip.ysh"
 
 profile=${CATFOOD_PROFILE:-$HOME/.profile}
 marker='# catfood workbench path'

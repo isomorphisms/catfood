@@ -15,6 +15,7 @@ jobs:
             catfood bootstrap.sh check-manifest.sh update-tools.ysh \
             provision.sh activate.sh build-tools.sh refresh.sh doctor.sh import-config.sh \
             android/check.sh android/install.sh \
+            followers/accept-device.sh followers/accept-x86.sh \
             tests/check-manifest.sh tests/entrypoint.sh tests/targets.sh tests/android-delivery.sh
           do
             if [ -f "$script" ]; then
@@ -137,6 +138,7 @@ jobs:
               "$CATFOOD_ROOT/bin/ysh" -n "$GITHUB_WORKSPACE/fdroid-check-deployed.ysh" >/dev/null
               "$CATFOOD_ROOT/bin/fdroid-deploy" --help >/dev/null
               "$CATFOOD_ROOT/bin/fdroid-check-deployed" --help >/dev/null
+              "$CATFOOD_ROOT/bin/google-drive-unzip" --help >/dev/null
               output=$(GITLAB_TOKEN=catfood-test-token \
                 "$CATFOOD_ROOT/bin/fdroid-deploy" /definitely/missing.yml 2>&1 || :)
               printf "%s\n" "$output" | grep -F "metadata file not found"

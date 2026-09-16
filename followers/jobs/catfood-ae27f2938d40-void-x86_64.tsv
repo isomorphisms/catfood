@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-ae27f2938d40-void-x86_64
+repository	isomorphisms/catfood
+branch	cloud-storage-api-delivery
+pr	47
+trigger_commit	ae27f2938d405d382d22363c59dbfa1a8d802772
+leader_platform	github-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	void-x86_64
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit ae27f2938d405d382d22363c59dbfa1a8d802772 on the persistent Void Linux x86-64 development machine; provision the exact source state with xbps, execute the installed cloud-storage command, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh void
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	-
+follow_policy	exact

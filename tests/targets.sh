@@ -14,6 +14,13 @@ printf '%s\n' "$CATFOOD_TEST_ARCH"
 EOF
 chmod 0755 "$fake_bin/uname"
 
+cat > "$temporary/void-os-release" <<'EOF'
+ID=void
+EOF
+cat > "$temporary/ubuntu-os-release" <<'EOF'
+ID=ubuntu
+EOF
+
 assert_target() {
     expected=$1
     actual=$2
@@ -50,7 +57,17 @@ assert_target termux "$(
         sh "$root/catfood" --target
 )"
 
-assert_target cloud "$(PREFIX= TERMUX_VERSION= sh "$root/catfood" --target)"
+assert_target cloud "$(
+    PREFIX= TERMUX_VERSION= \
+    CATFOOD_OS_RELEASE=$temporary/ubuntu-os-release \
+        sh "$root/catfood" --target
+)"
+assert_target void "$(
+    PREFIX= TERMUX_VERSION= \
+    CATFOOD_OS_RELEASE=$temporary/void-os-release \
+        sh "$root/catfood" --target
+)"
+assert_target void "$(CATFOOD_TARGET=void sh "$root/catfood" --target)"
 assert_target container "$(CATFOOD_TARGET=container sh "$root/catfood" --target)"
 assert_target cloud "$(CATFOOD_TARGET=hetzner sh "$root/catfood" --target)"
 
@@ -60,6 +77,6 @@ if CATFOOD_TARGET=not-a-target sh "$root/catfood" --target >/dev/null 2>&1; then
 fi
 
 sh "$root/catfood" --help |
-    grep -F 'phone|tablet|container|cloud|termux|hetzner' >/dev/null
+    grep -F 'phone|tablet|container|cloud|void|termux|hetzner' >/dev/null
 
 printf '%s\n' 'cat food target profiles pass'

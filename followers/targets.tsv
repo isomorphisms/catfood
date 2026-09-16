@@ -1,8 +1,9 @@
 # target	platform	architecture	profile	acceptance_kind	acceptance_action	concrete
-phone	android-termux	armv7	phone	physical-device	./catfood && sh android/check.sh gaps phone	yes
-tablet	android-termux	aarch64	tablet	physical-device	./catfood && sh android/check.sh gaps tablet	yes
-github-x86_64	github-actions	x86_64	container	runtime	sh followers/accept-x86.sh github	yes
+phone	android-termux	armv7	phone	physical-device	sh followers/accept-device.sh phone	yes
+tablet	android-termux	aarch64	tablet	physical-device	sh followers/accept-device.sh tablet	yes
+github-x86_64	github-actions-ubuntu	x86_64	container	runtime	sh followers/accept-x86.sh github	yes
 github-x86_64-artifact	github-actions	x86_64	artifact	artifact	validate exact published artifact identity, hash, metadata, extraction, and install contract	yes
-container-x86_64	linux-container	x86_64	container	runtime	sh followers/accept-x86.sh container	yes
+container-x86_64	linux-container-ubuntu	x86_64	container	runtime	sh followers/accept-x86.sh container	yes
 hetzner-x86_64	hetzner-linux	x86_64	cloud	runtime	sh followers/accept-x86.sh cloud	yes
+void-x86_64	void-linux	x86_64	void	runtime	sh followers/accept-x86.sh void	yes
 termux-generic	android-termux	unknown	termux	build	-	no

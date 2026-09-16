@@ -15,21 +15,22 @@ The target is detected automatically when possible:
   tablet     Termux on AArch64; install verified runtime packages only
   container  disposable Debian/Ubuntu workbench; select explicitly
   cloud      persistent Debian/Ubuntu/Hetzner workbench
+  void       persistent Void Linux development workbench
 
 Compatibility targets:
   termux     generic Termux source workbench when architecture is unknown/forced
   hetzner    alias for cloud
-  CATFOOD_TARGET=cloud|termux remains valid
 
 Help:
   ./catfood help          list every Cat Food tool
   ./catfood help TOOL     show that tool's Cat Food reference
 
 Overrides:
-  CATFOOD_TARGET=phone|tablet|container|cloud|termux|hetzner
+  CATFOOD_TARGET=phone|tablet|container|cloud|void|termux|hetzner
   CATFOOD_ROOT=/path/to/workspace
   CATFOOD_BUILD_TOOLS=0|1
   CATFOOD_INSTALL_YSH=0|1
+  CATFOOD_OS_RELEASE=/path/to/os-release
 EOF
 }
 
@@ -99,6 +100,15 @@ show_help_page() {
     return 2
 }
 
+detect_host_target() {
+    os_release=${CATFOOD_OS_RELEASE:-/etc/os-release}
+    if [ -r "$os_release" ] && grep -Eq '^ID=(void|"void")$' "$os_release"; then
+        printf '%s\n' void
+    else
+        printf '%s\n' cloud
+    fi
+}
+
 detect_target() {
     case ${PREFIX:-}:${TERMUX_VERSION:-} in
         /data/data/com.termux/*:*|*:*?*)
@@ -109,7 +119,7 @@ detect_target() {
                 *) printf '%s\n' termux ;;
             esac
             ;;
-        *) printf '%s\n' cloud ;;
+        *) detect_host_target ;;
     esac
 }
 
@@ -132,9 +142,9 @@ fi
 
 case $target in
     hetzner) target=cloud ;;
-    phone|tablet|container|cloud|termux) ;;
+    phone|tablet|container|cloud|void|termux) ;;
     *)
-        printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, or hetzner; found: %s\n' "$target" >&2
+        printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, void, termux, or hetzner; found: %s\n' "$target" >&2
         exit 2
         ;;
 esac
@@ -145,7 +155,7 @@ if [ "$show_target" -eq 1 ]; then
 fi
 
 case $target in
-    cloud)
+    cloud|void)
         CATFOOD_ROOT=${CATFOOD_ROOT:-/opt}
         CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-1}
         CATFOOD_INSTALL_YSH=${CATFOOD_INSTALL_YSH:-1}
