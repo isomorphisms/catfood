@@ -148,7 +148,7 @@ build_fieldmouse() {
             IDRIS2_PREFIX="$idric/bootstrap-build" \
                 "$compiler" --build fieldmouse.ipkg
         )
-        mark_state_built fieldmouse "$state"
+        mark_built fieldmouse "$repo"
     fi
 
     expected=$(printf 'sum 10.0\nok')
@@ -179,7 +179,7 @@ build_icu() {
             IDRIS2_PREFIX="$idric/bootstrap-build" \
                 make -j"$jobs" IDRIC="$compiler"
         )
-        mark_built icu "$repo"
+        mark_state_built icu "$state"
     fi
 
     [ -x "$output" ] || {
@@ -209,7 +209,7 @@ build_ib() {
             IDRIS2_PREFIX="$idric/bootstrap-build" \
                 "$compiler" Smoke.idric -o ib-smoke
         )
-        mark_built ib "$repo"
+        mark_state_built ib "$state"
     fi
 
     "$output" >/dev/null
