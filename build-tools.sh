@@ -74,6 +74,7 @@ build_grease() {
             touch Include/Python-ast.h Python/Python-ast.c
             ./configure --prefix="$python_prefix" --without-ensurepip
             make -j"$jobs" python
+            make pybuilddir.txt
             make inclinstall
         )
         ln -s "$python" "$grease_build/bin/python2"
