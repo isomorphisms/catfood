@@ -8,6 +8,7 @@ on:
       - 'android/install.sh'
       - 'android/check.sh'
       - 'tests/android-acceptance-bundles.sh'
+      - 'tests/android-acceptance-bundles-v2.sh'
       - '.github/workflows/android-device-acceptance-bundles.yml'
   pull_request:
     paths:
@@ -15,6 +16,7 @@ on:
       - 'android/install.sh'
       - 'android/check.sh'
       - 'tests/android-acceptance-bundles.sh'
+      - 'tests/android-acceptance-bundles-v2.sh'
       - '.github/workflows/android-device-acceptance-bundles.yml'
   workflow_dispatch:
 
@@ -36,11 +38,13 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
-      - name: Check bundle contract
-        run: sh tests/android-acceptance-bundles.sh
+      - name: Check bundle contracts
+        run: |
+          sh tests/android-acceptance-bundles.sh
+          sh tests/android-acceptance-bundles-v2.sh
 
-      - name: Build and verify both self-contained bundles
-        run: sh android/acceptance/build-bundles.sh
+      - name: Build and verify both corrected self-contained bundles
+        run: sh android/acceptance/build-bundles-v2.sh
 
       - name: Retain exact bundles
         uses: actions/upload-artifact@v4
@@ -88,4 +92,4 @@ jobs:
             --target "$GITHUB_SHA" \
             --prerelease \
             --title "Android device acceptance $short" \
-            --notes "Self-contained physical-device acceptance bundles. Phone and tablet evidence remain separate; one failed case does not prevent the remaining cases from running."
+            --notes "Corrected self-contained physical-device acceptance bundles after the first ARMv7 batch. OSH-readable syntax and YSH-native behavior remain separate evidence; Android 14 dynamic DEX is made read-only before loading; one failed case does not prevent the remaining cases from running."
