@@ -65,16 +65,24 @@ build_grease() {
         # Grease's development interpreter is Python 2.  Its vendored source
         # is intentionally built outside the checkout so feeding a newer
         # Grease revision never mistakes generated files for local edits.
-        # Build only the interpreter core and headers here.  Generic Python
-        # shared modules such as math and curses are not part of Grease's
-        # runtime boundary; the native modules Grease actually uses are built
-        # explicitly from the pinned Oils source below.
+        # Build only the interpreter core, headers, and the small native
+        # Python surface Grease actually imports.  Keep generic sharedmods
+        # disabled; in particular, do not pull curses or unrelated optional
+        # modules into the bootstrap.
         (
             cd "$python_build"
             touch Include/Python-ast.h Python/Python-ast.c
             ./configure --prefix="$python_prefix" --without-ensurepip
+            # Python 2.7.13 names a private gamma helper sinpi, while modern
+            # libc exports sinpi.  Rename only the private helper in this
+            # disposable build copy; its implementation and callers are
+            # otherwise unchanged.
+            sed 's/sinpi/catfood_python2_sinpi/g' \
+                Modules/mathmodule.c > Modules/mathmodule.c.catfood
+            mv Modules/mathmodule.c.catfood Modules/mathmodule.c
             printf '%s\n' \
                 'cStringIO cStringIO.c' \
+                'math mathmodule.c' \
                 '_collections _collectionsmodule.c' \
                 'operator operator.c' \
                 'itertools itertoolsmodule.c' \
