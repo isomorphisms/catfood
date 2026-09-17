@@ -85,6 +85,7 @@ build_grease() {
                 'math mathmodule.c _math.c' \
                 'time timemodule.c' \
                 'select selectmodule.c' \
+                'fcntl fcntlmodule.c' \
                 '_collections _collectionsmodule.c' \
                 'operator operator.c' \
                 'itertools itertoolsmodule.c' \
