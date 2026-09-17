@@ -170,8 +170,13 @@ tar --sort=name --mtime='UTC 2020-01-01' --owner=0 --group=0 --numeric-owner \
 tar --sort=name --mtime='UTC 2020-01-01' --owner=0 --group=0 --numeric-owner \
     -C "$tablet" -czf "$tablet_archive" .
 
-sha256sum "$phone_archive" > "$phone_archive.sha256"
-sha256sum "$tablet_archive" > "$tablet_archive.sha256"
+(
+    cd "$out"
+    phone_name=$(basename "$phone_archive")
+    tablet_name=$(basename "$tablet_archive")
+    sha256sum "$phone_name" > "$phone_name.sha256"
+    sha256sum "$tablet_name" > "$tablet_name.sha256"
+)
 
 printf 'phone bundle:  %s\n' "$phone_archive"
 printf 'tablet bundle: %s\n' "$tablet_archive"
