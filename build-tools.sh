@@ -76,6 +76,8 @@ build_grease() {
             printf '%s\n' \
                 'cStringIO cStringIO.c' \
                 '_collections _collectionsmodule.c' \
+                'operator operator.c' \
+                'itertools itertoolsmodule.c' \
                 '_functools _functoolsmodule.c' \
                 >> Modules/Setup.local
             make -j"$jobs" python
