@@ -43,18 +43,54 @@ PATH="$workspace/bin:$PATH"
 export PATH
 tab=$(printf '\t')
 
+verify_sha256() {
+    expected=$1
+    file=$2
+    if command -v sha256sum >/dev/null 2>&1; then
+        printf '%s  %s\n' "$expected" "$file" | sha256sum -c -
+        return
+    fi
+    toybox=${CATFOOD_TOYBOX:-/system/bin/toybox}
+    if [ -x "$toybox" ]; then
+        printf '%s  %s\n' "$expected" "$file" | "$toybox" sha256sum -c -
+        return
+    fi
+    printf '%s\n' 'Cat Food needs SHA-256 verification; neither sha256sum nor Android toybox is available' >&2
+    exit 127
+}
+
+termux_package_command() {
+    case $1 in
+        gawk) printf '%s\n' awk ;;
+        libiconv) printf '%s\n' iconv ;;
+        *) printf '%s\n' "$1" ;;
+    esac
+}
+
 install_termux_packages() {
     values=$1
     package=$2
     [ "$values" != - ] || return 0
-    command -v pkg >/dev/null 2>&1 || {
-        printf '%s declares Termux packages but pkg is not available: %s\n' "$package" "$values" >&2
-        exit 127
-    }
+
     old_ifs=$IFS
     IFS=,
     set -- $values
     IFS=$old_ifs
+
+    missing=
+    for candidate in "$@"; do
+        provided_command=$(termux_package_command "$candidate")
+        if ! command -v "$provided_command" >/dev/null 2>&1; then
+            missing="$missing${missing:+ }$candidate"
+        fi
+    done
+    [ -n "$missing" ] || return 0
+
+    command -v pkg >/dev/null 2>&1 || {
+        printf '%s declares missing Termux packages but pkg is not available: %s\n' "$package" "$missing" >&2
+        exit 127
+    }
+    set -- $missing
     printf '%-24s pkg %s\n' "$package" "$*"
     pkg install -y "$@"
 }
@@ -135,6 +171,40 @@ check_package_requirements() {
     done
 }
 
+remove_legacy_workbench_link() {
+    name=$1
+    path=$workspace/bin/$name
+    [ -L "$path" ] || return 0
+    existing=$(readlink "$path" 2>/dev/null || printf '%s' '')
+    case "$existing" in
+        "$workspace/packages/"*) ;;
+        "$workspace/"*)
+            printf '%-24s remove legacy workbench link\n' "$name"
+            rm -f "$path"
+            ;;
+    esac
+}
+
+remove_legacy_workbench_wrapper() {
+    name=$1
+    marker=$2
+    path=$workspace/bin/$name
+    if [ -f "$path" ] && grep -F "$marker" "$path" >/dev/null 2>&1; then
+        printf '%-24s remove legacy workbench wrapper\n' "$name"
+        rm -f "$path"
+    fi
+}
+
+# Older Cat Food Termux feeds treated the device as a source workbench.  A
+# phone/tablet is now a runtime target.  Remove only the links and wrappers
+# written by those old Cat Food paths; arbitrary user commands remain protected.
+for legacy_command in R Rscript edric idris2 fieldmouse icu ib-smoke ick ithon osh ysh grease go_down_load gdl; do
+    remove_legacy_workbench_link "$legacy_command"
+done
+remove_legacy_workbench_wrapper az '# catfood az wrapper'
+remove_legacy_workbench_wrapper abe '# catfood az wrapper'
+remove_legacy_workbench_wrapper aa '# catfood aa wrapper'
+
 safe_command_destination() {
     destination=$1
     mode=$2
@@ -210,19 +280,16 @@ EOF_ROW
 
     if [ "$current" -eq 0 ]; then
         rm -f "$receipt"
-        if [ ! -f "$workspace/downloads/$package-$sha256" ] ||
-           ! printf '%s  %s\n' "$sha256" "$workspace/downloads/$package-$sha256" | sha256sum -c - >/dev/null 2>&1; then
-            download="$workspace/downloads/$package-$sha256"
+        download="$workspace/downloads/$package-$sha256"
+        if [ ! -f "$download" ] || ! verify_sha256 "$sha256" "$download" >/dev/null 2>&1; then
             temporary_download="$download.tmp.$$"
             rm -f "$temporary_download"
             printf '%-24s fetch %s@%s\n' "$package" "$source" "$source_ref"
             curl -fL --retry 2 "$url" -o "$temporary_download"
-            printf '%s  %s\n' "$sha256" "$temporary_download" | sha256sum -c -
+            verify_sha256 "$sha256" "$temporary_download"
             mv "$temporary_download" "$download"
             publication_result=PASS
             publication_evidence=$url
-        else
-            download="$workspace/downloads/$package-$sha256"
         fi
 
         staging="$workspace/packages/.$package.staging.$$"
