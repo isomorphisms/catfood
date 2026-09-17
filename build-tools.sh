@@ -82,7 +82,7 @@ build_grease() {
             mv Modules/mathmodule.c.catfood Modules/mathmodule.c
             printf '%s\n' \
                 'cStringIO cStringIO.c' \
-                'math mathmodule.c' \
+                'math mathmodule.c _math.c' \
                 '_collections _collectionsmodule.c' \
                 'operator operator.c' \
                 'itertools itertoolsmodule.c' \
