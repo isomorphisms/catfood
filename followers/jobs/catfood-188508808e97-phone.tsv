@@ -15,10 +15,10 @@ required	yes
 action	leader target for Cat Food commit 188508808e97a22eef1f2ce8f4a4b3dfece4ca11 on phone; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	physical-device
 acceptance_action	./catfood && sh android/check.sh gaps phone
-state	pending
-last_attempt_commit	-
+state	accepted
+last_attempt_commit	188508808e97a22eef1f2ce8f4a4b3dfece4ca11
 blocker	-
-evidence	-
+evidence	catfood-188508808e97-phone.tsv
 depends_on	-
 reason	android-artifact-and-device
 superseded_by	-
