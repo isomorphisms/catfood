@@ -17,6 +17,7 @@ Before changing phone/tablet delivery, read [`android/README.md`](android/README
 - Unfinished ARM/Thumb or other experimental native backends are not prerequisites for unrelated Android delivery.
 - Bind packages to exact source/package commits, ABI, URL, SHA-256, runtime dependencies, and package dependencies.
 - Keep publication, digest verification, installation, launch, behavior, emulator evidence, and physical-device evidence separate.
+- When a phone/tablet command block is meant to produce output the human will paste back, use ANSI-colored section/action/PASS/FAIL markers when supported so the requested result is easy to find. Keep receipt fields and other machine-readable evidence plain, and never make color the only signal.
 
 Run `sh tests/android-delivery.sh` for repository-side contract changes. `sh android/check.sh ready phone|tablet` is intentionally allowed to remain red while declared runtime gaps exist.
 
