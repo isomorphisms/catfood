@@ -83,6 +83,7 @@ build_grease() {
             printf '%s\n' \
                 'cStringIO cStringIO.c' \
                 'math mathmodule.c _math.c' \
+                'time timemodule.c' \
                 '_collections _collectionsmodule.c' \
                 'operator operator.c' \
                 'itertools itertoolsmodule.c' \
