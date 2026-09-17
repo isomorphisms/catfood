@@ -1,0 +1,91 @@
+name: Android device acceptance bundles
+
+on:
+  push:
+    branches: [android/device-acceptance-bundles]
+    paths:
+      - 'android/acceptance/**'
+      - 'android/install.sh'
+      - 'android/check.sh'
+      - 'tests/android-acceptance-bundles.sh'
+      - '.github/workflows/android-device-acceptance-bundles.yml'
+  pull_request:
+    paths:
+      - 'android/acceptance/**'
+      - 'android/install.sh'
+      - 'android/check.sh'
+      - 'tests/android-acceptance-bundles.sh'
+      - '.github/workflows/android-device-acceptance-bundles.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-device-acceptance-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Check bundle contract
+        run: sh tests/android-acceptance-bundles.sh
+
+      - name: Build and verify both self-contained bundles
+        run: sh android/acceptance/build-bundles.sh
+
+      - name: Retain exact bundles
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-device-acceptance-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            dist/device-acceptance/catfood-phone-acceptance-*.tar.gz
+            dist/device-acceptance/catfood-phone-acceptance-*.tar.gz.sha256
+            dist/device-acceptance/catfood-tablet-acceptance-*.tar.gz
+            dist/device-acceptance/catfood-tablet-acceptance-*.tar.gz.sha256
+          if-no-files-found: error
+
+  publish:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/android/device-acceptance-bundles'
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Download exact bundles
+        uses: actions/download-artifact@v4
+        with:
+          name: android-device-acceptance-${{ github.sha }}
+          path: release
+
+      - name: Verify retained bundle digests
+        working-directory: release
+        run: |
+          set -eu
+          for digest in *.sha256; do
+            sha256sum -c "$digest"
+          done
+
+      - name: Publish immutable acceptance bundle pair
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          short=$(printf '%s' "$GITHUB_SHA" | cut -c1-12)
+          tag="android-device-acceptance-$short"
+          gh release create "$tag" \
+            release/catfood-phone-acceptance-*.tar.gz \
+            release/catfood-phone-acceptance-*.tar.gz.sha256 \
+            release/catfood-tablet-acceptance-*.tar.gz \
+            release/catfood-tablet-acceptance-*.tar.gz.sha256 \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Android device acceptance $short" \
+            --notes "Self-contained physical-device acceptance bundles. Phone and tablet evidence remain separate; one failed case does not prevent the remaining cases from running."
