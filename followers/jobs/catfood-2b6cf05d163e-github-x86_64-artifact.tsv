@@ -15,11 +15,11 @@ required	yes
 action	carried-forward artifact follower for Cat Food commit 2b6cf05d163e666895c0eedc39bd404b5f73f2d7; validate the unresolved Android artifact contract without treating the Grease bootstrap source change as artifact evidence.
 acceptance_kind	artifact
 acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	carried-forward unresolved Android artifact validation from 2a9a674e17fc61f270a7114f882750fdf8d57430; the newer source trigger does not erase that obligation
-superseded_by	-
+superseded_by	catfood-aa7327b27af6-github-x86_64-artifact
 follow_policy	exact
