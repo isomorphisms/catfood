@@ -13,7 +13,7 @@ follower_platform	hetzner-x86_64
 follower_arch	x86_64
 required	yes
 action	follower target for Cat Food commit 3c068e8dc8956051676426043493a04679940425 on hetzner-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
-acceptance_kind	cloud
+acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh cloud
 state	pending
 last_attempt_commit	-
