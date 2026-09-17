@@ -1,9 +1,9 @@
 schema	aici-follower-job-v1
-job_id	catfood-aa7327b27af6-github-x86_64
+job_id	catfood-2e3718f9ae6e-github-x86_64
 repository	isomorphisms/catfood
 branch	grease/minimal-python2-bootstrap
 pr	49
-trigger_commit	aa7327b27af6d12367b3c09860955beeb8868019
+trigger_commit	2e3718f9ae6e00701534e8cd288967d06e62fa0c
 leader_platform	github-x86_64
 leader_arch	x86_64
 leader_evidence	-
@@ -12,14 +12,14 @@ artifact_sha256	-
 follower_platform	github-x86_64
 follower_arch	x86_64
 required	yes
-action	leader target for Cat Food commit aa7327b27af6d12367b3c09860955beeb8868019 on github-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+action	leader target for Cat Food commit 2e3718f9ae6e00701534e8cd288967d06e62fa0c on github-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh github
-state	superseded
+state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	shared-portable
-superseded_by	catfood-2e3718f9ae6e-github-x86_64
+superseded_by	-
 follow_policy	exact
