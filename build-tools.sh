@@ -73,7 +73,11 @@ build_grease() {
             cd "$python_build"
             touch Include/Python-ast.h Python/Python-ast.c
             ./configure --prefix="$python_prefix" --without-ensurepip
-            printf '%s\n' 'cStringIO cStringIO.c' >> Modules/Setup.local
+            printf '%s\n' \
+                'cStringIO cStringIO.c' \
+                '_collections _collectionsmodule.c' \
+                '_functools _functoolsmodule.c' \
+                >> Modules/Setup.local
             make -j"$jobs" python
             make pybuilddir.txt
             make inclinstall
