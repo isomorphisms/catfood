@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-3c068e8dc895-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	android/minimal-tablet-bootstrap
+pr	46
+trigger_commit	3c068e8dc8956051676426043493a04679940425
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit 3c068e8dc8956051676426043493a04679940425 on github-x86_64-artifact; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device
+superseded_by	-
+follow_policy	exact
