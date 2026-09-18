@@ -94,6 +94,8 @@ Repositories marked `recursive` have actual submodules and are initialized autom
 
 `./check-manifest.sh --remote` validates workbench manifest structure and verifies that every named remote branch exists. `sh android/check.sh check` independently validates total Android inventory coverage and package metadata.
 
+Local checkout presence is a separate fact from inventory membership. `./catfood where TOOL` prints a path only when that path is a Git checkout whose `origin` matches the repository recorded by Cat Food; it fails when the checkout is absent or mismatched. `./catfood where` lists all locally verified Cat Food checkouts. Do not infer that `$CATFOOD_ROOT/TOOL` exists merely because `tools.tsv` names the tool or `catfood help TOOL` shows its canonical workbench location. On phone and tablet, source repositories are normally absent by design; checkout lookup does not clone them or change the runtime-consumer boundary.
+
 ## Private provider config
 
 Amazon and AbeBooks credentials stay outside Git. A private config directory can be handed to the provisioner with `CATFOOD_CONFIG_DIR=/private/catfood-config ./provision.sh`; the importer copies only the recognized files to the user configuration directory with restrictive permissions.
