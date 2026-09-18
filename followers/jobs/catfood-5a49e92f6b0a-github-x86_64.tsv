@@ -1,9 +1,9 @@
 schema	aici-follower-job-v1
-job_id	catfood-2d3d16a571a0-github-x86_64
+job_id	catfood-5a49e92f6b0a-github-x86_64
 repository	isomorphisms/catfood
-branch	fix/icu-idric-net-workbench
-pr	52
-trigger_commit	2d3d16a571a0ead2ff1699b9cb97da24ceeeb6ea
+branch	fix/local-checkout-locator
+pr	53
+trigger_commit	5a49e92f6b0a79df6a5739fe2e136d8ff07d2a87
 leader_platform	github-x86_64
 leader_arch	x86_64
 leader_evidence	-
@@ -12,14 +12,14 @@ artifact_sha256	-
 follower_platform	github-x86_64
 follower_arch	x86_64
 required	yes
-action	leader target for Cat Food commit 2d3d16a571a0ead2ff1699b9cb97da24ceeeb6ea on github-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+action	leader target for Cat Food commit 5a49e92f6b0a79df6a5739fe2e136d8ff07d2a87 on github-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh github
-state	superseded
+state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	shared-portable
-superseded_by	catfood-5a49e92f6b0a-github-x86_64
+superseded_by	-
 follow_policy	exact

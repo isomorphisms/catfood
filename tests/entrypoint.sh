@@ -104,4 +104,36 @@ sh "$root/catfood" help gopeed | grep -F '# Gopeed REST API' >/dev/null
 sh "$root/catfood" help ib | grep -F 'Repository: https://github.com/isomorphisms/ib.git' >/dev/null
 sh "$root/catfood" help grease | grep -F 'stage-one shell bootstrap' >/dev/null
 
-printf '%s\n' 'cat food cloud, generic Termux, and inventory help entrypoints pass'
+located=$(
+    HOME=$termux_home \
+    CATFOOD_ROOT=$termux_home/opt \
+    CATFOOD_MANIFEST=$manifest \
+        sh "$root/catfood" where catfood-fixture
+)
+test "$located" = "$termux_home/opt/catfood-fixture"
+
+locations=$temporary/locations.tsv
+HOME=$termux_home \
+CATFOOD_ROOT=$termux_home/opt \
+CATFOOD_MANIFEST=$manifest \
+    sh "$root/catfood" where > "$locations"
+grep -F "catfood-fixture${tab}$termux_home/opt/catfood-fixture" "$locations" >/dev/null
+
+if HOME=$termux_home \
+    CATFOOD_ROOT=$termux_home/opt \
+    CATFOOD_MANIFEST=$manifest \
+    sh "$root/catfood" where missing-tool >/dev/null 2>&1; then
+    printf '%s\n' 'checkout lookup accepted an unknown tool' >&2
+    exit 1
+fi
+
+rm -rf "$termux_home/opt/catfood-fixture"
+if HOME=$termux_home \
+    CATFOOD_ROOT=$termux_home/opt \
+    CATFOOD_MANIFEST=$manifest \
+    sh "$root/catfood" where catfood-fixture >/dev/null 2>&1; then
+    printf '%s\n' 'checkout lookup treated a canonical path as an existing checkout' >&2
+    exit 1
+fi
+
+printf '%s\n' 'cat food cloud, generic Termux, inventory help, and checkout lookup entrypoints pass'
