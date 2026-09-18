@@ -9,6 +9,11 @@ Cat Food has one control plane and four concrete acceptance targets. Shared mech
 | `container` | Disposable Debian/Ubuntu container or sandbox | full source workbench; depth 1; no shell-profile modification | A clean ephemeral Linux workbench can provision and build. It does not prove persistent-host or Android behavior. |
 | `cloud` | Persistent Debian/Ubuntu host, including Hetzner | `/opt`; full source workbench and host tool builds | The persistent cloud workbench path provisions and builds. Hetzner-specific acceptance may add provider checks. |
 
+Device target identity does not imply a storage layout. Phone and tablet paths,
+mounts, removable media, and executable locations are tracked separately in
+[`docs/device-storage.md`](docs/device-storage.md); never infer one device's
+storage facts from the other.
+
 `termux` remains a compatibility source-workbench target for an unknown or explicitly generic Termux architecture. `hetzner` is an alias for `cloud`.
 
 ## Selection
