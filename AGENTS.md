@@ -6,6 +6,13 @@ Before changing this repository, read its README and repository-local documentat
 
 Keep this file repository-specific. Do not copy the shared `ai-ci` rulebook here.
 
+## Local checkout locations
+
+- Treat `tools.tsv` as inventory, not proof that a checkout exists on the current machine.
+- Do not guess checkout paths from repository names, `$HOME`, `/opt`, or the canonical workbench location shown by `catfood help`.
+- Use `./catfood where TOOL` when a task depends on a local repository path. Use the returned path only when the command succeeds; `./catfood where` lists all verified local Cat Food checkouts.
+- Phone and tablet are runtime consumers, so a missing source checkout there is normally correct. Do not clone the source fleet merely to satisfy a local-path lookup.
+
 ## Android delivery
 
 Before changing phone/tablet delivery, read [`android/README.md`](android/README.md), `android/delivery.tsv`, and `android/packages.tsv`.
