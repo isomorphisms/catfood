@@ -7,6 +7,7 @@ usage() {
     cat <<'EOF'
 usage: ./catfood [--target]
        ./catfood help [tool]
+       ./catfood where [tool]
 
 Feed the selected Cat Food target.
 
@@ -24,6 +25,10 @@ Compatibility targets:
 Help:
   ./catfood help          list every Cat Food tool
   ./catfood help TOOL     show that tool's Cat Food reference
+
+Local checkout lookup:
+  ./catfood where         list verified local repository checkouts
+  ./catfood where TOOL    print TOOL's verified local checkout
 
 Overrides:
   CATFOOD_TARGET=phone|tablet|container|cloud|termux|hetzner
@@ -53,7 +58,8 @@ show_inventory_help() {
 
 Repository: https://github.com/isomorphisms/grease.git
 Branch: main
-Workbench checkout: $CATFOOD_ROOT/grease
+Canonical workbench checkout: $CATFOOD_ROOT/grease
+Local presence: use ./catfood where grease; do not assume the checkout exists.
 Cat Food role: stage-one shell bootstrap, fed separately before tools.tsv.
 
 Cat Food keeps Grease outside tools.tsv because it supplies the shell used to feed the remaining workbench. See bootstrap.sh for the exact bootstrap path and the Grease checkout itself for repository-specific command help.
@@ -72,7 +78,8 @@ EOF
     printf 'Repository: %s\n' "$repository"
     printf 'Branch: %s\n' "$branch"
     printf 'Submodules: %s\n' "$submodules"
-    printf 'Workbench checkout: $CATFOOD_ROOT/%s\n' "$name"
+    printf 'Canonical workbench checkout: $CATFOOD_ROOT/%s\n' "$name"
+    printf '%s\n' 'Local presence: use ./catfood where TOOL; do not assume the checkout exists.'
     printf '%s\n\n' 'Cat Food role: workbench inventory entry.'
     printf '%s\n' 'This generic page records where Cat Food gets the tool and how it is fed. For repository-specific commands, use the tool or checkout help/README. A docs/help/TOOL.md page can provide a richer Cat Food reference for APIs, protocols, environment variables, examples, or target-specific constraints.'
 }
@@ -113,6 +120,132 @@ detect_target() {
     esac
 }
 
+normalize_repository_url() {
+    repository=${1%.git}
+    case $repository in
+        git@github.com:*)
+            repository=https://github.com/${repository#git@github.com:}
+            ;;
+        ssh://git@github.com/*)
+            repository=https://github.com/${repository#ssh://git@github.com/}
+            ;;
+    esac
+    printf '%s\n' "$repository"
+}
+
+repository_matches() {
+    checkout=$1
+    expected=$2
+
+    [ -e "$checkout/.git" ] || return 1
+    origin=$(git -C "$checkout" remote get-url origin 2>/dev/null || true)
+    [ -n "$origin" ] || return 1
+
+    [ "$(normalize_repository_url "$origin")" = "$(normalize_repository_url "$expected")" ]
+}
+
+lookup_workspace() {
+    if [ -n "${CATFOOD_ROOT:-}" ]; then
+        printf '%s\n' "$CATFOOD_ROOT"
+        return 0
+    fi
+
+    lookup_target=${CATFOOD_TARGET:-auto}
+    if [ "$lookup_target" = auto ]; then
+        lookup_target=$(detect_target)
+    fi
+    case $lookup_target in
+        hetzner) lookup_target=cloud ;;
+    esac
+
+    case $lookup_target in
+        cloud)
+            printf '%s\n' /opt
+            ;;
+        container)
+            if [ -w /opt ]; then
+                printf '%s\n' /opt
+            else
+                printf '%s\n' "$HOME/opt"
+            fi
+            ;;
+        phone|tablet|termux)
+            printf '%s\n' "$HOME/opt"
+            ;;
+        *)
+            printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, or hetzner; found: %s\n' "$lookup_target" >&2
+            return 2
+            ;;
+    esac
+}
+
+lookup_tool() {
+    topic=$1
+    manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
+
+    case $topic in
+        catfood)
+            lookup_name=catfood
+            lookup_repository=https://github.com/isomorphisms/catfood.git
+            lookup_checkout=$root
+            return 0
+            ;;
+        grease)
+            lookup_name=grease
+            lookup_repository=https://github.com/isomorphisms/grease.git
+            lookup_checkout=$(lookup_workspace)/grease
+            return 0
+            ;;
+    esac
+
+    line=$(awk -v topic="$topic" '$1 !~ /^#/ && NF >= 4 && $1 == topic { print; found=1; exit } END { if (!found) exit 1 }' "$manifest") || return 1
+    set -- $line
+    lookup_name=$1
+    lookup_repository=$2
+    lookup_checkout=$(lookup_workspace)/$lookup_name
+}
+
+where_one() {
+    topic=$1
+    if ! lookup_tool "$topic"; then
+        printf 'unknown Cat Food tool: %s\n' "$topic" >&2
+        return 2
+    fi
+
+    if repository_matches "$lookup_checkout" "$lookup_repository"; then
+        printf '%s\n' "$lookup_checkout"
+        return 0
+    fi
+
+    if [ -e "$lookup_checkout" ]; then
+        printf '%s: %s exists but is not the expected checkout of %s\n' \
+            "$lookup_name" "$lookup_checkout" "$lookup_repository" >&2
+    else
+        printf '%s: no verified local checkout; repository: %s\n' \
+            "$lookup_name" "$lookup_repository" >&2
+    fi
+    return 1
+}
+
+where_index() {
+    manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
+
+    if repository_matches "$root" https://github.com/isomorphisms/catfood.git; then
+        printf 'catfood\t%s\n' "$root"
+    fi
+
+    if lookup_tool grease && repository_matches "$lookup_checkout" "$lookup_repository"; then
+        printf 'grease\t%s\n' "$lookup_checkout"
+    fi
+
+    awk '$1 !~ /^#/ && NF >= 4 { print $1 }' "$manifest" |
+    while IFS= read -r topic; do
+        if lookup_tool "$topic" && repository_matches "$lookup_checkout" "$lookup_repository"; then
+            printf '%s\t%s\n' "$lookup_name" "$lookup_checkout"
+        fi
+    done
+}
+
 show_target=0
 case ${1:-} in
     '') ;;
@@ -120,6 +253,14 @@ case ${1:-} in
     -h|--help) usage; exit 0 ;;
     help)
         show_help_page "${2:-}"
+        exit $?
+        ;;
+    where)
+        if [ -n "${2:-}" ]; then
+            where_one "$2"
+        else
+            where_index
+        fi
         exit $?
         ;;
     *) usage >&2; exit 2 ;;
