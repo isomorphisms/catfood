@@ -39,6 +39,20 @@ executable location, shared storage, or removable storage:
   working external SD card has been established. Shared Downloads rejected
   direct ELF execution, while private Termux storage executed the same Mali-G57
   test binary. Do not call tablet Downloads an SD card.
+- **Tablet ADB boundary, verified 2026-09-18 and explicitly deferred:** do
+  not turn a physical tablet test that can run directly under Termux into an ADB
+  prerequisite. The current Termux client reports `adb mdns services` as
+  unsupported and same-device Android 15 wireless pairing failed with
+  `protocol fault (couldn't read status message): Success`. ADB setup is a
+  separate problem for another session. Do not ask the human to retry pairing,
+  install ADB tooling, or route ordinary tablet acceptance through ADB unless
+  the human explicitly reopens ADB work.
+- **Tablet removable-storage boundary, verified 2026-09-18 and explicitly
+  deferred:** `~/storage/external-1` is absent and no working external SD card
+  has been established on `TAB_P10`. Do not prescribe SD-card paths, SD-card
+  diagnostics, or moving work to removable storage on this tablet unless the
+  human explicitly reopens the tablet SD-card problem and new direct evidence
+  establishes a working mount.
 - When these facts change, update this section rather than relying on chat
   history or another device's layout.
 
