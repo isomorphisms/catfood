@@ -1,9 +1,9 @@
 schema	aici-follower-job-v1
-job_id	catfood-0bad7b6e5566-github-x86_64-artifact
+job_id	catfood-cb726afa73a7-github-x86_64-artifact
 repository	isomorphisms/catfood
-branch	android/minimal-tablet-bootstrap
-pr	46
-trigger_commit	0bad7b6e5566f0edc062e32c9a10f3bca17cf597
+branch	android/powervr-runners
+pr	41
+trigger_commit	cb726afa73a7b8484d4469790d8dab1945a511bb
 leader_platform	phone
 leader_arch	armv7
 leader_evidence	-
@@ -12,7 +12,7 @@ artifact_sha256	-
 follower_platform	github-x86_64-artifact
 follower_arch	x86_64
 required	yes
-action	follower target for Cat Food commit 0bad7b6e5566f0edc062e32c9a10f3bca17cf597 on github-x86_64-artifact; fetch that exact commit, run the named acceptance action, and record a receipt.
+action	Validate the exact published phone and tablet PowerVR runner packages referenced by Cat Food commit cb726afa73a7b8484d4469790d8dab1945a511bb, including URL, SHA-256, metadata, extraction, and install contract.
 acceptance_kind	artifact
 acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
 state	superseded
@@ -20,6 +20,6 @@ last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
-reason	android-artifact-and-device; carries forward unresolved artifact validation from 5a49e92f6b0a79df6a5739fe2e136d8ff07d2a87
+reason	carried-forward Android artifact obligation across shared-portable descendant
 superseded_by	catfood-04182f61259f-github-x86_64-artifact
 follow_policy	exact
