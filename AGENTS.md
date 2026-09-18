@@ -79,11 +79,12 @@ For the exact source commit being led from mobile:
 
 - infer affected followers rather than relying on a human reminder to test x86;
 - run follower checks available in the current environment;
-- create durable follower jobs for every affected environment that cannot run here;
+- create durable follower jobs for every affected **maintained target** that cannot run here; do not turn every architecture/page-size/emulator/hardware combination into a target;
 - bind jobs and artifacts to exact commits and SHA-256 identities;
 - never claim GitHub, local/container x86-64, Hetzner, tablet, or phone acceptance from another target's receipt;
 - preserve build, runtime, artifact, publication, and physical-device evidence as separate acceptance kinds;
 - leave inaccessible or unsupported targets pending/blocked/unsupported rather than calling them green;
+- if a possible future target is worth recording before it is actually maintained, use the shared conditional `n/a` policy rather than a required blocked follower; physical-device work is required only for an identified physical deployment target;
 - record explicit supersession when later work replaces an unfinished follower obligation.
 
 Before declaring follower work caught up, run AICI follower verification/reconciliation, `sh followers/stale.sh`, and inspect `sh followers/manage.sh pending <source-commit>`. A follower closes only after its required matching receipt exists.
