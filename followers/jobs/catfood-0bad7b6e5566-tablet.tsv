@@ -15,11 +15,11 @@ required	yes
 action	follower target for Cat Food commit 0bad7b6e5566f0edc062e32c9a10f3bca17cf597 on tablet; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	physical-device
 acceptance_action	./catfood && sh android/check.sh gaps tablet
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	android-artifact-and-device; carries forward unresolved tablet acceptance from 5a49e92f6b0a79df6a5739fe2e136d8ff07d2a87
-superseded_by	-
+superseded_by	catfood-2be90ca6a9b0-tablet
 follow_policy	exact
