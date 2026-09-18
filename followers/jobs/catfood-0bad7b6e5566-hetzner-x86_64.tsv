@@ -21,5 +21,5 @@ blocker	-
 evidence	-
 depends_on	-
 reason	carried-forward unresolved Hetzner x86-64 runtime acceptance from 5a49e92f6b0a79df6a5739fe2e136d8ff07d2a87; newer Android source state does not erase that obligation
-superseded_by	-
+superseded_by	catfood-04182f61259f-hetzner-x86_64
 follow_policy	exact
