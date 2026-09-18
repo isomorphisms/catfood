@@ -21,5 +21,5 @@ blocker	-
 evidence	-
 depends_on	-
 reason	carried-forward Android artifact obligation across shared-portable descendant
-superseded_by	-
+superseded_by	catfood-04182f61259f-github-x86_64-artifact
 follow_policy	exact
