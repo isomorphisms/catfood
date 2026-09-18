@@ -6,7 +6,7 @@ pr	41
 trigger_commit	cb726afa73a7b8484d4469790d8dab1945a511bb
 leader_platform	phone
 leader_arch	armv7
-leader_evidence	catfood-cb726afa73a7-phone.tsv
+leader_evidence	-
 artifact	powervr-runner-phone-armeabi-v7a.tar.gz
 artifact_sha256	714e5f706a05224ff4f43188a6fb043e7fa39f6a7f7f6ea7b0ef0dcb424502de
 follower_platform	phone
@@ -18,7 +18,7 @@ acceptance_action	CATFOOD_TARGET=phone ./catfood; sh android/check.sh gaps phone
 state	accepted
 last_attempt_commit	cb726afa73a7b8484d4469790d8dab1945a511bb
 blocker	-
-evidence	-
+evidence	catfood-cb726afa73a7-phone.tsv
 depends_on	-
 reason	shared-portable workbench manifest correction with existing Android delivery
 superseded_by	-
