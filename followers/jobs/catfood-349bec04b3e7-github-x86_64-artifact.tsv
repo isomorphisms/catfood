@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-349bec04b3e7-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	android/device-acceptance-bundles
+pr	50
+trigger_commit	349bec04b3e7293fbd0e834d08db085b5b66c327
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit 349bec04b3e7293fbd0e834d08db085b5b66c327 on github-x86_64-artifact; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device; carries forward unresolved artifact validation from 695e692e3a82f06e57d0ffe4bd5daddaaad6963d
+superseded_by	-
+follow_policy	exact
