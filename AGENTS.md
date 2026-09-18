@@ -39,6 +39,11 @@ executable location, shared storage, or removable storage:
   working external SD card has been established. Shared Downloads rejected
   direct ELF execution, while private Termux storage executed the same Mali-G57
   test binary. Do not call tablet Downloads an SD card.
+- **Tablet ADB boundary, verified 2026-09-18:** do not turn a physical
+  tablet test that can run directly under Termux into an ADB prerequisite.
+  Working ADB connectivity on the tablet has not been established and is a
+  separate setup problem for another session. Prefer direct on-device execution
+  and receipts unless the task inherently requires ADB.
 - When these facts change, update this section rather than relying on chat
   history or another device's layout.
 
