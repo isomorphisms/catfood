@@ -21,5 +21,5 @@ blocker	-
 evidence	-
 depends_on	-
 reason	android-artifact-and-device; carries forward unresolved artifact validation from 5a49e92f6b0a79df6a5739fe2e136d8ff07d2a87
-superseded_by	-
+superseded_by	catfood-04182f61259f-github-x86_64-artifact
 follow_policy	exact
