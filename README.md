@@ -47,15 +47,17 @@ Build, package, publication, installation, launch, runtime behavior, emulator ex
 
 ### Android bootstrap
 
-The Cat Food checkout itself is the small control plane. On Termux, provide the basic download/checksum/archive commands, clone Cat Food outside the runtime tree, and run it:
+The Cat Food checkout itself is the small control plane. On Termux, install only what is needed to fetch that checkout, then let Android delivery install a declared runtime dependency only when its command is actually missing:
 
 ```sh
-pkg install -y git ca-certificates curl coreutils tar
+pkg install -y git ca-certificates
 mkdir -p "$HOME/.cache"
 git clone --depth 1 https://github.com/isomorphisms/catfood.git "$HOME/.cache/catfood"
 cd "$HOME/.cache/catfood"
 ./catfood
 ```
+
+Package verification uses an existing `sha256sum` when present and otherwise Android's `/system/bin/toybox sha256sum`; GNU coreutils is not a bootstrap requirement. Likewise, an existing Android/Termux `tar`, `grep`, `sed`, `awk`, `iconv`, or other declared command is reused instead of installing a duplicate Termux package.
 
 Runtime state stays directly under `~/opt` by default: stable commands in `~/opt/bin`, installed packages in `~/opt/packages`, receipts in `~/opt/receipts`, and downloads in `~/opt/downloads`.
 
@@ -76,6 +78,7 @@ The core host build currently exercises the repositories that need a real build 
 
 - Grease builds its vendored Python 2 bootstrap outside the checkout and exposes the generated interpreter; released native YSH is the stage-one shell.
 - Idriç runs its checked-in `./edric all` bootstrap and focused handoff tests.
+- Idric-Net builds and installs its `idric_net` package into the current Idriç prefix before dependent host clients such as ICU are built.
 - Fieldmouse builds with Idriç, runs an interpreter smoke test, and rebuilds when Fieldmouse or Idriç changes.
 - ICU builds with Idriç and OpenSSL into its checked-in command path.
 - IB initializes its PDF-harvester submodule and compiles its deterministic smoke program.
@@ -93,6 +96,8 @@ Build stamps are keyed to repository commits. `catfood-update` fetches repositor
 Repositories marked `recursive` have actual submodules and are initialized automatically. New workbench clones use shallow history, 12 commits by default; set `CATFOOD_DEPTH` to change that. Existing checkouts are fetched without rewriting their history.
 
 `./check-manifest.sh --remote` validates workbench manifest structure and verifies that every named remote branch exists. `sh android/check.sh check` independently validates total Android inventory coverage and package metadata.
+
+Local checkout presence is a separate fact from inventory membership. `./catfood where TOOL` prints a path only when that path is a Git checkout whose `origin` matches the repository recorded by Cat Food; it fails when the checkout is absent or mismatched. `./catfood where` lists all locally verified Cat Food checkouts. Do not infer that `$CATFOOD_ROOT/TOOL` exists merely because `tools.tsv` names the tool or `catfood help TOOL` shows its canonical workbench location. On phone and tablet, source repositories are normally absent by design; checkout lookup does not clone them or change the runtime-consumer boundary.
 
 ## Private provider config
 
