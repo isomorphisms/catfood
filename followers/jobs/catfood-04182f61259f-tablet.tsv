@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-04182f61259f-tablet
+repository	isomorphisms/catfood
+branch	android/powervr-runners
+pr	41
+trigger_commit	04182f61259ff22d930ebcebadd0d175203942ba
+leader_platform	tablet
+leader_arch	aarch64
+leader_evidence	-
+artifact	powervr-runner-tablet-arm64-v8a.tar.gz
+artifact_sha256	25ee1a7de1cbfed2ab20670e8e26824904d98efe079f080d7d66e79a5a29bb50
+follower_platform	tablet
+follower_arch	aarch64
+required	yes
+action	Run the corrected Mali-aware packaged Android GLES acceptance on the physical TAB_P10 tablet and preserve the exact package-bound receipt.
+acceptance_kind	physical-device
+acceptance_action	Verify package hash 25ee1a7de1cbfed2ab20670e8e26824904d98efe079f080d7d66e79a5a29bb50; run powervr-accept directly under Termux on TAB_P10; require ARM / Mali-G57 identity, 6/6 compile-link PASS, 6/6 framebuffer PASS, and final Android GLES packaged acceptance PASS.
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	tablet package repinned to corrected Mali-aware acceptance wrapper
+superseded_by	-
+follow_policy	exact
