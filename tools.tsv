@@ -31,10 +31,10 @@ ddg https://github.com/isomorphisms/ddg.git develop recursive
 chawan https://github.com/isomorphisms/chawan.git master recursive
 gopeed https://github.com/isomorphisms/gopeed.git main none
 manimi https://github.com/isomorphismes/manimi.git master none
-wegert https://github.com/isomorphismes/wegert.git main none
+wegert https://github.com/isomorphismes/wegert.git main recursive
 yt-shorts https://github.com/isomorphisms/yt-shorts.git main none
 ai-ci https://github.com/isomorphisms/ai-ci.git main none
-computer-science https://github.com/walnut-burgundy/computer-science.git how-long+how-wide none
+computer-science https://github.com/walnut-burgundy/computer-science.git how-long+how-wide recursive
 utilities-android-phone-user https://github.com/isomorphisms/utilities-android-phone-user.git main none
 
 # Current applications, games, and mathematical experiments
