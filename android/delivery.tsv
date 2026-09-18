@@ -11,6 +11,7 @@ ithon	runtime	gap:android-package-missing	gap:android-package-missing	stable-run
 icky	host	n/a	n/a	ick-parser-host-component
 ick	host	n/a	n/a	experimental-c-compiler-host-tool
 Idric	runtime	gap:android-package-missing	gap:android-package-missing	compiler-interpreter-runtime
+Idric-Net	host	n/a	n/a	ICU-networking-semantics-build-dependency
 idric-cli	runtime	gap:android-package-missing	gap:android-package-missing	command-line-runtime
 issh	runtime	gap:android-package-missing	gap:android-package-missing	libssh2-runtime-library-not-shell-command
 fieldmouse	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
