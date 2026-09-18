@@ -13,6 +13,28 @@ Keep this file repository-specific. Do not copy the shared `ai-ci` rulebook here
 - Use `./catfood where TOOL` when a task depends on a local repository path. Use the returned path only when the command succeeds; `./catfood where` lists all verified local Cat Food checkouts.
 - Phone and tablet are runtime consumers, so a missing source checkout there is normally correct. Do not clone the source fleet merely to satisfy a local-path lookup.
 
+## Device identity and storage paths
+
+Read [`docs/device-storage.md`](docs/device-storage.md) before giving a phone
+or tablet command that depends on repository location, executable location,
+shared storage, or removable storage.
+
+- Cat Food is the canonical place to record device-local path and mount facts.
+  Do not substitute remembered conventional paths when Cat Food has a recorded
+  fact or a runtime check can establish one.
+- Never copy a storage assumption from phone to tablet or tablet to phone.
+  Model, architecture, mount aliases, removable media, free space, and
+  executable locations are independent facts.
+- `~/storage/downloads` is Android shared Downloads, not a synonym for an SD
+  card. Call storage "external SD" only after the exact device shows a distinct
+  removable mount such as a verified `~/storage/external-1`.
+- Android shared/removable storage may be `noexec`. Keep durable source,
+  shaders, receipts, or artifacts there when appropriate, but run ELF binaries
+  from an execution-capable private Termux location unless the exact mount has
+  been proved executable.
+- Current phone and tablet observations are deliberately recorded with dates in
+  `docs/device-storage.md`. Recheck mutable facts before relying on them.
+
 ## Android delivery
 
 Before changing phone/tablet delivery, read [`android/README.md`](android/README.md), `android/delivery.tsv`, and `android/packages.tsv`.
