@@ -6,7 +6,7 @@ pr	41
 trigger_commit	cb726afa73a7b8484d4469790d8dab1945a511bb
 leader_platform	phone
 leader_arch	armv7
-leader_evidence	-
+leader_evidence	catfood-cb726afa73a7-phone.tsv
 artifact	powervr-runner-phone-armeabi-v7a.tar.gz
 artifact_sha256	714e5f706a05224ff4f43188a6fb043e7fa39f6a7f7f6ea7b0ef0dcb424502de
 follower_platform	phone
@@ -15,8 +15,8 @@ required	yes
 action	Run the current whole-inventory Cat Food phone acceptance, then run the exact packaged PowerVR acceptance runner on the physical ARMv7 phone and preserve the package-bound hardware receipt.
 acceptance_kind	physical-device
 acceptance_action	CATFOOD_TARGET=phone ./catfood; sh android/check.sh gaps phone; run powervr-accept on the physical ARMv7 PowerVR phone and verify package hash 714e5f706a05224ff4f43188a6fb043e7fa39f6a7f7f6ea7b0ef0dcb424502de plus all six compile/link and framebuffer passes.
-state	pending
-last_attempt_commit	-
+state	accepted
+last_attempt_commit	cb726afa73a7b8484d4469790d8dab1945a511bb
 blocker	-
 evidence	-
 depends_on	-
