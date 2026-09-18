@@ -104,36 +104,107 @@ sh "$root/catfood" help gopeed | grep -F '# Gopeed REST API' >/dev/null
 sh "$root/catfood" help ib | grep -F 'Repository: https://github.com/isomorphisms/ib.git' >/dev/null
 sh "$root/catfood" help grease | grep -F 'stage-one shell bootstrap' >/dev/null
 
+checkouts=$temporary/checkouts.tsv
+canonical=$termux_home/opt/catfood-fixture
+
 located=$(
     HOME=$termux_home \
     CATFOOD_ROOT=$termux_home/opt \
     CATFOOD_MANIFEST=$manifest \
+    CATFOOD_CHECKOUTS=$checkouts \
         sh "$root/catfood" where catfood-fixture
 )
-test "$located" = "$termux_home/opt/catfood-fixture"
+test "$located" = "catfood-fixture${tab}workbench${tab}$canonical"
+
+make_checkout() {
+    checkout_path=$1
+    checkout_origin=$2
+    mkdir -p "$checkout_path"
+    git -C "$checkout_path" init -q
+    git -C "$checkout_path" remote add origin "$checkout_origin"
+}
+
+acceptance=$temporary/ib-phone-smoke
+cache_checkout=$temporary/cache/catfood-fixture
+stale=$temporary/stale/catfood-fixture
+mismatched=$temporary/mismatched/catfood-fixture
+rejected=$temporary/rejected/catfood-fixture
+
+make_checkout "$acceptance" https://github.com/isomorphisms/catfood
+make_checkout "$cache_checkout" https://github.com/isomorphisms/catfood.git
+make_checkout "$stale" https://github.com/isomorphisms/catfood.git
+make_checkout "$mismatched" https://github.com/isomorphisms/catfood.git
+make_checkout "$rejected" https://github.com/isomorphisms/not-catfood.git
+
+register_checkout() {
+    role=$1
+    checkout_path=$2
+    HOME=$termux_home \
+    CATFOOD_ROOT=$termux_home/opt \
+    CATFOOD_MANIFEST=$manifest \
+    CATFOOD_CHECKOUTS=$checkouts \
+        sh "$root/catfood" register catfood-fixture "$role" "$checkout_path" >/dev/null
+}
+
+register_checkout acceptance "$acceptance"
+register_checkout cache "$cache_checkout"
+register_checkout test "$stale"
+register_checkout other "$mismatched"
+
+rm -rf "$stale"
+git -C "$mismatched" remote set-url origin https://github.com/isomorphisms/not-catfood.git
+
+if HOME=$termux_home \
+    CATFOOD_ROOT=$termux_home/opt \
+    CATFOOD_MANIFEST=$manifest \
+    CATFOOD_CHECKOUTS=$checkouts \
+    sh "$root/catfood" register catfood-fixture other "$rejected" >/dev/null 2>&1; then
+    printf '%s\n' 'checkout registration accepted a mismatched Git origin' >&2
+    exit 1
+fi
 
 locations=$temporary/locations.tsv
 HOME=$termux_home \
 CATFOOD_ROOT=$termux_home/opt \
 CATFOOD_MANIFEST=$manifest \
+CATFOOD_CHECKOUTS=$checkouts \
+    sh "$root/catfood" where catfood-fixture > "$locations"
+
+grep -Fx "catfood-fixture${tab}acceptance${tab}$acceptance" "$locations" >/dev/null
+grep -Fx "catfood-fixture${tab}cache${tab}$cache_checkout" "$locations" >/dev/null
+grep -Fx "catfood-fixture${tab}workbench${tab}$canonical" "$locations" >/dev/null
+test "$(wc -l < "$locations" | tr -d ' ')" -eq 3
+if grep -F "$stale" "$locations" >/dev/null || grep -F "$mismatched" "$locations" >/dev/null; then
+    printf '%s\n' 'checkout lookup reported stale or mismatched registered state' >&2
+    exit 1
+fi
+
+HOME=$termux_home \
+CATFOOD_ROOT=$termux_home/opt \
+CATFOOD_MANIFEST=$manifest \
+CATFOOD_CHECKOUTS=$checkouts \
     sh "$root/catfood" where > "$locations"
-grep -F "catfood-fixture${tab}$termux_home/opt/catfood-fixture" "$locations" >/dev/null
+grep -Fx "catfood-fixture${tab}acceptance${tab}$acceptance" "$locations" >/dev/null
+grep -Fx "catfood-fixture${tab}cache${tab}$cache_checkout" "$locations" >/dev/null
+grep -Fx "catfood-fixture${tab}workbench${tab}$canonical" "$locations" >/dev/null
 
 if HOME=$termux_home \
     CATFOOD_ROOT=$termux_home/opt \
     CATFOOD_MANIFEST=$manifest \
+    CATFOOD_CHECKOUTS=$checkouts \
     sh "$root/catfood" where missing-tool >/dev/null 2>&1; then
     printf '%s\n' 'checkout lookup accepted an unknown tool' >&2
     exit 1
 fi
 
-rm -rf "$termux_home/opt/catfood-fixture"
+rm -rf "$canonical" "$acceptance" "$cache_checkout"
 if HOME=$termux_home \
     CATFOOD_ROOT=$termux_home/opt \
     CATFOOD_MANIFEST=$manifest \
+    CATFOOD_CHECKOUTS=$checkouts \
     sh "$root/catfood" where catfood-fixture >/dev/null 2>&1; then
-    printf '%s\n' 'checkout lookup treated a canonical path as an existing checkout' >&2
+    printf '%s\n' 'checkout lookup reported only stale or mismatched locations as current' >&2
     exit 1
 fi
 
-printf '%s\n' 'cat food cloud, generic Termux, inventory help, and checkout lookup entrypoints pass'
+printf '%s\n' 'cat food cloud, generic Termux, inventory help, and verified checkout location entrypoints pass'

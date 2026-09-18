@@ -8,6 +8,7 @@ usage() {
 usage: ./catfood [--target]
        ./catfood help [tool]
        ./catfood where [tool]
+       ./catfood register TOOL ROLE PATH
 
 Feed the selected Cat Food target.
 
@@ -27,14 +28,18 @@ Help:
   ./catfood help TOOL     show that tool's Cat Food reference
 
 Local checkout lookup:
-  ./catfood where         list verified local repository checkouts
-  ./catfood where TOOL    print TOOL's verified local checkout
+  ./catfood where         list verified local checkouts as: TOOL<TAB>ROLE<TAB>PATH
+  ./catfood where TOOL    list all verified local checkouts for TOOL
+  ./catfood register TOOL ROLE PATH
+                          register a verified noncanonical or additional checkout
+  roles: workbench, acceptance, test, cache, control, other
 
 Overrides:
   CATFOOD_TARGET=phone|tablet|container|cloud|termux|hetzner
   CATFOOD_ROOT=/path/to/workspace
   CATFOOD_BUILD_TOOLS=0|1
   CATFOOD_INSTALL_YSH=0|1
+  CATFOOD_CHECKOUTS=/path/to/machine-local-checkouts.tsv
 EOF
 }
 
@@ -187,13 +192,11 @@ lookup_tool() {
         catfood)
             lookup_name=catfood
             lookup_repository=https://github.com/isomorphisms/catfood.git
-            lookup_checkout=$root
             return 0
             ;;
         grease)
             lookup_name=grease
             lookup_repository=https://github.com/isomorphisms/grease.git
-            lookup_checkout=$(lookup_workspace)/grease
             return 0
             ;;
     esac
@@ -202,48 +205,204 @@ lookup_tool() {
     set -- $line
     lookup_name=$1
     lookup_repository=$2
-    lookup_checkout=$(lookup_workspace)/$lookup_name
 }
 
-where_one() {
+checkout_inventory() {
+    if [ -n "${CATFOOD_CHECKOUTS:-}" ]; then
+        printf '%s\n' "$CATFOOD_CHECKOUTS"
+        return 0
+    fi
+
+    state_home=${XDG_STATE_HOME:-$HOME/.local/state}
+    printf '%s\n' "$state_home/catfood/checkouts.tsv"
+}
+
+validate_checkout_inventory() {
+    inventory=$(checkout_inventory)
+    [ -e "$inventory" ] || return 0
+    if [ ! -f "$inventory" ]; then
+        printf 'Cat Food checkout inventory is not a regular file: %s\n' "$inventory" >&2
+        return 2
+    fi
+
+    awk -F '\t' '
+        /^[[:space:]]*($|#)/ { next }
+        NF != 3 {
+            printf "%s:%d: expected TOOL<TAB>ROLE<TAB>PATH\n", FILENAME, NR > "/dev/stderr"
+            failed = 1
+            next
+        }
+        $1 !~ /^[[:alnum:]_.-]+$/ {
+            printf "%s:%d: unsafe tool name: %s\n", FILENAME, NR, $1 > "/dev/stderr"
+            failed = 1
+        }
+        $2 != "workbench" && $2 != "acceptance" && $2 != "test" &&
+        $2 != "cache" && $2 != "control" && $2 != "other" {
+            printf "%s:%d: invalid checkout role: %s\n", FILENAME, NR, $2 > "/dev/stderr"
+            failed = 1
+        }
+        $3 !~ /^\// {
+            printf "%s:%d: checkout path must be absolute: %s\n", FILENAME, NR, $3 > "/dev/stderr"
+            failed = 1
+        }
+        END { exit failed }
+    ' "$inventory" || return $?
+
+    tab=$(printf '\t')
+    awk -F '\t' '/^[[:space:]]*($|#)/ { next } { print $1 "\t" $2 "\t" $3 }' "$inventory" |
+    while IFS="$tab" read -r registered_tool registered_role registered_path; do
+        if ! lookup_tool "$registered_tool"; then
+            printf '%s: checkout inventory names unknown Cat Food tool\n' "$registered_tool" >&2
+            exit 2
+        fi
+    done
+}
+
+registered_candidates() {
     topic=$1
+    inventory=$(checkout_inventory)
+    [ -f "$inventory" ] || return 0
+
+    awk -F '\t' -v topic="$topic" '
+        /^[[:space:]]*($|#)/ { next }
+        topic == "" || $1 == topic { print $1 "\t" $2 "\t" $3 }
+    ' "$inventory"
+}
+
+canonical_candidates() {
+    topic=$1
+    workspace=$(lookup_workspace) || return $?
+
+    if [ -n "$topic" ]; then
+        if ! lookup_tool "$topic"; then
+            printf 'unknown Cat Food tool: %s\n' "$topic" >&2
+            return 2
+        fi
+        if [ "$lookup_name" = catfood ]; then
+            printf 'catfood\tcontrol\t%s\n' "$root"
+        else
+            printf '%s\tworkbench\t%s/%s\n' "$lookup_name" "$workspace" "$lookup_name"
+        fi
+        return 0
+    fi
+
+    printf 'catfood\tcontrol\t%s\n' "$root"
+    printf 'grease\tworkbench\t%s/grease\n' "$workspace"
+    awk '$1 !~ /^#/ && NF >= 4 { print $1 }' "${CATFOOD_MANIFEST:-$root/tools.tsv}" |
+    while IFS= read -r candidate_tool; do
+        printf '%s\tworkbench\t%s/%s\n' "$candidate_tool" "$workspace" "$candidate_tool"
+    done
+}
+
+verify_candidates() {
+    tab=$(printf '\t')
+    while IFS="$tab" read -r candidate_tool candidate_role candidate_path; do
+        [ -n "$candidate_tool" ] || continue
+        if ! lookup_tool "$candidate_tool"; then
+            printf '%s: checkout candidate names unknown Cat Food tool\n' "$candidate_tool" >&2
+            return 2
+        fi
+        if repository_matches "$candidate_path" "$lookup_repository"; then
+            printf '%s\t%s\t%s\n' "$candidate_tool" "$candidate_role" "$candidate_path"
+        fi
+    done
+}
+
+where_inventory() {
+    topic=${1:-}
+
+    validate_checkout_inventory || return $?
+    if [ -n "$topic" ] && ! lookup_tool "$topic"; then
+        printf 'unknown Cat Food tool: %s\n' "$topic" >&2
+        return 2
+    fi
+
+    {
+        registered_candidates "$topic"
+        canonical_candidates "$topic"
+    } |
+    verify_candidates |
+    awk -F '\t' -v topic="$topic" '
+        !seen[$1 SUBSEP $3]++ {
+            print
+            found = 1
+        }
+        END {
+            if (topic != "" && !found) {
+                printf "%s: no verified local checkout\n", topic > "/dev/stderr"
+                exit 1
+            }
+        }
+    '
+}
+
+register_checkout() {
+    topic=$1
+    role=$2
+    requested_path=$3
+
     if ! lookup_tool "$topic"; then
         printf 'unknown Cat Food tool: %s\n' "$topic" >&2
         return 2
     fi
 
-    if repository_matches "$lookup_checkout" "$lookup_repository"; then
-        printf '%s\n' "$lookup_checkout"
-        return 0
+    case $role in
+        workbench|acceptance|test|cache|control|other) ;;
+        *)
+            printf 'invalid checkout role: %s\n' "$role" >&2
+            return 2
+            ;;
+    esac
+
+    tab=$(printf '\t')
+    newline='
+'
+    case $requested_path in
+        *"$tab"*|*"$newline"*)
+            printf '%s\n' 'checkout paths may not contain tabs or newlines' >&2
+            return 2
+            ;;
+    esac
+
+    if [ ! -d "$requested_path" ]; then
+        printf 'checkout path is not a directory: %s\n' "$requested_path" >&2
+        return 1
+    fi
+    checkout=$(CDPATH='' cd -- "$requested_path" && pwd -P)
+
+    if ! repository_matches "$checkout" "$lookup_repository"; then
+        printf '%s: %s is not a checkout of %s\n' "$topic" "$checkout" "$lookup_repository" >&2
+        return 1
     fi
 
-    if [ -e "$lookup_checkout" ]; then
-        printf '%s: %s exists but is not the expected checkout of %s\n' \
-            "$lookup_name" "$lookup_checkout" "$lookup_repository" >&2
+    validate_checkout_inventory || return $?
+    inventory=$(checkout_inventory)
+    case $inventory in
+        */*)
+            inventory_dir=${inventory%/*}
+            [ -n "$inventory_dir" ] || inventory_dir=/
+            ;;
+        *) inventory_dir=. ;;
+    esac
+
+    umask 077
+    mkdir -p "$inventory_dir"
+    temporary_inventory=$inventory.tmp.$$
+    trap 'rm -f "$temporary_inventory"' EXIT HUP INT TERM
+
+    if [ -f "$inventory" ]; then
+        awk -F '\t' -v tool="$topic" -v checkout="$checkout" '
+            /^[[:space:]]*($|#)/ { print; next }
+            !($1 == tool && $3 == checkout) { print }
+        ' "$inventory" > "$temporary_inventory"
     else
-        printf '%s: no verified local checkout; repository: %s\n' \
-            "$lookup_name" "$lookup_repository" >&2
+        printf '%s\n' '# catfood-checkouts-v1: TOOL<TAB>ROLE<TAB>ABSOLUTE_PATH' > "$temporary_inventory"
     fi
-    return 1
-}
+    printf '%s\t%s\t%s\n' "$topic" "$role" "$checkout" >> "$temporary_inventory"
+    mv "$temporary_inventory" "$inventory"
+    trap - EXIT HUP INT TERM
 
-where_index() {
-    manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
-
-    if repository_matches "$root" https://github.com/isomorphisms/catfood.git; then
-        printf 'catfood\t%s\n' "$root"
-    fi
-
-    if lookup_tool grease && repository_matches "$lookup_checkout" "$lookup_repository"; then
-        printf 'grease\t%s\n' "$lookup_checkout"
-    fi
-
-    awk '$1 !~ /^#/ && NF >= 4 { print $1 }' "$manifest" |
-    while IFS= read -r topic; do
-        if lookup_tool "$topic" && repository_matches "$lookup_checkout" "$lookup_repository"; then
-            printf '%s\t%s\n' "$lookup_name" "$lookup_checkout"
-        fi
-    done
+    printf '%s\t%s\t%s\n' "$topic" "$role" "$checkout"
 }
 
 show_target=0
@@ -256,11 +415,19 @@ case ${1:-} in
         exit $?
         ;;
     where)
-        if [ -n "${2:-}" ]; then
-            where_one "$2"
-        else
-            where_index
+        if [ -n "${3:-}" ]; then
+            usage >&2
+            exit 2
         fi
+        where_inventory "${2:-}"
+        exit $?
+        ;;
+    register)
+        if [ "$#" -ne 4 ]; then
+            usage >&2
+            exit 2
+        fi
+        register_checkout "$2" "$3" "$4"
         exit $?
         ;;
     *) usage >&2; exit 2 ;;
