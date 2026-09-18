@@ -15,25 +15,32 @@ Keep this file repository-specific. Do not copy the shared `ai-ci` rulebook here
 
 ## Device identity and storage paths
 
-Read [`docs/device-storage.md`](docs/device-storage.md) before giving a phone
-or tablet command that depends on repository location, executable location,
-shared storage, or removable storage.
+Cat Food is the canonical place to record device-local path and mount facts.
+Before giving a phone or tablet command that depends on repository location,
+executable location, shared storage, or removable storage:
 
-- Cat Food is the canonical place to record device-local path and mount facts.
-  Do not substitute remembered conventional paths when Cat Food has a recorded
-  fact or a runtime check can establish one.
 - Never copy a storage assumption from phone to tablet or tablet to phone.
   Model, architecture, mount aliases, removable media, free space, and
   executable locations are independent facts.
 - `~/storage/downloads` is Android shared Downloads, not a synonym for an SD
   card. Call storage "external SD" only after the exact device shows a distinct
   removable mount such as a verified `~/storage/external-1`.
-- Android shared/removable storage may be `noexec`. Keep durable source,
-  shaders, receipts, or artifacts there when appropriate, but run ELF binaries
-  from an execution-capable private Termux location unless the exact mount has
-  been proved executable.
-- Current phone and tablet observations are deliberately recorded with dates in
-  `docs/device-storage.md`. Recheck mutable facts before relying on them.
+- Verify mutable paths on the exact device with `readlink -f`, `df -h`,
+  existence/mount checks, or an execution probe when execution capability
+  matters. Android shared/removable storage may be `noexec`.
+- **Phone convention:** `~/opt/bin` is the preferred executable location on
+  the phone's internal Termux storage. The phone has previously exposed an
+  external SD card as `~/storage/external-1` (historically resolving to
+  `/storage/4A21-0000/Android/data/com.termux/files`), but removable media must
+  still be verified before use. Do not project either fact onto the tablet.
+- **Tablet observation, verified 2026-09-18:** physical `TAB_P10`,
+  `sun65iw1p1`, `aarch64`; `~/storage/downloads` resolves to
+  `/storage/emulated/0/Download`; `~/storage/external-1` is absent; no
+  working external SD card has been established. Shared Downloads rejected
+  direct ELF execution, while private Termux storage executed the same Mali-G57
+  test binary. Do not call tablet Downloads an SD card.
+- When these facts change, update this section rather than relying on chat
+  history or another device's layout.
 
 ## Android delivery
 
