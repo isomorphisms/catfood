@@ -53,7 +53,12 @@ jobs:
           short=$(printf '%s' "$trigger" | cut -c1-12)
           job_id="catfood-$short-github-x86_64"
           job="followers/jobs/$job_id.tsv"
-          test -f "$job"
+          if [ ! -f "$job" ]; then
+            printf 'required=no\n' >> "$GITHUB_OUTPUT"
+            printf 'no GitHub x86 runtime follower is required for %s\n' "$trigger"
+            exit 0
+          fi
+          printf 'required=yes\n' >> "$GITHUB_OUTPUT"
 
           source_root="$RUNNER_TEMP/catfood-trigger-$short"
           git worktree add --detach "$source_root" "$trigger"
@@ -85,6 +90,7 @@ jobs:
           mv "$receipt.clean" "$receipt"
           printf 'receipt=%s\n' "$receipt" >> "$GITHUB_OUTPUT"
       - name: Publish exact GitHub follower receipt
+        if: steps.github_follower.outputs.required == 'yes'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: github-x86_64-follower-receipt
