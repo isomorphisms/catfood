@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-0bad7b6e5566-phone
+repository	isomorphisms/catfood
+branch	android/minimal-tablet-bootstrap
+pr	46
+trigger_commit	0bad7b6e5566f0edc062e32c9a10f3bca17cf597
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	phone
+follower_arch	armv7
+required	yes
+action	leader target for Cat Food commit 0bad7b6e5566f0edc062e32c9a10f3bca17cf597 on phone; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	physical-device
+acceptance_action	./catfood && sh android/check.sh gaps phone
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device; carries forward unresolved phone acceptance from 5a49e92f6b0a79df6a5739fe2e136d8ff07d2a87
+superseded_by	-
+follow_policy	exact
