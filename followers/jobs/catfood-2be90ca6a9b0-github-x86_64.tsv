@@ -6,7 +6,7 @@ pr	57
 trigger_commit	2be90ca6a9b04b660d34f934874ed898fa1dd200
 leader_platform	phone
 leader_arch	armv7
-leader_evidence	catfood-2be90ca6a9b0-github-x86_64.tsv
+leader_evidence	-
 artifact	-
 artifact_sha256	-
 follower_platform	github-x86_64
@@ -18,7 +18,7 @@ acceptance_action	sh followers/accept-x86.sh github
 state	accepted
 last_attempt_commit	2be90ca6a9b04b660d34f934874ed898fa1dd200
 blocker	-
-evidence	-
+evidence	catfood-2be90ca6a9b0-github-x86_64.tsv
 depends_on	-
 reason	shared-portable
 superseded_by	-
