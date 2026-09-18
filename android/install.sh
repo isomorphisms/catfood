@@ -228,6 +228,53 @@ safe_command_destination() {
     exit 4
 }
 
+gopeed_control_marker="# Cat Food's small command-line client for the local Gopeed REST service."
+
+safe_gopeed_control_destination() {
+    name=$1
+    destination=$workspace/bin/$name
+    [ ! -e "$destination" ] && [ ! -L "$destination" ] && return 0
+
+    if [ "$name" = gopeed ] && [ -f "$destination" ] &&
+       grep -F "$gopeed_control_marker" "$destination" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    if [ "$name" != gopeed ] && [ -L "$destination" ]; then
+        existing=$(readlink "$destination" 2>/dev/null || printf '%s' '')
+        case "$existing" in
+            gopeed|"$workspace/bin/gopeed") return 0 ;;
+        esac
+    fi
+
+    printf '%s exists and is not the Cat Food Gopeed control command; leaving it alone\n' "$destination" >&2
+    exit 4
+}
+
+install_gopeed_control_command() {
+    script=$root/gopeed.ysh
+    [ -f "$script" ] || return 0
+
+    # The Android product fleet stays package-only. This one command is part
+    # of the Cat Food control plane itself and is installed only after the
+    # delivered Grease package has made YSH available.
+    if [ ! -x "$workspace/bin/ysh" ]; then
+        printf '%-24s %s\n' gopeed-control 'not installed: ysh is unavailable' >&2
+        return 0
+    fi
+
+    safe_gopeed_control_destination gopeed
+    safe_gopeed_control_destination gdl
+    safe_gopeed_control_destination go_down_load
+
+    cp "$script" "$workspace/bin/gopeed"
+    chmod 0755 "$workspace/bin/gopeed"
+    rm -f "$workspace/bin/gdl" "$workspace/bin/go_down_load"
+    ln -s gopeed "$workspace/bin/gdl"
+    ln -s gopeed "$workspace/bin/go_down_load"
+    printf '%-24s command %s (aliases: gdl go_down_load)\n' gopeed-control "$workspace/bin/gopeed"
+}
+
 package_ids=$(awk -F '\t' -v target="$target" '
     /^[[:space:]]*($|#)/ { next }
     $2 == target && !seen[$1]++ { print $1 }
@@ -415,6 +462,8 @@ EOF_WRAPPER
         mv "$receipt.tmp.$$" "$receipt"
     fi
 done
+
+install_gopeed_control_command
 
 printf '\nCat Food %s installed all currently published packages.\n' "$target"
 unresolved=$(CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" \

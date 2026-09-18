@@ -178,7 +178,11 @@ cat > "$workspace/bin/az" <<'EOF_OLD_AZ'
 # catfood az wrapper
 exit 99
 EOF_OLD_AZ
-chmod 0755 "$workspace/bin/az"
+cat > "$workspace/bin/ysh" <<'EOF_YSH'
+#!/bin/sh
+exec sh "$@"
+EOF_YSH
+chmod 0755 "$workspace/bin/az" "$workspace/bin/ysh"
 
 PATH="$fake_bin:$PATH" \
 CATFOOD_TEST_RELEASE="$fixture" \
@@ -200,6 +204,13 @@ test ! -L "$workspace/bin/grease"
 test ! -e "$workspace/bin/edric"
 test ! -L "$workspace/bin/edric"
 test ! -e "$workspace/bin/az"
+test -x "$workspace/bin/ysh"
+test -x "$workspace/bin/gopeed"
+test -L "$workspace/bin/gdl"
+test -L "$workspace/bin/go_down_load"
+test "$(readlink "$workspace/bin/gdl")" = gopeed
+test "$(readlink "$workspace/bin/go_down_load")" = gopeed
+PATH="$workspace/bin:$fake_bin:$PATH" "$workspace/bin/gdl" --help | grep -F 'go_down_load' >/dev/null
 test -x "$workspace/bin/app"
 test -f "$workspace/packages/app-phone/$package_ref/classes.dex"
 test -f "$workspace/packages/app-phone/$package_ref/lib/libapp.so"
