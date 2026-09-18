@@ -15,11 +15,11 @@ required	yes
 action	Run the carried-forward GitHub-hosted x86_64 runtime acceptance against Cat Food commit 912ac987770dda208ddf377ccb0f99ee1dd3c4b9; this carries forward the unresolved shared-portable obligation from 2d3d16a571a0ead2ff1699b9cb97da24ceeeb6ea without treating the Android-only change as new host evidence.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh github
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	carried-forward unresolved shared-portable obligation across Android-only descendant
-superseded_by	-
+superseded_by	catfood-cb726afa73a7-github-x86_64
 follow_policy	exact

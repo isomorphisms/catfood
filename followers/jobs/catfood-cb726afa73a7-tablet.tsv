@@ -1,9 +1,9 @@
 schema	aici-follower-job-v1
-job_id	catfood-912ac987770d-tablet
+job_id	catfood-cb726afa73a7-tablet
 repository	isomorphisms/catfood
 branch	android/powervr-runners
 pr	41
-trigger_commit	912ac987770dda208ddf377ccb0f99ee1dd3c4b9
+trigger_commit	cb726afa73a7b8484d4469790d8dab1945a511bb
 leader_platform	phone
 leader_arch	armv7
 leader_evidence	-
@@ -15,11 +15,11 @@ required	yes
 action	Run the current whole-inventory Cat Food tablet acceptance, then verify the exact packaged PowerVR runner identity on the physical AArch64 tablet without substituting tablet evidence for the PowerVR phone receipt.
 acceptance_kind	physical-device
 acceptance_action	CATFOOD_TARGET=tablet ./catfood; sh android/check.sh gaps tablet; verify the installed powervr-accept package identity and package hash 4dba2cd39d7a0fc440f8f1c09b379e2712c78411cbd8a648cc411fcfcce54ba7 on the physical AArch64 tablet; do not promote tablet evidence into phone hardware evidence.
-state	superseded
+state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
-reason	android-artifact-and-device
-superseded_by	catfood-cb726afa73a7-tablet
+reason	shared-portable workbench manifest correction with existing Android delivery
+superseded_by	-
 follow_policy	exact
