@@ -15,7 +15,7 @@ required	yes
 action	Validate the exact published phone and tablet PowerVR runner packages referenced by Cat Food commit cb726afa73a7b8484d4469790d8dab1945a511bb, including URL, SHA-256, metadata, extraction, and install contract.
 acceptance_kind	artifact
 acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-

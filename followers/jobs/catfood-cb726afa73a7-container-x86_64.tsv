@@ -15,7 +15,7 @@ required	yes
 action	Run independent container x86_64 runtime acceptance against Cat Food commit cb726afa73a7b8484d4469790d8dab1945a511bb.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh container
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-

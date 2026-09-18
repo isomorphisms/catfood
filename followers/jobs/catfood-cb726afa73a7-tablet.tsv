@@ -15,7 +15,7 @@ required	yes
 action	Run the current whole-inventory Cat Food tablet acceptance, then verify the exact packaged PowerVR runner identity on the physical AArch64 tablet without substituting tablet evidence for the PowerVR phone receipt.
 acceptance_kind	physical-device
 acceptance_action	CATFOOD_TARGET=tablet ./catfood; sh android/check.sh gaps tablet; verify the installed powervr-accept package identity and package hash 4dba2cd39d7a0fc440f8f1c09b379e2712c78411cbd8a648cc411fcfcce54ba7 on the physical AArch64 tablet; do not promote tablet evidence into phone hardware evidence.
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
