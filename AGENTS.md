@@ -8,10 +8,14 @@ Keep this file repository-specific. Do not copy the shared `ai-ci` rulebook here
 
 ## Local checkout locations
 
-- Treat `tools.tsv` as inventory, not proof that a checkout exists on the current machine.
-- Do not guess checkout paths from repository names, `$HOME`, `/opt`, or the canonical workbench location shown by `catfood help`.
-- Use `./catfood where TOOL` when a task depends on a local repository path. Use the returned path only when the command succeeds; `./catfood where` lists all verified local Cat Food checkouts.
-- Phone and tablet are runtime consumers, so a missing source checkout there is normally correct. Do not clone the source fleet merely to satisfy a local-path lookup.
+- Treat `tools.tsv` as repository inventory, not proof that a checkout exists on the current machine.
+- Do not guess checkout paths from repository names, `$HOME`, `/opt`, cache naming, or acceptance-directory naming.
+- `./catfood where [TOOL]` is the authoritative query. It emits stable tab-separated rows `TOOL<TAB>ROLE<TAB>PATH` only after re-verifying the path's Git `origin` against Cat Food's repository inventory.
+- Cat Food considers only its current control checkout, the selected Cat Food workbench root, and explicitly registered machine-local paths. It does not scan arbitrary storage.
+- Register noncanonical or additional working copies with `./catfood register TOOL ROLE PATH`. Roles are `workbench`, `acceptance`, `test`, `cache`, `control`, or `other`. Registration verifies the Git origin before writing machine-local state.
+- Multiple rows for one tool are valid. Stale paths and paths whose Git origin later changes are not reported as current.
+- The machine-local checkout inventory defaults to `${XDG_STATE_HOME:-$HOME/.local/state}/catfood/checkouts.tsv`; `CATFOOD_CHECKOUTS` may point at another machine-local file.
+- Phone and tablet are runtime consumers, so a missing source checkout there is normally correct. Registration and lookup never clone the source fleet or install build tooling.
 
 ## Device identity and storage paths
 
