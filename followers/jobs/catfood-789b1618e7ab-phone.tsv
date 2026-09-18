@@ -20,6 +20,6 @@ last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
-reason	shared-portable
+reason	shared-portable; carries forward unresolved phone physical-device acceptance from 0bad7b6e5566f0edc062e32c9a10f3bca17cf597; the newer source state does not erase that obligation
 superseded_by	-
 follow_policy	exact
