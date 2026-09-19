@@ -12,7 +12,7 @@ artifact_sha256	11f824ae140b39d88493a5325d5776b410985cac851eb28fc3cbaa38385b9098
 follower_platform	github-x86_64-artifact
 follower_arch	x86_64
 required	yes
-action	artifact follower for Cat Food commit a127fa27b952929282788730ba770cf3c4359147; validate the exact az-phone URL, landed source/package identity, SHA-256, metadata, and file-install contract without claiming physical-phone execution.
+action	artifact follower for Cat Food commit a127fa27b952929282788730ba770cf3c4359147; validate the exact az-phone URL, landed source/package identity, SHA-256, metadata, and file-install contract while also carrying the unresolved prior artifact obligation; do not claim physical-phone execution.
 acceptance_kind	artifact
 acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
 state	pending
@@ -20,6 +20,6 @@ last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
-reason	android-artifact-and-device
+reason	android-artifact-and-device; carries forward unresolved artifact validation from 0bad7b6e5566f0edc062e32c9a10f3bca17cf597
 superseded_by	-
 follow_policy	exact

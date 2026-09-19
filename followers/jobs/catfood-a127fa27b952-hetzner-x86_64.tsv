@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-a127fa27b952-hetzner-x86_64
+repository	isomorphisms/catfood
+branch	fix/az-phone-landed-identity
+pr	67
+trigger_commit	a127fa27b952929282788730ba770cf3c4359147
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	hetzner-x86_64
+follower_arch	x86_64
+required	yes
+action	carried-forward follower target for Cat Food commit a127fa27b952929282788730ba770cf3c4359147 on hetzner-x86_64; run the exact persistent-cloud acceptance and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh cloud
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	carried-forward unresolved Hetzner x86-64 runtime acceptance from 0bad7b6e5566f0edc062e32c9a10f3bca17cf597; newer az-phone source state does not erase that obligation
+superseded_by	-
+follow_policy	exact

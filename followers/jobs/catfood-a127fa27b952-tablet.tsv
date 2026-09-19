@@ -20,6 +20,6 @@ last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
-reason	android-artifact-and-device
+reason	android-artifact-and-device; carries forward unresolved tablet acceptance from 0bad7b6e5566f0edc062e32c9a10f3bca17cf597
 superseded_by	-
 follow_policy	exact
