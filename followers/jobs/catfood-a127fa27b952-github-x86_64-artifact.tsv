@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-a127fa27b952-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	fix/az-phone-landed-identity
+pr	67
+trigger_commit	a127fa27b952929282788730ba770cf3c4359147
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	az-phone
+artifact_sha256	11f824ae140b39d88493a5325d5776b410985cac851eb28fc3cbaa38385b9098
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	artifact follower for Cat Food commit a127fa27b952929282788730ba770cf3c4359147; validate the exact az-phone URL, landed source/package identity, SHA-256, metadata, and file-install contract without claiming physical-phone execution.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device
+superseded_by	-
+follow_policy	exact

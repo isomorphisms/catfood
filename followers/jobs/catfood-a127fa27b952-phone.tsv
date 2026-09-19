@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-a127fa27b952-phone
+repository	isomorphisms/catfood
+branch	fix/az-phone-landed-identity
+pr	67
+trigger_commit	a127fa27b952929282788730ba770cf3c4359147
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	az-phone
+artifact_sha256	11f824ae140b39d88493a5325d5776b410985cac851eb28fc3cbaa38385b9098
+follower_platform	phone
+follower_arch	armv7
+required	yes
+action	leader target for Cat Food commit a127fa27b952929282788730ba770cf3c4359147 on phone; fetch that exact commit, install and verify the pinned az-phone file artifact, run the named acceptance action, and record a physical-device receipt.
+acceptance_kind	physical-device
+acceptance_action	./catfood && sh android/check.sh gaps phone
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device
+superseded_by	-
+follow_policy	exact
