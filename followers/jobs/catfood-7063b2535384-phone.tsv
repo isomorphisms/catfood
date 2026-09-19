@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-7063b2535384-phone
+repository	isomorphisms/catfood
+branch	fix/checkout-location-inventory
+pr	66
+trigger_commit	7063b2535384e0321b6b49a4ef0bfc7edf1cd82f
+leader_platform	github-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	az-phone
+artifact_sha256	11f824ae140b39d88493a5325d5776b410985cac851eb28fc3cbaa38385b9098
+follower_platform	phone
+follower_arch	armv7
+required	yes
+action	follower target for Cat Food commit 7063b2535384e0321b6b49a4ef0bfc7edf1cd82f on phone; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	physical-device
+acceptance_action	./catfood && sh android/check.sh gaps phone
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable; combined checkout-location source with landed az-phone state; carries forward unresolved phone obligation without transferring predecessor evidence
+superseded_by	-
+follow_policy	exact
