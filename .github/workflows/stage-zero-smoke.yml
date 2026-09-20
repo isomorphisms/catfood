@@ -14,8 +14,9 @@ jobs:
           for script in \
             catfood bootstrap.sh check-manifest.sh update-tools.ysh \
             provision.sh activate.sh build-tools.sh refresh.sh doctor.sh import-config.sh \
-            android/check.sh android/install.sh \
-            tests/check-manifest.sh tests/entrypoint.sh tests/targets.sh tests/android-delivery.sh
+            android/check.sh android/install.sh android/install-local-clients.sh \
+            tests/check-manifest.sh tests/entrypoint.sh tests/targets.sh tests/android-delivery.sh \
+            tests/android-local-clients.sh
           do
             if [ -f "$script" ]; then
               dash -n "$script"
@@ -37,6 +38,9 @@ jobs:
       - name: Verify whole-inventory Android delivery contracts
         shell: sh
         run: sh tests/android-delivery.sh
+      - name: Verify Android local client feed
+        shell: sh
+        run: sh tests/android-local-clients.sh
       - name: Exercise az through the stable command path
         shell: bash
         run: |
