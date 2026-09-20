@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-fb834ff341db-hetzner-x86_64
+repository	isomorphisms/catfood
+branch	android-gdl-main-2026-09-19
+pr	68
+trigger_commit	fb834ff341db3bf6e6136db9aa9eb4cd1c68040e
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	hetzner-x86_64
+follower_arch	x86_64
+required	yes
+action	carried-forward follower target for Cat Food commit fb834ff341db3bf6e6136db9aa9eb4cd1c68040e on hetzner-x86_64; run the exact persistent-cloud acceptance and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh cloud
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable; carries forward unresolved Hetzner x86-64 runtime acceptance from 7063b2535384e0321b6b49a4ef0bfc7edf1cd82f
+superseded_by	-
+follow_policy	exact

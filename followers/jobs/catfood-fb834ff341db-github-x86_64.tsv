@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-fb834ff341db-github-x86_64
+repository	isomorphisms/catfood
+branch	android-gdl-main-2026-09-19
+pr	68
+trigger_commit	fb834ff341db3bf6e6136db9aa9eb4cd1c68040e
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit fb834ff341db3bf6e6136db9aa9eb4cd1c68040e on github-x86_64; run exact GitHub runtime acceptance for the new product state and record a receipt without treating it as Android physical evidence.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh github
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable; predecessor 7063b2535384e0321b6b49a4ef0bfc7edf1cd82f has its own accepted GitHub receipt, which is historical and does not accept this changed source state
+superseded_by	-
+follow_policy	exact
