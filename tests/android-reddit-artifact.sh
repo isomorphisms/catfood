@@ -18,6 +18,7 @@ EOF_TOOLS
 
 cat > "$delivery" <<'EOF_DELIVERY'
 # name	role	phone	tablet	note
+grease	reference	n/a	n/a	fixture-not-under-test
 reddit	runtime	package:reddit-phone	package:reddit-tablet	exact-published-artifact-test
 EOF_DELIVERY
 
