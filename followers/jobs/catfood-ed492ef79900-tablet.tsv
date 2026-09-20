@@ -15,11 +15,11 @@ required	yes
 action	Run the exact PR #32 Reddit DEX/JNI tablet bundle on the physical AArch64 tablet; first record the published reddit-tablet.tar.gz SHA-256 in this job, then install, invoke reddit search, and preserve the physical-device receipt.
 acceptance_kind	physical-device
 acceptance_action	CATFOOD_TARGET=tablet ./catfood; run the installed reddit command on the physical AArch64 device and verify backend SHA b7d50d50bc1b11f3c470051a39693cfe5996608c plus the exact published bundle hash.
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	PR #32 explicitly leaves physical tablet execution pending.
-superseded_by	-
+superseded_by	catfood-e2c5ccb16bbd-tablet
 follow_policy	exact

@@ -15,11 +15,11 @@ required	yes
 action	Run the exact PR #32 Reddit DEX/JNI phone bundle on the physical ARMv7 phone; first record the published reddit-phone.tar.gz SHA-256 in this job, then install, invoke reddit search, and preserve the physical-device receipt.
 acceptance_kind	physical-device
 acceptance_action	CATFOOD_TARGET=phone ./catfood; run the installed reddit command on the physical ARMv7 device and verify backend SHA b7d50d50bc1b11f3c470051a39693cfe5996608c plus the exact published bundle hash.
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	PR #32 explicitly leaves physical phone execution pending.
-superseded_by	-
+superseded_by	catfood-e2c5ccb16bbd-phone
 follow_policy	exact
