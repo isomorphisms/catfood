@@ -15,10 +15,10 @@ required	yes
 action	Run exact GitHub-hosted x86-64 follower acceptance against this integrated Cat Food source state and record its independent runtime receipt.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh github
-state	pending
-last_attempt_commit	-
+state	accepted
+last_attempt_commit	e2c5ccb16bbd37dd3ec3b791fd40006119e58b55
 blocker	-
-evidence	-
+evidence	catfood-e2c5ccb16bbd-github-x86_64.tsv
 depends_on	-
 reason	The tools.tsv inventory change is shared repository state; exact GitHub x86-64 runtime acceptance remains independent of Android artifact validation.
 superseded_by	-
