@@ -53,6 +53,20 @@ sh followers/stale.sh
 
 `pending` is the direct answer to “what is still behind this phone/tablet work?” It is also available without the verifier as a read-only fallback; mutation and reconciliation require the verifier.
 
+`blockers` renders the follower portion of ai-ci's merge-state observation. Cat
+Food's current exact follower jobs are durable post-merge debt and therefore
+carry `blocking=no`; they do not prove acceptance, but they also do not force a
+source PR to wait unless that PR declares the same evidence as an explicit
+promotion condition. An unresolved ancestor trigger is different: it is stale
+bookkeeping and produces `FOLLOWER_STALE` until reconciled.
+
+`supersede-ancestors CURRENT_TRIGGER` handles the common one-for-one case
+mechanically. It preflights every unresolved ancestor job, requires a current
+job for the same concrete target and the same acceptance kind, and then records
+the exact successor. It refuses changed acceptance kinds or missing successors
+instead of guessing. This retires obsolete bookkeeping without inventing a
+receipt or changing the current job's pending/blocked/accepted state.
+
 `reconcile` first resolves an integration commit to its canonical exact follower trigger when necessary, then re-infers the affected target set and fails if a required follower job disappeared or references a removed target. `stale.sh` uses the same canonical trigger and fails when unresolved work remains on an ancestor of it. Finish it or record explicit supersession; moving or merging the branch does not erase the dependency.
 
 ## GitHub x86-64

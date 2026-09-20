@@ -352,6 +352,68 @@ mark_blocked() {
     printf '%s\n' "$file"
 }
 
+supersede_ancestors() {
+    [ "$#" -eq 1 ] || fatal 'supersede-ancestors CURRENT_TRIGGER'
+    current=$(resolve_trigger "$1")
+    plan=$(mktemp)
+    for file in "$jobs"/*.tsv; do
+        [ -f "$file" ] || continue
+        state=$(record_value "$file" state)
+        case $state in pending|blocked|unsupported) ;; *) continue ;; esac
+        old=$(record_value "$file" trigger_commit)
+        [ "$old" != "$current" ] || continue
+        git -C "$root" merge-base --is-ancestor "$old" "$current" 2>/dev/null || continue
+        target=$(record_value "$file" follower_platform)
+        successor_file=$(job_for "$current" "$target") || {
+            rm -f "$plan"
+            fatal "stale job $(record_value "$file" job_id) has no same-target successor at $current"
+        }
+        old_kind=$(record_value "$file" acceptance_kind)
+        new_kind=$(record_value "$successor_file" acceptance_kind)
+        [ "$old_kind" = "$new_kind" ] || {
+            rm -f "$plan"
+            fatal "stale job $(record_value "$file" job_id) changes acceptance kind from $old_kind to $new_kind"
+        }
+        printf '%s\t%s\n' "$file" "$(record_value "$successor_file" job_id)" >> "$plan"
+    done
+
+    if [ ! -s "$plan" ]; then
+        rm -f "$plan"
+        printf 'no supersedable ancestor followers before %s\n' "$current"
+        return 0
+    fi
+
+    while IFS="$tab" read -r file successor; do
+        tmp=$file.new.$$
+        rewrite_field "$file" state superseded "$tmp" && mv "$tmp" "$file"
+        rewrite_field "$file" superseded_by "$successor" "$tmp" && mv "$tmp" "$file"
+        printf 'superseded\t%s\t%s\n' "$(record_value "$file" job_id)" "$successor"
+    done < "$plan"
+    rm -f "$plan"
+}
+
+merge_blockers() {
+    requested=${1:-$(latest_source)}
+    current=$(resolve_trigger "$requested")
+    printf 'follower\tblocking\ttrigger\tcurrent_trigger\tacceptance_kind\tstate\tsuccessor\tobject_ref\taction\n'
+    for file in "$jobs"/*.tsv; do
+        [ -f "$file" ] || continue
+        state=$(record_value "$file" state)
+        trigger=$(record_value "$file" trigger_commit)
+        if [ "$trigger" = "$current" ]; then
+            :
+        else
+            case $state in pending|blocked|unsupported) ;; *) continue ;; esac
+            git -C "$root" merge-base --is-ancestor "$trigger" "$current" 2>/dev/null || continue
+        fi
+        printf '%s\tno\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$(record_value "$file" job_id)" "$trigger" "$current" \
+            "$(record_value "$file" acceptance_kind)" "$state" \
+            "$(record_value "$file" superseded_by)" "$file" \
+            "$([ "$trigger" = "$current" ] && printf run-follower || printf supersede-ancestors)"
+    done
+}
+
 fallback_pending() {
     trigger=${1:-}
     printf 'job_id\ttrigger_commit\tfollower_platform\tfollower_arch\tacceptance_kind\tstate\taction\tblocker\n'
@@ -400,5 +462,7 @@ case ${1:-} in
     matrix) shift; matrix "$@" ;;
     record) shift; record_receipt "$@" ;;
     block) shift; mark_blocked "$@" ;;
-    *) fatal 'usage: manage.sh affected|latest|resolve|prepare|reconcile|pending|matrix|record|block ...' ;;
+    supersede-ancestors) shift; supersede_ancestors "$@" ;;
+    blockers) shift; merge_blockers "$@" ;;
+    *) fatal 'usage: manage.sh affected|latest|resolve|prepare|reconcile|pending|matrix|record|block|supersede-ancestors|blockers ...' ;;
 esac

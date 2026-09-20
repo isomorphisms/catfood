@@ -1,0 +1,5 @@
+# scope	merge_blocking	reason
+current-follower	no	durable follower debt survives the source merge and proves no stronger claim
+stale-follower	yes	an obsolete unsuperseded trigger is incorrect bookkeeping and must be reconciled
+missing-follower-job	yes	the affected maintained target would otherwise be forgotten
+explicit-promotion-evidence	yes	a PR-specific draft condition remains a separate evidence requirement
