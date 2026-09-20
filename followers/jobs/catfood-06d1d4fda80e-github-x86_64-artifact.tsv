@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-06d1d4fda80e-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	fix/android-gopeed-control
+pr	57
+trigger_commit	06d1d4fda80e2801fefed36a1ea6148c31cd8fe7
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	az-phone
+artifact_sha256	11f824ae140b39d88493a5325d5776b410985cac851eb28fc3cbaa38385b9098
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit 06d1d4fda80e2801fefed36a1ea6148c31cd8fe7 on github-x86_64-artifact; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device
+superseded_by	-
+follow_policy	exact

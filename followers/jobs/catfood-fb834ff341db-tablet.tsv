@@ -15,11 +15,11 @@ required	yes
 action	follower target for Cat Food commit fb834ff341db3bf6e6136db9aa9eb4cd1c68040e on tablet; fetch that exact commit, install verified Android runtime packages and the local gdl client, run the named acceptance action, and record a physical-device receipt. Do not treat this as Gopeed app REST acceptance.
 acceptance_kind	physical-device
 acceptance_action	./catfood && sh android/check.sh gaps tablet
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	android-artifact-and-device; carries forward unresolved tablet acceptance from 7063b2535384e0321b6b49a4ef0bfc7edf1cd82f; Gopeed Android app and REST execution remain separate
-superseded_by	-
+superseded_by	catfood-06d1d4fda80e-tablet
 follow_policy	exact

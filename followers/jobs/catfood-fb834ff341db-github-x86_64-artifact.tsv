@@ -15,11 +15,11 @@ required	yes
 action	artifact follower for Cat Food commit fb834ff341db3bf6e6136db9aa9eb4cd1c68040e; validate the carried-forward exact az-phone identity/hash and Android install contract without treating the checked-in gdl client as a Gopeed Android app/package artifact or physical-device evidence.
 acceptance_kind	artifact
 acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	android-artifact-and-device; carries forward unresolved artifact validation from 7063b2535384e0321b6b49a4ef0bfc7edf1cd82f; local gdl client remains checked-in source, not Gopeed app/package evidence
-superseded_by	-
+superseded_by	catfood-06d1d4fda80e-github-x86_64-artifact
 follow_policy	exact
