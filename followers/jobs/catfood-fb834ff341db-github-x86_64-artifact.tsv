@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-fb834ff341db-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	android-gdl-main-2026-09-19
+pr	68
+trigger_commit	fb834ff341db3bf6e6136db9aa9eb4cd1c68040e
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	az-phone
+artifact_sha256	11f824ae140b39d88493a5325d5776b410985cac851eb28fc3cbaa38385b9098
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	artifact follower for Cat Food commit fb834ff341db3bf6e6136db9aa9eb4cd1c68040e; validate the carried-forward exact az-phone identity/hash and Android install contract without treating the checked-in gdl client as a Gopeed Android app/package artifact or physical-device evidence.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device; carries forward unresolved artifact validation from 7063b2535384e0321b6b49a4ef0bfc7edf1cd82f; local gdl client remains checked-in source, not Gopeed app/package evidence
+superseded_by	-
+follow_policy	exact
