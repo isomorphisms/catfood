@@ -15,11 +15,11 @@ required	yes
 action	leader target for Cat Food commit a127fa27b952929282788730ba770cf3c4359147 on phone; fetch that exact commit, install and verify the pinned az-phone file artifact, run the named acceptance action, and record a physical-device receipt.
 acceptance_kind	physical-device
 acceptance_action	./catfood && sh android/check.sh gaps phone
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	android-artifact-and-device; carries forward unresolved phone acceptance from 0bad7b6e5566f0edc062e32c9a10f3bca17cf597
-superseded_by	-
+superseded_by	catfood-7063b2535384-phone
 follow_policy	exact
