@@ -30,6 +30,15 @@ EOF_DELIVERY
 test "$(awk -F '\t' '$1 == "reddit-phone" { count++ } END { print count+0 }' "$packages")" -eq 1
 test "$(awk -F '\t' '$1 == "reddit-tablet" { count++ } END { print count+0 }' "$packages")" -eq 1
 
+checksums_url=https://github.com/isomorphisms/idric-arm-thumb/releases/download/reddit-android-45b8b5e1e391/SHA256SUMS
+checksums="$tmp/SHA256SUMS"
+curl -fL --retry 2 "$checksums_url" -o "$checksums"
+printf '%s  %s\n' \
+    a5a2f1dd8496924821ae647afaf7be4b92af741ce96454540f8af0c136f1ffa5 \
+    "$checksums" | sha256sum -c -
+grep -Fqx '063fd4dcc04409c09caef34d2295d93361e2ba441d87dac8476f81d71530662c  reddit-phone.tar.gz' "$checksums"
+grep -Fqx '4bcd1e3a95342f58e6ba399455110476104d88507c9b3b2bfc856f39478f84e9  reddit-tablet.tar.gz' "$checksums"
+
 cat > "$fake_bin/app_process" <<'EOF_APP_PROCESS'
 #!/bin/sh
 printf '%s\n' 'artifact-contract test must not execute app_process' >&2
