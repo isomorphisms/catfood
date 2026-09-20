@@ -110,6 +110,34 @@ EOF_RECEIPT
         echo 'unresolved follower work from an ancestor trigger was forgotten' >&2
         exit 1
     fi
+
+    blockers=$(sh followers/manage.sh blockers "$android_trigger")
+    printf '%s\n' "$blockers" | grep "${trigger}.*${android_trigger}" >/dev/null
+    printf '%s\n' "$blockers" | awk -F '\t' -v current="$android_trigger" \
+        'NR>1 && $4==current && $2=="no" {found=1} END {exit !found}'
+
+    if sh followers/manage.sh supersede-ancestors "$android_trigger" >/dev/null 2>&1; then
+        echo 'narrow Android trigger erased older container/Hetzner obligations' >&2
+        exit 1
+    fi
+
+    printf '%s\n' '# combined portable successor' >> provision.sh
+    printf '%s\n' '# combined Android successor' >> android/install-example.sh
+    git add provision.sh android/install-example.sh
+    git commit -qm combined-successor
+    current_trigger=$(git rev-parse HEAD)
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
+        prepare "$current_trigger" phone armv7 - phone/example 3 >/dev/null
+
+    sh followers/manage.sh supersede-ancestors "$current_trigger" >/dev/null
+    sh followers/stale.sh >/dev/null
+    blockers=$(sh followers/manage.sh blockers "$current_trigger")
+    if printf '%s\n' "$blockers" | grep "$trigger" >/dev/null; then
+        echo 'superseded ancestor remained in merge blockers' >&2
+        exit 1
+    fi
+    printf '%s\n' "$blockers" | awk -F '\t' -v current="$current_trigger" \
+        'NR>1 && $3==current && $4==current && $2=="no" {found=1} END {exit !found}'
 )
 
 make_integration_fixture() {

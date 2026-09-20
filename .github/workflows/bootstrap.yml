@@ -9,6 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
       - name: Enforce the Cat Food ai-ci contract
         uses: isomorphisms/ai-ci@e342fc1e58bde3e7bcb82875b66f721725a600e8
         with:

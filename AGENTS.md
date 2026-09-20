@@ -92,3 +92,10 @@ For the exact source commit being led from mobile:
 - record explicit supersession when later work replaces an unfinished follower obligation.
 
 Before declaring follower work caught up, run AICI follower verification/reconciliation, `sh followers/stale.sh`, and inspect `sh followers/manage.sh pending <source-commit>`. A follower closes only after its required matching receipt exists.
+
+For merge-state collection, use `sh followers/manage.sh blockers <source-commit>`.
+Current exact follower debt is informational for the source merge unless the PR
+declares it as a promotion requirement. Reconcile stale ancestor jobs with
+`sh followers/manage.sh supersede-ancestors <source-commit>` only when its
+same-target, same-acceptance-kind preflight succeeds; this records succession
+and never manufactures acceptance.
