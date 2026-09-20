@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-35c996663f9c-tablet
+repository	isomorphisms/catfood
+branch	android/ike-current-main
+pr	70
+trigger_commit	35c996663f9cbe3d6ecdc8d1251111ed7a7a18ac
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	ike-tablet
+artifact_sha256	19f01bdecd21af915c6a0e2bba203a9932e3e2155b910d04e1056ebe3028f04d
+follower_platform	tablet
+follower_arch	aarch64
+required	yes
+action	follower target for Cat Food commit 35c996663f9cbe3d6ecdc8d1251111ed7a7a18ac on tablet; fetch that exact commit, install verified Android runtime packages and the Cat Food gopeed/gdl/go_down_load control-plane helpers, require TCP loopback rather than app-private Unix-socket assumptions, install the declared ike-tablet package, run the named acceptance action, execute Ike dependency/recipe behavior, and record physical-device evidence. Do not treat helper installation or package publication as Gopeed-app or Ike physical-runtime evidence.
+acceptance_kind	physical-device
+acceptance_action	./catfood && sh android/check.sh gaps tablet
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device; carries forward unresolved tablet acceptance from 06d1d4fda80e2801fefed36a1ea6148c31cd8fe7, including the Gopeed control boundary, and adds current Ike a92fe68 Android package execution
+superseded_by	-
+follow_policy	exact

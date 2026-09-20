@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-35c996663f9c-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	android/ike-current-main
+pr	70
+trigger_commit	35c996663f9cbe3d6ecdc8d1251111ed7a7a18ac
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	az-phone
+artifact_sha256	11f824ae140b39d88493a5325d5776b410985cac851eb28fc3cbaa38385b9098
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	artifact follower for Cat Food commit 35c996663f9cbe3d6ecdc8d1251111ed7a7a18ac; preserve the carried-forward exact az-phone identity/hash and Android install contract from 06d1d4fda80e2801fefed36a1ea6148c31cd8fe7, and validate both current Ike Android release assets, exact SHA-256 values, package metadata, extraction/install contract, and equality between android/packages.tsv and the acceptance-bundle pins. Do not promote package evidence to device runtime or treat the local gdl client as Gopeed app/package evidence.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device; carries forward unresolved az-phone artifact validation from 06d1d4fda80e2801fefed36a1ea6148c31cd8fe7 and adds both current Ike Android package identities; no physical-device evidence is implied
+superseded_by	-
+follow_policy	exact

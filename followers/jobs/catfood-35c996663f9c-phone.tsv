@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-35c996663f9c-phone
+repository	isomorphisms/catfood
+branch	android/ike-current-main
+pr	70
+trigger_commit	35c996663f9cbe3d6ecdc8d1251111ed7a7a18ac
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	ike-phone
+artifact_sha256	cfccededea8b420b66b8c427d53c3bd7a073b4ebb83c78c8a23a4fa50cfba0d8
+follower_platform	phone
+follower_arch	armv7
+required	yes
+action	leader target for Cat Food commit 35c996663f9cbe3d6ecdc8d1251111ed7a7a18ac on phone; fetch that exact commit, install verified Android runtime packages and the Cat Food gopeed/gdl/go_down_load control-plane helpers, require TCP loopback rather than app-private Unix-socket assumptions, install the declared ike-phone package, run the named acceptance action, execute Ike dependency/recipe behavior through the Android shell boundary, and record physical-device evidence. Do not treat helper installation or package publication as Gopeed-app or Ike physical-runtime evidence.
+acceptance_kind	physical-device
+acceptance_action	./catfood && sh android/check.sh gaps phone
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device; carries forward unresolved phone acceptance from 06d1d4fda80e2801fefed36a1ea6148c31cd8fe7, including the Gopeed control boundary, and adds current Ike a92fe68 Android package execution
+superseded_by	-
+follow_policy	exact

@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-35c996663f9c-hetzner-x86_64
+repository	isomorphisms/catfood
+branch	android/ike-current-main
+pr	70
+trigger_commit	35c996663f9cbe3d6ecdc8d1251111ed7a7a18ac
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	hetzner-x86_64
+follower_arch	x86_64
+required	yes
+action	carried-forward follower target for Cat Food commit 35c996663f9cbe3d6ecdc8d1251111ed7a7a18ac on Hetzner x86-64; run exact persistent-cloud acceptance for the integrated product state, preserving the Gopeed TCP-loopback/control-plane changes from 06d1d4fda80e2801fefed36a1ea6148c31cd8fe7 and adding current Ike inventory integration.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh cloud
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable; carries forward unresolved Hetzner x86-64 runtime acceptance from 06d1d4fda80e2801fefed36a1ea6148c31cd8fe7 and adds current Ike integration
+superseded_by	-
+follow_policy	exact
