@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-e2c5ccb16bbd-github-x86_64
+repository	isomorphisms/catfood
+branch	android/reddit-dex-jni-package
+pr	69
+trigger_commit	e2c5ccb16bbd37dd3ec3b791fd40006119e58b55
+leader_platform	github-x86_64-artifact
+leader_arch	x86_64
+leader_evidence	https://github.com/isomorphisms/catfood/actions/runs/35509762538
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64
+follower_arch	x86_64
+required	yes
+action	Run exact GitHub-hosted x86-64 follower acceptance against this integrated Cat Food source state and record its independent runtime receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh github
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	The tools.tsv inventory change is shared repository state; exact GitHub x86-64 runtime acceptance remains independent of Android artifact validation.
+superseded_by	-
+follow_policy	exact
