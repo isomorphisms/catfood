@@ -8,6 +8,7 @@ oils	host	n/a	n/a	grease-source-and-host-build-input
 ir	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
 irk	host	n/a	n/a	experimental-r-compiler-host-tool
 ithon	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
+ike	runtime	package:ike-phone	package:ike-tablet	build-orchestrator-command
 icky	host	n/a	n/a	ick-parser-host-component
 ick	host	n/a	n/a	experimental-c-compiler-host-tool
 Idric	runtime	gap:android-package-missing	gap:android-package-missing	compiler-interpreter-runtime
