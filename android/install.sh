@@ -334,6 +334,10 @@ EOF_ROW
                 rm -rf "$staging" "$entries_file"
                 exit 3
             }
+            while IFS="$tab" read -r command entrypoint; do
+                chmod 0444 "$staging/$entrypoint"
+            done < "$entries_file"
+            chmod 0444 "$staging/$jni_library"
         fi
 
         mkdir -p "$(dirname -- "$package_dir")"

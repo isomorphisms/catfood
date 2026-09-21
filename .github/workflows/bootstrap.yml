@@ -27,10 +27,13 @@ jobs:
           dash -n android/check.sh
           dash -n android/install.sh
           dash -n tests/android-delivery.sh
+          dash -n tests/android-reddit-artifact.sh
           dash -n tests/entrypoint.sh
-      - name: Exercise Android delivery contracts
+      - name: Exercise Android delivery and exact Reddit artifact contracts
         shell: sh
-        run: sh tests/android-delivery.sh
+        run: |
+          sh tests/android-delivery.sh
+          sh tests/android-reddit-artifact.sh
       - name: Exercise cloud and generic Termux entrypoints
         shell: sh
         run: sh tests/entrypoint.sh

@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-e2c5ccb16bbd-phone
+repository	isomorphisms/catfood
+branch	android/reddit-dex-jni-package
+pr	69
+trigger_commit	e2c5ccb16bbd37dd3ec3b791fd40006119e58b55
+leader_platform	github-x86_64-artifact
+leader_arch	x86_64
+leader_evidence	https://github.com/isomorphisms/catfood/actions/runs/35509762538
+artifact	reddit-phone.tar.gz
+artifact_sha256	063fd4dcc04409c09caef34d2295d93361e2ba441d87dac8476f81d71530662c
+follower_platform	phone
+follower_arch	armv7
+required	yes
+action	Install the exact Reddit phone package pinned by this trigger on the physical ARMv7 phone, run the installed stable reddit command through the dedicated acceptance script, and record only evidence produced by that run.
+acceptance_kind	physical-device
+acceptance_action	CATFOOD_TARGET=phone ./catfood && CATFOOD_TARGET=phone sh android/acceptance/reddit-installed.sh
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	Exact published phone artifact is pinned and repository-side artifact/install validation passed; physical phone launch/runtime/device execution has not been run for this package identity.
+superseded_by	-
+follow_policy	exact

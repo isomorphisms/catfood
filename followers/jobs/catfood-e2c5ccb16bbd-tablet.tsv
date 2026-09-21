@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-e2c5ccb16bbd-tablet
+repository	isomorphisms/catfood
+branch	android/reddit-dex-jni-package
+pr	69
+trigger_commit	e2c5ccb16bbd37dd3ec3b791fd40006119e58b55
+leader_platform	github-x86_64-artifact
+leader_arch	x86_64
+leader_evidence	https://github.com/isomorphisms/catfood/actions/runs/35509762538
+artifact	reddit-tablet.tar.gz
+artifact_sha256	4bcd1e3a95342f58e6ba399455110476104d88507c9b3b2bfc856f39478f84e9
+follower_platform	tablet
+follower_arch	aarch64
+required	yes
+action	Install the exact Reddit tablet package pinned by this trigger on the physical AArch64 tablet, run the installed stable reddit command through the dedicated acceptance script, and record only evidence produced by that run.
+acceptance_kind	physical-device
+acceptance_action	CATFOOD_TARGET=tablet ./catfood && CATFOOD_TARGET=tablet sh android/acceptance/reddit-installed.sh
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	Exact published tablet artifact is pinned and repository-side artifact/install validation passed; physical tablet launch/runtime/device execution has not been run for this package identity.
+superseded_by	-
+follow_policy	exact

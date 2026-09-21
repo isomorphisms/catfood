@@ -9,6 +9,9 @@ on:
       - 'android/check.sh'
       - 'tests/android-acceptance-bundles.sh'
       - 'tests/android-acceptance-bundles-v2.sh'
+      - 'tests/android-reddit-artifact.sh'
+      - 'android/packages.tsv'
+      - 'android/delivery.tsv'
       - '.github/workflows/android-device-acceptance-bundles.yml'
   pull_request:
     paths:
@@ -17,6 +20,9 @@ on:
       - 'android/check.sh'
       - 'tests/android-acceptance-bundles.sh'
       - 'tests/android-acceptance-bundles-v2.sh'
+      - 'tests/android-reddit-artifact.sh'
+      - 'android/packages.tsv'
+      - 'android/delivery.tsv'
       - '.github/workflows/android-device-acceptance-bundles.yml'
   workflow_dispatch:
 
@@ -38,10 +44,11 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
-      - name: Check bundle contracts
+      - name: Check bundle and exact published Reddit artifact contracts
         run: |
           sh tests/android-acceptance-bundles.sh
           sh tests/android-acceptance-bundles-v2.sh
+          sh tests/android-reddit-artifact.sh
 
       - name: Build and verify both corrected self-contained bundles
         run: sh android/acceptance/build-bundles-v2.sh

@@ -5,6 +5,9 @@ root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 
+dash -n "$root/android/acceptance/reddit-installed.sh"
+sh -n "$root/android/acceptance/reddit-installed.sh"
+
 # The checked-in manifests must cover the whole current inventory, while
 # readiness remains false until every intended Android runtime has a package.
 sh "$root/android/check.sh" check >/dev/null
@@ -203,6 +206,8 @@ test ! -e "$workspace/bin/az"
 test -x "$workspace/bin/app"
 test -f "$workspace/packages/app-phone/$package_ref/classes.dex"
 test -f "$workspace/packages/app-phone/$package_ref/lib/libapp.so"
+test "$(stat -c '%a' "$workspace/packages/app-phone/$package_ref/classes.dex")" = 444
+test "$(stat -c '%a' "$workspace/packages/app-phone/$package_ref/lib/libapp.so")" = 444
 test -f "$workspace/receipts/phone-app-phone.tsv"
 grep -F '# catfood android dex-jni wrapper' "$workspace/bin/app" >/dev/null
 grep -F "source_ref	$source_ref" "$workspace/receipts/phone-app-phone.tsv" >/dev/null
@@ -318,6 +323,87 @@ grep -F "CLASSPATH=$workspace/packages/app-phone/$package_ref/classes.dex" "$app
 grep -F 'ARGS=-Dapp.library=' "$app_log" >/dev/null
 grep -F 'runtime_result	NOT_VERIFIED' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
 grep -F 'physical_device_result	NOT_VERIFIED' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
+
+# The installed Reddit physical acceptance promotes only launch/runtime/device
+# evidence after executing the stable command and checking the exact install receipt.
+reddit_tools=$tmp/reddit-tools.tsv
+reddit_delivery=$tmp/reddit-delivery.tsv
+reddit_packages=$tmp/reddit-packages.tsv
+cat > "$reddit_tools" <<'EOF_REDDIT_TOOLS'
+reddit https://github.com/isomorphisms/app.git main none
+EOF_REDDIT_TOOLS
+cat > "$reddit_delivery" <<'EOF_REDDIT_DELIVERY'
+# name	role	phone	tablet	note
+grease	reference	n/a	n/a	fixture-not-under-test
+reddit	runtime	package:reddit-phone	gap:not-under-test	fixture-reddit
+EOF_REDDIT_DELIVERY
+cat > "$reddit_packages" <<EOF_REDDIT_PACKAGES
+# package	target	abi	mode	source	source_ref	package_ref	url	sha256	command	entrypoint	main_class	jni_library	jni_property	install_requires	termux_packages	runtime_requires	package_requires
+reddit-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	reddit	classes.dex	org.isomorphisms.reddit.RedditCli	lib/libapp.so	reddit.library	curl,sha256sum,tar	-	-	-
+EOF_REDDIT_PACKAGES
+
+reddit_workspace=$tmp/reddit-workspace
+mkdir -p "$reddit_workspace"
+PATH="$fake_bin:$PATH" \
+CATFOOD_TEST_RELEASE="$fixture" \
+CATFOOD_APP_PROCESS="$fake_bin/app_process" \
+CATFOOD_DEVICE_ABI=armeabi-v7a \
+CATFOOD_TARGET=phone \
+CATFOOD_ROOT="$reddit_workspace" \
+CATFOOD_CACHE="$tmp/reddit-cache" \
+CATFOOD_TOOLS="$reddit_tools" \
+CATFOOD_ANDROID_DELIVERY="$reddit_delivery" \
+CATFOOD_ANDROID_PACKAGES="$reddit_packages" \
+    sh "$root/android/install.sh" >/dev/null
+
+cat > "$reddit_workspace/bin/reddit" <<'EOF_REDDIT'
+#!/bin/sh
+case ${1:-} in
+    url)
+        printf '%s\n' 'https://www.reddit.com/search/?q=computer%20science%20degree%20regret'
+        ;;
+    search)
+        printf '%s\n' 'reddit: missing REDDIT_ACCESS_TOKEN' >&2
+        exit 2
+        ;;
+    *)
+        exit 64
+        ;;
+esac
+EOF_REDDIT
+chmod 0755 "$reddit_workspace/bin/reddit"
+
+cat > "$fake_bin/getprop" <<'EOF_GETPROP'
+#!/bin/sh
+case ${1:-} in
+    ro.product.cpu.abi) printf '%s\n' armeabi-v7a ;;
+    ro.build.version.sdk) printf '%s\n' 34 ;;
+    ro.product.model) printf '%s\n' fixture-phone ;;
+    ro.build.fingerprint) printf '%s\n' fixture/fingerprint ;;
+    *) exit 0 ;;
+esac
+EOF_GETPROP
+chmod 0755 "$fake_bin/getprop"
+
+CATFOOD_TARGET=phone \
+CATFOOD_ROOT="$reddit_workspace" \
+CATFOOD_GETPROP="$fake_bin/getprop" \
+CATFOOD_REDDIT_EVIDENCE="$tmp/reddit-evidence" \
+CATFOOD_TOOLS="$reddit_tools" \
+CATFOOD_ANDROID_DELIVERY="$reddit_delivery" \
+CATFOOD_ANDROID_PACKAGES="$reddit_packages" \
+    sh "$root/android/acceptance/reddit-installed.sh" >/dev/null
+
+reddit_physical_receipt="$tmp/reddit-evidence/phone-reddit-physical.tsv"
+test -f "$reddit_physical_receipt"
+grep -F 'launch_result	PASS' "$reddit_physical_receipt" >/dev/null
+grep -F 'runtime_result	PASS' "$reddit_physical_receipt" >/dev/null
+grep -F 'physical_device_result	PASS' "$reddit_physical_receipt" >/dev/null
+grep -F 'emulator_result	NOT_VERIFIED' "$reddit_physical_receipt" >/dev/null
+CATFOOD_TOOLS="$reddit_tools" \
+CATFOOD_ANDROID_DELIVERY="$reddit_delivery" \
+CATFOOD_ANDROID_PACKAGES="$reddit_packages" \
+    sh "$root/android/check.sh" receipt "$reddit_physical_receipt" >/dev/null
 
 # The normal device provisioner must enter the same runtime-only path. It may
 # install manifest-declared commodity Termux packages, but it must not clone
