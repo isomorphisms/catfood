@@ -1,0 +1,13 @@
+# model source role status
+#
+# Candidate open-weight models for agents that must reliably follow local
+# program/tool instructions.  Presence here is inventory only: it does not
+# claim that weights have been downloaded, can run on a particular target,
+# or have passed Cat Food acceptance.
+
+Qwen3.5-27B https://huggingface.co/Qwen/Qwen3.5-27B primary candidate
+Qwen3.5-122B-A10B https://huggingface.co/Qwen/Qwen3.5-122B-A10B large candidate
+MiniMax-M2.7 https://huggingface.co/MiniMaxAI/MiniMax-M2.7 agent-skills candidate
+GLM-5.3-Flash https://huggingface.co/zai-org/GLM-5.3-Flash agent-code candidate
+Qwen3.5-35B-A3B https://huggingface.co/Qwen/Qwen3.5-35B-A3B efficient candidate
+gpt-oss-120b https://huggingface.co/openai/gpt-oss-120b comparison candidate
