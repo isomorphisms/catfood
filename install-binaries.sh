@@ -7,6 +7,8 @@ workspace=${CATFOOD_ROOT:-"$HOME/opt"}
 cache=${CATFOOD_CACHE:-"${XDG_CACHE_HOME:-$HOME/.cache}/catfood"}
 platform=${CATFOOD_BINARY_PLATFORM:-}
 
+# These rows are direct runtime assets. Unsupported platforms fail closed:
+# never substitute a source build or an unpinned package-manager copy.
 if [ -z "$platform" ]; then
     os=$(uname -s 2>/dev/null || printf '%s\n' unknown)
     machine=$(uname -m 2>/dev/null || printf '%s\n' unknown)
