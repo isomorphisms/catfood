@@ -71,6 +71,7 @@ case $target in
            [ -z "${CATFOOD_ANDROID_DELIVERY:-}" ] && \
            [ -z "${CATFOOD_TOOLS:-}" ]; then
             CATFOOD_ROOT=$workspace sh "$root/android/install-local-clients.sh"
+            CATFOOD_ROOT=$workspace sh "$root/android/install-csvkit.sh"
         fi
         printf 'cat food %s runtime packages are current under %s\n' "$target" "$workspace"
         exit 0

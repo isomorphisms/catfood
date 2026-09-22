@@ -45,7 +45,7 @@ EOF
 
 help_index() {
     printf '%s\n' 'Cat Food help topics:'
-    printf '  %s\n' grease
+    printf '  %s\n' grease csvkit
     awk '$1 !~ /^#/ && NF >= 4 { print "  " $1 }' "$root/tools.tsv"
     cat <<'EOF'
 
