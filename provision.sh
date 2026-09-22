@@ -64,6 +64,7 @@ case $target in
         if [ -n "${CATFOOD_CONFIG_DIR:-}" ]; then
             CATFOOD_CONFIG_DIR=$CATFOOD_CONFIG_DIR sh "$root/import-config.sh"
         fi
+        CATFOOD_ROOT=$workspace CATFOOD_CACHE=$cache sh "$root/install-binaries.sh"
         CATFOOD_ROOT=$workspace CATFOOD_CACHE=$cache CATFOOD_TARGET=$target \
             sh "$root/android/install.sh"
         if [ -z "${CATFOOD_ANDROID_PACKAGES:-}" ] && \
@@ -97,11 +98,11 @@ install_packages() {
             printf '%s\n' 'cat food needs the Termux pkg command' >&2
             exit 127
         }
-        pkg install -y bash ca-certificates coreutils curl gawk git grep jq libiconv sed tar
+        pkg install -y bash ca-certificates coreutils curl gawk git grep libiconv sed tar
     elif command -v apt-get >/dev/null 2>&1; then
         as_root apt-get update
         as_root env DEBIAN_FRONTEND=noninteractive apt-get install -y \
-            bash build-essential ca-certificates cmake curl espeak-ng ffmpeg gfortran git jq \
+            bash build-essential ca-certificates cmake curl espeak-ng ffmpeg gfortran git \
             libbz2-dev libcurl4-openssl-dev libdeflate-dev libexpat1-dev libffi-dev \
             libgdbm-dev libgmp-dev liblzma-dev libncurses-dev libpcre2-dev libreadline-dev \
             libsqlite3-dev libssl-dev make ninja-build default-jdk-headless perl \
@@ -141,6 +142,7 @@ install_ysh() {
 }
 
 install_packages
+CATFOOD_ROOT=$workspace CATFOOD_CACHE=$cache sh "$root/install-binaries.sh"
 if [ "${CATFOOD_INSTALL_YSH:-1}" != 0 ]; then
     install_ysh
 fi
