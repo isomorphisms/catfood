@@ -13,9 +13,11 @@ The device path is intentionally short:
 
 ## Termux packages
 
-`termux_packages` is an explicit comma-separated list of commodity dependencies that Cat Food is allowed to obtain with `pkg install -y` on the Android device. `-` means none. This is intended for ordinary Termux runtime facilities such as `curl`, `jq`, `libiconv`, `coreutils`, or `tar`; it is not a source-build escape hatch.
+`termux_packages` is an explicit comma-separated list of commodity dependencies that Cat Food is allowed to obtain with `pkg install -y` on the Android device. `-` means none. This is intended for ordinary Termux runtime facilities such as `curl`, `libiconv`, `coreutils`, or `tar`; it is not a source-build escape hatch.
 
 Cat Food installs those declared packages before checking `install_requires` and `runtime_requires`. Package-manager use is therefore visible in the manifest instead of being an implicit repair step. Compiler toolchains and unfinished compiler backends remain build-host concerns unless a future delivery decision explicitly changes that boundary.
+
+The normal `./catfood` path installs jq and Miller from the separate pinned platform-binary feed before Android product delivery begins. jq therefore remains a declared runtime command requirement for consumers such as `az`, but it is no longer declared as a Termux package to fetch. If the pinned jq binary is absent, product delivery fails instead of silently replacing that mechanism with `pkg install jq`. Miller is installed by the same feed as the `mlr` command. These utility binaries are control-plane/runtime conveniences, not product rows in `delivery.tsv`.
 
 ## Package modes
 
