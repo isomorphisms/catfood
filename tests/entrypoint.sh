@@ -28,6 +28,31 @@ printf '%s\n' \
     'catfood-fixture https://github.com/isomorphisms/catfood.git main none' \
     > "$manifest"
 
+binary_assets=$temporary/runtime-binary-assets
+mkdir -p "$binary_assets/miller-9.8.7-linux-amd64"
+cat > "$binary_assets/jq" <<'EOF_JQ'
+#!/bin/sh
+[ "${1:-}" = --version ] && { printf '%s\n' 'jq-9.8.7'; exit 0; }
+exit 2
+EOF_JQ
+cat > "$binary_assets/miller-9.8.7-linux-amd64/mlr" <<'EOF_MLR'
+#!/bin/sh
+[ "${1:-}" = --version ] && { printf '%s\n' 'mlr 9.8.7'; exit 0; }
+exit 2
+EOF_MLR
+chmod 0755 "$binary_assets/jq" "$binary_assets/miller-9.8.7-linux-amd64/mlr"
+tar -czf "$binary_assets/miller.tar.gz" -C "$binary_assets" miller-9.8.7-linux-amd64
+jq_sha=$(sha256sum "$binary_assets/jq" | awk '{print $1}')
+mlr_sha=$(sha256sum "$binary_assets/miller.tar.gz" | awk '{print $1}')
+binary_manifest=$temporary/runtime-binaries.tsv
+{
+    printf '# command\tsource\tversion\tplatform\tmode\turl\tsha256\tentrypoint\tprobe_arg\tprobe_contains\n'
+    printf 'jq\tfixture/jq\t9.8.7\tlinux-x86_64\tfile\tfile://%s\t%s\t-\t--version\t9.8.7\n' "$binary_assets/jq" "$jq_sha"
+    printf 'mlr\tfixture/miller\t9.8.7\tlinux-x86_64\ttar.gz\tfile://%s\t%s\tmiller-9.8.7-linux-amd64/mlr\t--version\t9.8.7\n' "$binary_assets/miller.tar.gz" "$mlr_sha"
+} > "$binary_manifest"
+export CATFOOD_BINARY_MANIFEST=$binary_manifest
+export CATFOOD_BINARY_PLATFORM=linux-x86_64
+
 termux_home=$temporary/termux-home
 mkdir -p "$termux_home"
 HOME=$termux_home \
@@ -44,7 +69,9 @@ CATFOOD_NO_PROFILE=1 \
 test -d "$termux_home/opt/grease/.git"
 test -d "$termux_home/opt/catfood-fixture/.git"
 tab=$(printf '\t')
-grep -F "pkg${tab}install -y bash ca-certificates coreutils curl gawk git grep jq libiconv sed tar" "$log" >/dev/null
+grep -F "pkg${tab}install -y bash ca-certificates coreutils curl gawk git grep libiconv sed tar" "$log" >/dev/null
+test "$("$termux_home/opt/bin/jq" --version)" = "jq-9.8.7"
+test "$("$termux_home/opt/bin/mlr" --version)" = "mlr 9.8.7"
 if grep -F 'forbidden' "$log" >/dev/null; then
     printf '%s\n' 'Termux entrypoint attempted a root/cloud package command' >&2
     exit 1

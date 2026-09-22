@@ -16,10 +16,10 @@ jobs:
         run: |
           for script in \
             catfood bootstrap.sh check-manifest.sh update-tools.ysh \
-            provision.sh activate.sh build-tools.sh refresh.sh doctor.sh import-config.sh \
+            provision.sh install-binaries.sh activate.sh build-tools.sh refresh.sh doctor.sh import-config.sh \
             android/check.sh android/install.sh android/install-local-clients.sh \
             tests/check-manifest.sh tests/entrypoint.sh tests/targets.sh tests/android-delivery.sh \
-            tests/android-local-clients.sh
+            tests/android-local-clients.sh tests/runtime-binaries.sh
           do
             if [ -f "$script" ]; then
               dash -n "$script"
@@ -41,6 +41,9 @@ jobs:
       - name: Verify whole-inventory Android delivery contracts
         shell: sh
         run: sh tests/android-delivery.sh
+      - name: Verify pinned runtime binary contracts
+        shell: sh
+        run: sh tests/runtime-binaries.sh
       - name: Verify Android local client feed
         shell: sh
         run: sh tests/android-local-clients.sh
@@ -143,6 +146,8 @@ jobs:
             sh -c '
               "$CATFOOD_ROOT/bin/ysh" -c "echo"
               "$CATFOOD_ROOT/bin/osh" -c "echo"
+              "$CATFOOD_ROOT/bin/jq" --version | grep -F "1.8.2"
+              "$CATFOOD_ROOT/bin/mlr" --version | grep -F "6.21.0"
               "$CATFOOD_ROOT/bin/ysh" -n "$GITHUB_WORKSPACE/fdroid-deploy.ysh" >/dev/null
               "$CATFOOD_ROOT/bin/ysh" -n "$GITHUB_WORKSPACE/fdroid-check-deployed.ysh" >/dev/null
               "$CATFOOD_ROOT/bin/fdroid-deploy" --help >/dev/null

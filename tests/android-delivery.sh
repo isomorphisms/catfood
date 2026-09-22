@@ -61,13 +61,14 @@ url=
 while [ "$#" -gt 0 ]; do
     case $1 in
         -o) shift; output=$1 ;;
-        http://*|https://*) url=$1 ;;
+        http://*|https://*|file://*) url=$1 ;;
     esac
     shift
 done
 [ -n "$output" ] && [ -n "$url" ]
 case $url in
     https://example.invalid/app-phone.tar.gz) cp "$CATFOOD_TEST_RELEASE/app-phone.tar.gz" "$output" ;;
+    file://*) cp "${url#file://}" "$output" ;;
     *) printf 'unexpected fixture URL: %s\n' "$url" >&2; exit 22 ;;
 esac
 EOF_CURL
@@ -332,6 +333,32 @@ EOF_FORBIDDEN
 done
 : > "$backend_log"
 : > "$pkg_log"
+
+binary_fixture=$tmp/runtime-binary-fixture
+mkdir -p "$binary_fixture/miller-9.8.7-linux-armv7"
+cat > "$binary_fixture/jq" <<'EOF_JQ'
+#!/bin/sh
+[ "${1:-}" = --version ] && { printf '%s\n' 'jq-9.8.7'; exit 0; }
+exit 2
+EOF_JQ
+cat > "$binary_fixture/miller-9.8.7-linux-armv7/mlr" <<'EOF_MLR'
+#!/bin/sh
+[ "${1:-}" = --version ] && { printf '%s\n' 'mlr 9.8.7'; exit 0; }
+exit 2
+EOF_MLR
+chmod 0755 "$binary_fixture/jq" "$binary_fixture/miller-9.8.7-linux-armv7/mlr"
+tar -czf "$binary_fixture/miller.tar.gz" -C "$binary_fixture" miller-9.8.7-linux-armv7
+jq_binary_sha=$(sha256sum "$binary_fixture/jq" | awk '{print $1}')
+mlr_binary_sha=$(sha256sum "$binary_fixture/miller.tar.gz" | awk '{print $1}')
+binary_manifest=$tmp/runtime-binaries.tsv
+{
+    printf '# command\tsource\tversion\tplatform\tmode\turl\tsha256\tentrypoint\tprobe_arg\tprobe_contains\n'
+    printf 'jq\tfixture/jq\t9.8.7\tlinux-armv7\tfile\tfile://%s\t%s\t-\t--version\t9.8.7\n' \
+        "$binary_fixture/jq" "$jq_binary_sha"
+    printf 'mlr\tfixture/miller\t9.8.7\tlinux-armv7\ttar.gz\tfile://%s\t%s\tmiller-9.8.7-linux-armv7/mlr\t--version\t9.8.7\n' \
+        "$binary_fixture/miller.tar.gz" "$mlr_binary_sha"
+} > "$binary_manifest"
+
 provision_workspace=$tmp/provision-workspace
 PATH="$fake_bin:$PATH" \
 CATFOOD_TEST_RELEASE="$fixture" \
@@ -341,6 +368,8 @@ CATFOOD_PKG_LOG="$pkg_log" \
 CATFOOD_APP_PROCESS="$fake_bin/app_process" \
 CATFOOD_DEVICE_ABI=armeabi-v7a \
 CATFOOD_TARGET=phone \
+CATFOOD_BINARY_PLATFORM=linux-armv7 \
+CATFOOD_BINARY_MANIFEST="$binary_manifest" \
 CATFOOD_ROOT="$provision_workspace" \
 CATFOOD_CACHE="$tmp/provision-cache" \
 CATFOOD_TOOLS="$fixture_tools" \
@@ -348,9 +377,15 @@ CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
 CATFOOD_ANDROID_PACKAGES="$fixture_packages" \
     sh "$root/provision.sh" >/dev/null
 test -x "$provision_workspace/bin/app"
+test "$("$provision_workspace/bin/jq" --version)" = "jq-9.8.7"
+test "$("$provision_workspace/bin/mlr" --version)" = "mlr 9.8.7"
 grep -Fx 'install -y catfood-runtime' "$pkg_log" >/dev/null
 if grep -F 'install -y curl' "$pkg_log" >/dev/null; then
     printf '%s\n' 'Android provisioner reinstalled an already available curl command' >&2
+    exit 1
+fi
+if grep -F 'install -y jq' "$pkg_log" >/dev/null; then
+    printf '%s\n' 'Android provisioner substituted the Termux jq package for the pinned binary' >&2
     exit 1
 fi
 test ! -s "$backend_log"

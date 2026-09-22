@@ -61,6 +61,8 @@ Package verification uses an existing `sha256sum` when present and otherwise And
 
 Runtime state stays directly under `~/opt` by default: stable commands in `~/opt/bin`, installed packages in `~/opt/packages`, receipts in `~/opt/receipts`, and downloads in `~/opt/downloads`.
 
+Cat Food also owns a small platform-binary feed in [`runtime-binaries.tsv`](runtime-binaries.tsv). It currently pins jq 1.8.2 and Miller 6.21.0 (`mlr`) from their upstream release assets for Linux ARMv7, AArch64, x86-64, and RISC-V 64. Each asset is bound to an exact SHA-256 and must pass its version probe after installation. The ARMv7 phone, AArch64 tablet, and x86-64 Linux targets therefore consume prebuilt binaries rather than compiling these utilities locally or relying on a target package-manager version. The RISC-V row is binary availability only; it does not create or imply a maintained RISC-V acceptance target.
+
 ## Fresh Hetzner / Ubuntu workbench
 
 ```sh
@@ -105,7 +107,7 @@ Amazon and AbeBooks credentials stay outside Git. A private config directory can
 
 ## Stable commands
 
-Workbenches keep stable command names under `$CATFOOD_ROOT/bin`. Current host names include `R`, `Rscript`, `grease`, `edric`, `idris2`, `fieldmouse`, `icu`, `ib-smoke`, `ithon`, `osh`, `ysh`, `az`, `abe`, `gopeed`, `gdl`, `go_down_load`, `fdroid-deploy`, and `fdroid-check-deployed` when their targets are present. `aa` is installed when the fed `az` checkout contains `bin/aa`. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`.
+Workbenches keep stable command names under `$CATFOOD_ROOT/bin`. Current host names include `R`, `Rscript`, `grease`, `edric`, `idris2`, `fieldmouse`, `icu`, `ib-smoke`, `ithon`, `osh`, `ysh`, `az`, `abe`, `gopeed`, `gdl`, `go_down_load`, `fdroid-deploy`, `fdroid-check-deployed`, `jq`, and `mlr` when their targets are present. `aa` is installed when the fed `az` checkout contains `bin/aa`. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`.
 
 `gdl` and `go_down_load` are aliases of the `gopeed` REST client. It accepts a direct URL or one URL on standard input, so `aa resolve MD5 | gdl` hands a resolved Anna's Archive member URL to Gopeed without making Gopeed part of AA's HTTP transport.
 
