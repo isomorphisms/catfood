@@ -24,13 +24,18 @@ jobs:
           dash -n update-tools.ysh
           dash -n catfood
           dash -n provision.sh
+          dash -n install-binaries.sh
           dash -n android/check.sh
           dash -n android/install.sh
           dash -n tests/android-delivery.sh
+          dash -n tests/runtime-binaries.sh
           dash -n tests/entrypoint.sh
       - name: Exercise Android delivery contracts
         shell: sh
         run: sh tests/android-delivery.sh
+      - name: Exercise pinned runtime binary contracts
+        shell: sh
+        run: sh tests/runtime-binaries.sh
       - name: Exercise cloud and generic Termux entrypoints
         shell: sh
         run: sh tests/entrypoint.sh
