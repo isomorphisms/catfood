@@ -41,11 +41,11 @@ REDDIT_PHONE_SHA=e731fbd5d34517d4f191b392ef1119e9dd3d556106cb12260e1e895825d4649
 REDDIT_TABLET_URL=https://github.com/isomorphisms/idric-arm-thumb/releases/download/reddit-android-513d3515083e/reddit-tablet.tar.gz
 REDDIT_TABLET_SHA=3cb14b45cf6a45834bfe94f87bd27c11b007f42b306ffc80d3126f23eb5bdbbd
 
-IKE_REF=80a85b13f4047d7c4be72af2d386f3280468a9d4
-IKE_PHONE_URL=https://github.com/dilapidated-shed/ike/releases/download/ike-android-80a85b13f404/ike-phone-armeabi-v7a.tar.gz
-IKE_PHONE_SHA=6badcde63409ba79cb5dac1c95bc2a7cae85329cb622f2e7dc720e58b0c74114
-IKE_TABLET_URL=https://github.com/dilapidated-shed/ike/releases/download/ike-android-80a85b13f404/ike-tablet-arm64-v8a.tar.gz
-IKE_TABLET_SHA=51092a72e9337b7ba138f74980337f4ae4a1ee5256db33aa71e61f97a62e2fdc
+IKE_REF=a92fe68bf8aad8dfcfe9f7a7abd84e07290f7fe0
+IKE_PHONE_URL=https://github.com/dilapidated-shed/ike/releases/download/ike-android-a92fe68bf8aa/ike-phone-armeabi-v7a.tar.gz
+IKE_PHONE_SHA=cfccededea8b420b66b8c427d53c3bd7a073b4ebb83c78c8a23a4fa50cfba0d8
+IKE_TABLET_URL=https://github.com/dilapidated-shed/ike/releases/download/ike-android-a92fe68bf8aa/ike-tablet-arm64-v8a.tar.gz
+IKE_TABLET_SHA=19f01bdecd21af915c6a0e2bba203a9932e3e2155b910d04e1056ebe3028f04d
 
 CLOUD_STORAGE_REF=4be1d5a3d603154262f247581dcd76f6a4b317cd
 CLOUD_STORAGE_URL=https://raw.githubusercontent.com/isomorphisms/cloud-storage-api/4be1d5a3d603154262f247581dcd76f6a4b317cd/commands/google-drive-unzip.ysh
