@@ -1,0 +1,6 @@
+# Projects whose source and GitHub release state are checked on every refresh.
+Idric
+icu
+ithon
+fieldmouse
+ib
