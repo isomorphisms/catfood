@@ -234,4 +234,26 @@ if HOME=$termux_home \
     exit 1
 fi
 
-printf '%s\n' 'cat food cloud, generic Termux, inventory help, and verified checkout location entrypoints pass'
+apk_phone=$temporary/apks-phone
+apk_tablet=$temporary/apks-tablet
+sh "$root/catfood" apks phone "$apk_phone" >/dev/null
+sh "$root/catfood" apks tablet "$apk_tablet" >/dev/null
+
+general_count=$(awk 'NR > 1 { n++ } END { print n + 0 }' "$root/android/apks/general-dex/manifest.tsv")
+miro_count=$(awk 'NR > 1 { n++ } END { print n + 0 }' "$root/android/apks/miro-a1/manifest.tsv")
+tablet_count=$(awk 'NR > 1 { n++ } END { print n + 0 }' "$root/android/apks/tab-p10-row/manifest.tsv")
+
+set -- "$apk_phone"/*.apk
+test -e "$1"
+test "$#" -eq "$((general_count + miro_count))"
+
+set -- "$apk_tablet"/*.apk
+test -e "$1"
+test "$#" -eq "$((general_count + tablet_count))"
+
+awk -F '\t' 'NR > 1 && $8 != "-" { exit 1 }' "$root/android/apks/general-dex/manifest.tsv"
+awk -F '\t' 'NR > 1 && $8 == "-" { exit 1 }' "$root/android/apks/miro-a1/manifest.tsv"
+awk -F '\t' 'NR > 1 && $8 == "-" { exit 1 }' "$root/android/apks/tab-p10-row/manifest.tsv"
+grep -F '7b9657ea55dfbff437c30ca92c31b06d6aeb6d04cafbd185b6e74cb3957f5f19' "$root/android/apks/general-dex/manifest.tsv" >/dev/null
+
+printf '%s\n' 'cat food cloud, generic Termux, APK staging, inventory help, and verified checkout location entrypoints pass'
