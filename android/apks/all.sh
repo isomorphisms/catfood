@@ -8,8 +8,7 @@ usage() {
     cat <<'EOF'
 usage: android/apks/all.sh [phone|tablet] [destination]
 
-Stage every APK usable on the selected Android target:
-  general-dex + the target's native-ABI shelf.
+Stage every APK usable on the selected Android target.
 
 Aliases:
   phone, miro-a1, armv7, armeabi-v7a
@@ -77,14 +76,12 @@ if [ -z "$destination" ]; then
     fi
 fi
 
-general_dir="$self_dir/general-dex"
-native_dir="$self_dir/$shelf"
-for required in "$general_dir/manifest.tsv" "$native_dir/manifest.tsv"; do
-    [ -f "$required" ] || {
-        printf '%s\n' "missing APK shelf manifest: $required" >&2
-        exit 1
-    }
-done
+source_dir="$self_dir/$shelf"
+manifest="$source_dir/manifest.tsv"
+[ -f "$manifest" ] || {
+    printf '%s\n' "missing APK shelf manifest: $manifest" >&2
+    exit 1
+}
 
 if command -v sha256sum >/dev/null 2>&1; then
     sha256_command=sha256sum
@@ -99,33 +96,33 @@ mkdir -p "$destination"
 combined_manifest="$destination/manifest.tsv"
 printf '%s\n' 'shelf	repository	source_kind	source_ref	asset	file	sha256	bytes	native_abis	url' > "$combined_manifest"
 
-copy_shelf() {
-    shelf_name=$1
-    source_dir=$2
-    manifest=$source_dir/manifest.tsv
-    tab=$(printf '\t')
+tab=$(printf '\t')
+while IFS="$tab" read -r repository source_kind source_ref asset file sha256 bytes native_abis url; do
+    case "$repository" in
+        ''|repository) continue ;;
+    esac
 
-    while IFS="$tab" read -r repository source_kind source_ref asset file sha256 bytes native_abis url; do
-        case "$repository" in
-            ''|repository) continue ;;
-        esac
-        source_file="$source_dir/$file"
-        [ -f "$source_file" ] || {
-            printf '%s\n' "missing APK: $source_file" >&2
-            exit 1
-        }
-        got_sha=$($sha256_command "$source_file" | awk '{print $1}')
-        [ "$got_sha" = "$sha256" ] || {
-            printf '%s\n' "APK digest mismatch: $source_file" >&2
-            exit 1
-        }
-        cp "$source_file" "$destination/$file"
-        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n'             "$shelf_name" "$repository" "$source_kind" "$source_ref" "$asset" "$file" "$sha256" "$bytes" "$native_abis" "$url"             >> "$combined_manifest"
-    done < "$manifest"
-}
+    source_file="$source_dir/$file"
+    [ -f "$source_file" ] || {
+        printf '%s\n' "missing APK: $source_file" >&2
+        exit 1
+    }
 
-copy_shelf general-dex "$general_dir"
-copy_shelf "$shelf" "$native_dir"
+    got_sha=$($sha256_command "$source_file" | awk '{print $1}')
+    [ "$got_sha" = "$sha256" ] || {
+        printf '%s\n' "APK digest mismatch: $source_file" >&2
+        exit 1
+    }
+
+    got_bytes=$(wc -c < "$source_file" | tr -d ' ')
+    [ "$got_bytes" = "$bytes" ] || {
+        printf '%s\n' "APK byte-count mismatch: $source_file" >&2
+        exit 1
+    }
+
+    cp "$source_file" "$destination/$file"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n'         "$shelf" "$repository" "$source_kind" "$source_ref" "$asset" "$file"         "$sha256" "$bytes" "$native_abis" "$url" >> "$combined_manifest"
+done < "$manifest"
 
 count=$(awk 'END { print NR - 1 }' "$combined_manifest")
 printf '%s\n' "Staged $count APKs for $shelf"

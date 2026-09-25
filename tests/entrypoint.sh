@@ -239,21 +239,27 @@ apk_tablet=$temporary/apks-tablet
 sh "$root/catfood" apks phone "$apk_phone" >/dev/null
 sh "$root/catfood" apks tablet "$apk_tablet" >/dev/null
 
-general_count=$(awk 'NR > 1 { n++ } END { print n + 0 }' "$root/android/apks/general-dex/manifest.tsv")
 miro_count=$(awk 'NR > 1 { n++ } END { print n + 0 }' "$root/android/apks/miro-a1/manifest.tsv")
 tablet_count=$(awk 'NR > 1 { n++ } END { print n + 0 }' "$root/android/apks/tab-p10-row/manifest.tsv")
 
 set -- "$apk_phone"/*.apk
 test -e "$1"
-test "$#" -eq "$((general_count + miro_count))"
+test "$#" -eq "$miro_count"
 
 set -- "$apk_tablet"/*.apk
 test -e "$1"
-test "$#" -eq "$((general_count + tablet_count))"
+test "$#" -eq "$tablet_count"
 
-awk -F '\t' 'NR > 1 && $8 != "-" { exit 1 }' "$root/android/apks/general-dex/manifest.tsv"
-awk -F '\t' 'NR > 1 && $8 == "-" { exit 1 }' "$root/android/apks/miro-a1/manifest.tsv"
-awk -F '\t' 'NR > 1 && $8 == "-" { exit 1 }' "$root/android/apks/tab-p10-row/manifest.tsv"
-grep -F '7b9657ea55dfbff437c30ca92c31b06d6aeb6d04cafbd185b6e74cb3957f5f19' "$root/android/apks/general-dex/manifest.tsv" >/dev/null
+awk -F '\t' 'NR > 1 && $8 != "-" && $8 !~ /(^|,)armeabi-v7a(,|$)/ { exit 1 }' "$root/android/apks/miro-a1/manifest.tsv"
+awk -F '\t' 'NR > 1 && $8 != "-" && $8 !~ /(^|,)arm64-v8a(,|$)/ { exit 1 }' "$root/android/apks/tab-p10-row/manifest.tsv"
+
+keyboard_sha='7b9657ea55dfbff437c30ca92c31b06d6aeb6d04cafbd185b6e74cb3957f5f19'
+toki_sha='43e9571fbfcc66b190fbea2988bfc0fd09d70c177d540e0925a894bfcda8deb6'
+grep -F "$keyboard_sha" "$root/android/apks/miro-a1/manifest.tsv" >/dev/null
+grep -F "$keyboard_sha" "$root/android/apks/tab-p10-row/manifest.tsv" >/dev/null
+grep -F "$toki_sha" "$root/android/apks/miro-a1/manifest.tsv" >/dev/null
+grep -F "$toki_sha" "$root/android/apks/tab-p10-row/manifest.tsv" >/dev/null
+
+test -f "$root/android/dex/README.md"
 
 printf '%s\n' 'cat food cloud, generic Termux, APK staging, inventory help, and verified checkout location entrypoints pass'

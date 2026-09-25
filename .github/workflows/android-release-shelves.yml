@@ -1,0 +1,81 @@
+name: Refresh Android release shelves
+
+on:
+  push:
+    branches:
+      - main
+      - android/apk-shelves
+    paths:
+      - 'tools.tsv'
+      - 'android/apks/pinned-apks.tsv'
+      - 'android/apks/pinned/**'
+      - 'android/dex-archive-repositories.txt'
+      - '.github/workflows/android-release-shelves.yml'
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release-shelves-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Check out exact source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+
+      - name: Build complete release repository population
+        shell: sh
+        run: |
+          set -eu
+          {
+            awk '
+              $1 !~ /^#/ && NF >= 2 {
+                repository=$2
+                sub(/^https:\/\/github\.com\//, "", repository)
+                sub(/\.git$/, "", repository)
+                print repository
+              }
+            ' tools.tsv
+            printf '%s\n' isomorphisms/grease
+            awk '/^[[:space:]]*($|#)/ { next } { print }' android/dex-archive-repositories.txt
+          } | sort -u > "$RUNNER_TEMP/catfood-release-repositories.txt"
+
+      - name: Refresh current APK and DEX shelves
+        uses: isomorphisms/ai-ci/release-shelf@dac185530f5faa0ab8686e3748ab9f0ce95a94c5
+        with:
+          repositories: ${{ runner.temp }}/catfood-release-repositories.txt
+          dex_archive_repositories: android/dex-archive-repositories.txt
+          supplemental_apks: android/apks/pinned-apks.tsv
+          supplemental_apk_root: android/apks/pinned
+          output_root: android
+          phone_dir: apks/miro-a1
+          tablet_dir: apks/tab-p10-row
+          dex_dir: dex
+          github_token: ${{ github.token }}
+
+      - name: Verify Cat Food staging contract
+        shell: sh
+        run: sh tests/entrypoint.sh
+
+      - name: Commit refreshed shelves
+        shell: sh
+        run: |
+          set -eu
+          if [ -z "$(git status --porcelain -- android/apks/miro-a1 android/apks/tab-p10-row android/dex)" ]; then
+            echo 'Android release shelves are already current.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add android/apks/miro-a1 android/apks/tab-p10-row android/dex
+          git commit -m 'Refresh Android release shelves'
+          git push origin "HEAD:${GITHUB_REF_NAME}"

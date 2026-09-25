@@ -1,0 +1,2 @@
+# GitHub repositories whose release ZIP/TAR assets may contain direct DEX payloads.
+dilapidated-shed/idric-arm-thumb

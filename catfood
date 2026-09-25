@@ -37,7 +37,7 @@ Local checkout lookup:
 
 APK shelf:
   ./catfood apks
-                          stage general DEX APKs plus this Android target's native APKs
+                          stage every APK usable on this Android target
   ./catfood apks TARGET DESTINATION
                           explicitly select phone/tablet and staging folder
 
