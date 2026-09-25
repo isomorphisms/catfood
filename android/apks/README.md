@@ -1,28 +1,45 @@
 # Android APK shelves
 
-This directory collects installable APKs for the two maintained physical Android targets:
+This directory is the installable-app shelf for a fresh Android device.
 
-- `miro-a1/`: MIRO A1, 32-bit ARMv7 / `armeabi-v7a`;
-- `tab-p10-row/`: SVITOO TAB_P10_ROW, AArch64 / `arm64-v8a`.
+- `general-dex/`: architecture-neutral APKs with no native `lib/` payload; these are ordinary DEX/ART APKs and belong on either device.
+- `miro-a1/`: APKs containing `armeabi-v7a` native code for the MIRO A1 / 32-bit ARM phone.
+- `tab-p10-row/`: APKs containing `arm64-v8a` native code for the SVITOO TAB_P10_ROW / AArch64 tablet.
 
-`collect.sh` scans the repositories classified as Android `runtime` entries in `android/delivery.tsv`, resolves their GitHub repository URLs from `tools.tsv`, and inspects the newest GitHub release in each repository that contains APK assets. The separately bootstrapped Grease repository is included too.
+The point is that a new device should not require remembering where each app came from. Cat Food's normal `./catfood` path delivers command-line/runtime packages; `./catfood apks` stages every installable APK for the detected Android target into one folder. Thus the fresh-device pair is:
 
-For every APK in that release, the collector downloads the upstream asset unchanged and inspects the ZIP members under `lib/`:
+```sh
+./catfood
+./catfood apks
+```
 
-- no native libraries: copy to both shelves;
-- `lib/armeabi-v7a/`: copy to the MIRO A1 shelf;
-- `lib/arm64-v8a/`: copy to the TAB_P10_ROW shelf;
-- an APK containing both ABIs is copied to both;
-- APKs containing only other native ABIs are not copied.
+On Android, `./catfood apks` uses shared Downloads when that path already exists and is writable; otherwise it stages under the Cat Food checkout. An explicit target and destination are also accepted:
 
-Files are named `OWNER-REPOSITORY--UPSTREAM-ASSET.apk` so identical generic asset names from different repositories do not collide. Each shelf contains a `manifest.tsv` with the source repository, release tag, upstream asset name, SHA-256, byte size, observed native ABIs, and original release URL.
+```sh
+./catfood apks phone /path/to/folder
+./catfood apks tablet /path/to/folder
+```
 
-This is an artifact shelf, not Android delivery or acceptance evidence. Presence here does not change `android/packages.tsv`, does not close a `gap:android-package-missing` row, and does not claim installation, launch, runtime behavior, emulator execution, or physical-device acceptance.
+`collect.sh` scans repositories classified as Android `runtime` entries in `android/delivery.tsv`, resolves their GitHub URLs from `tools.tsv`, and inspects the newest GitHub release in each repository that contains APK assets. The separately bootstrapped Grease repository is included too.
 
-Refresh from a host with `curl`, `jq`, `unzip`, and `sha256sum`:
+For every release APK, the collector downloads the upstream asset unchanged and inspects ZIP members under `lib/`:
+
+- no native libraries: keep it once in `general-dex/`;
+- `lib/armeabi-v7a/`: keep it in `miro-a1/`;
+- `lib/arm64-v8a/`: keep it in `tab-p10-row/`;
+- an APK containing both ABIs is present in both device shelves;
+- APKs containing only other native ABIs are not retained.
+
+Some useful APKs exist only as CI artifacts rather than durable GitHub releases. Those are pinned explicitly in `pinned-general.tsv`; the checked-in APK remains durable even after the original CI artifact expires. The collector verifies and preserves every pinned entry rather than silently dropping it.
+
+Files are named `OWNER-REPOSITORY--UPSTREAM-ASSET.apk` so generic upstream names do not collide. Each shelf has a `manifest.tsv` with source kind/ref, upstream asset, checked-in filename, SHA-256, byte size, observed native ABIs, and source URL.
+
+This is an artifact shelf, not Android acceptance evidence. Presence here does not change `android/packages.tsv`, does not close a `gap:android-package-missing` row, and does not claim installation, launch, runtime behavior, emulator execution, or physical-device acceptance.
+
+Refresh release-backed entries from a host with `curl`, `jq`, `unzip`, and `sha256sum`:
 
 ```sh
 sh android/apks/collect.sh
 ```
 
-The collector fails instead of replacing the shelves with a partial result when a runtime repository cannot be queried or an APK cannot be downloaded or opened.
+The collector fails instead of replacing the shelves with a partial result when a runtime repository cannot be queried, an APK cannot be downloaded/opened, or a pinned APK no longer matches its recorded digest.
