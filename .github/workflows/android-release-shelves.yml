@@ -32,6 +32,19 @@ jobs:
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
 
+      - name: Restore exact pinned math keyboard artifact
+        shell: sh
+        env:
+          MATH_KEYBOARD_ARTIFACT_URL: 'https://sdmntprcentralus.oaiusercontent.com/files/00000000-50d0-81f5-b0ab-565a089b2e7f/raw?se=2026-09-25T19%3A13%3A35Z&sp=r&sv=2026-02-06&sr=b&scid=72a67ec8-61a0-5f32-8565-7e031860f3c3&skoid=78501c7f-f65d-4e8d-9110-bed29e1beb41&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-25T15%3A39%3A04Z&ske=2026-09-26T15%3A39%3A04Z&sks=b&skv=2026-02-06&sig=Yt0zteTmyYRo2oauWRZOGFtr1SzIrityffMH4MS3HBI%3D'
+        run: |
+          set -eu
+          archive="$RUNNER_TEMP/math-keyboard-sample-apk.zip"
+          destination='android/apks/pinned/Ashtray-Archer-utilities-android-phone-user--math-keyboard-sample.apk'
+          curl -LfsS "$MATH_KEYBOARD_ARTIFACT_URL" -o "$archive"
+          mkdir -p "$(dirname "$destination")"
+          unzip -p "$archive" math-keyboard-sample.apk > "$destination"
+          printf '%s  %s\n'             '7b9657ea55dfbff437c30ca92c31b06d6aeb6d04cafbd185b6e74cb3957f5f19'             "$destination" | sha256sum -c -
+
       - name: Build complete release repository population
         shell: sh
         run: |
@@ -70,12 +83,12 @@ jobs:
         shell: sh
         run: |
           set -eu
-          if [ -z "$(git status --porcelain -- android/apks/miro-a1 android/apks/tab-p10-row android/dex)" ]; then
+          if [ -z "$(git status --porcelain -- android/apks/pinned android/apks/miro-a1 android/apks/tab-p10-row android/dex)" ]; then
             echo 'Android release shelves are already current.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add android/apks/miro-a1 android/apks/tab-p10-row android/dex
+          git add android/apks/pinned android/apks/miro-a1 android/apks/tab-p10-row android/dex
           git commit -m 'Refresh Android release shelves'
           git push origin "HEAD:${GITHUB_REF_NAME}"
