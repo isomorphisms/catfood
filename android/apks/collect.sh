@@ -18,6 +18,16 @@ for command_name in curl jq unzip sha256sum awk sort grep tr wc cp rm mkdir; do
     }
 done
 
+github_api_get() {
+    url=$1
+    output=$2
+    if [ -n "${GITHUB_TOKEN:-}" ]; then
+        curl -fsSL             -A 'catfood-apk-shelf/1'             -H 'Accept: application/vnd.github+json'             -H "Authorization: Bearer $GITHUB_TOKEN"             "$url"             -o "$output"
+    else
+        curl -fsSL             -A 'catfood-apk-shelf/1'             -H 'Accept: application/vnd.github+json'             "$url"             -o "$output"
+    fi
+}
+
 rm -rf "$tmp_dir"
 mkdir -p "$tmp_dir/miro-a1" "$tmp_dir/tab-p10-row"
 
@@ -34,7 +44,7 @@ awk '
 ' "$repo_root/android/delivery.tsv" | sort -u > "$runtime_names"
 
 : > "$runtime_repos"
-while read -r name repository branch submodules; do
+while read -r name repository branch_name submodules; do
     case "$name" in
         ''|'#'*) continue ;;
     esac
@@ -62,7 +72,7 @@ while IFS= read -r github_repo; do
     releases_json="$tmp_dir/releases.json"
     assets_tsv="$tmp_dir/assets.tsv"
 
-    if ! curl -fsSL         -A 'catfood-apk-shelf/1'         "https://api.github.com/repos/$github_repo/releases?per_page=100"         -o "$releases_json"
+    if ! github_api_get         "https://api.github.com/repos/$github_repo/releases?per_page=100"         "$releases_json"
     then
         printf '%s\n' "failed to query releases: $github_repo" >&2
         failed=1
