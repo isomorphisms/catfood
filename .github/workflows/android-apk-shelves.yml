@@ -1,0 +1,40 @@
+name: Populate Android APK shelves
+
+on:
+  push:
+    branches:
+      - android/apk-shelves
+    paths:
+      - 'android/apks/**'
+      - 'android/delivery.tsv'
+      - 'tools.tsv'
+      - '.github/workflows/android-apk-shelves.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  collect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out exact branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Collect current APK shelves
+        run: sh android/apks/collect.sh
+
+      - name: Commit collected APKs
+        run: |
+          set -eu
+          if git diff --quiet -- android/apks/miro-a1 android/apks/tab-p10-row; then
+            echo 'APK shelves are already current.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add android/apks/miro-a1 android/apks/tab-p10-row
+          git commit -m 'Populate Android APK shelves'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
