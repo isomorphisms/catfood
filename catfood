@@ -9,6 +9,7 @@ usage: ./catfood [--target]
        ./catfood help [tool]
        ./catfood where [tool]
        ./catfood register TOOL ROLE PATH
+       ./catfood apks [phone|tablet] [destination]
 
 Feed the selected Cat Food target.
 
@@ -33,6 +34,12 @@ Local checkout lookup:
   ./catfood register TOOL ROLE PATH
                           register a verified noncanonical or additional checkout
   roles: workbench, acceptance, test, cache, control, other
+
+APK shelf:
+  ./catfood apks
+                          stage general DEX APKs plus this Android target's native APKs
+  ./catfood apks TARGET DESTINATION
+                          explicitly select phone/tablet and staging folder
 
 Overrides:
   CATFOOD_TARGET=phone|tablet|container|cloud|termux|hetzner
@@ -413,6 +420,13 @@ case ${1:-} in
     help)
         show_help_page "${2:-}"
         exit $?
+        ;;
+    apks)
+        if [ "$#" -gt 3 ]; then
+            usage >&2
+            exit 2
+        fi
+        exec sh "$root/android/apks/all.sh" "${2:-}" "${3:-}"
         ;;
     where)
         if [ -n "${3:-}" ]; then
