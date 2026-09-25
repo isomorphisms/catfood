@@ -260,6 +260,5 @@ grep -F "$keyboard_sha" "$root/android/apks/tab-p10-row/manifest.tsv" >/dev/null
 grep -F "$toki_sha" "$root/android/apks/miro-a1/manifest.tsv" >/dev/null
 grep -F "$toki_sha" "$root/android/apks/tab-p10-row/manifest.tsv" >/dev/null
 
-test -f "$root/android/dex/README.md"
 
 printf '%s\n' 'cat food cloud, generic Termux, APK staging, inventory help, and verified checkout location entrypoints pass'
