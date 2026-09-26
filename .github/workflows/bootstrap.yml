@@ -30,6 +30,11 @@ jobs:
           dash -n tests/android-delivery.sh
           dash -n tests/runtime-binaries.sh
           dash -n tests/entrypoint.sh
+          dash -n ci/repositories.sh
+          dash -n tests/repository-identities.sh
+      - name: Verify transferred repository identity and updates
+        shell: sh
+        run: sh tests/repository-identities.sh
       - name: Exercise Android delivery contracts
         shell: sh
         run: sh tests/android-delivery.sh

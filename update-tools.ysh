@@ -6,15 +6,12 @@ set -eu
 # separate from shell variables.
 script_dir=$(dirname -- "$0")
 root=$(CDPATH='' cd -- "$script_dir" && pwd)
+. "$root/ci/repositories.sh"
 workspace=${1:-${CATFOOD_ROOT:-/opt}}
 history_depth=${2:-${CATFOOD_DEPTH:-12}}
 manifest=${3:-${CATFOOD_MANIFEST:-$root/tools.tsv}}
 links_only=${4:-${CATFOOD_LINKS_ONLY:-0}}
 failures=0
-
-same_repository_url() {
-    test "${1%.git}" = "${2%.git}"
-}
 
 feed_repository() {
     name=$1

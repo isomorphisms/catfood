@@ -128,7 +128,7 @@ awk '$1 !~ /^#/ && NF >= 4 { print $1 }' "$root/tools.tsv" | while IFS= read -r 
     }
 done
 sh "$root/catfood" help gopeed | grep -F '# Gopeed REST API' >/dev/null
-sh "$root/catfood" help ib | grep -F 'Repository: https://github.com/isomorphisms/ib.git' >/dev/null
+sh "$root/catfood" help ib | grep -F 'Repository: https://github.com/dilapidated-shed/ib.git' >/dev/null
 sh "$root/catfood" help grease | grep -F 'stage-one shell bootstrap' >/dev/null
 
 checkouts=$temporary/checkouts.tsv
