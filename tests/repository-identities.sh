@@ -3,6 +3,7 @@ set -eu
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 . "$root/ci/repositories.sh"
+stage_one=${CATFOOD_TEST_STAGE_ONE:-sh}
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT HUP INT TERM
 
@@ -50,12 +51,15 @@ sh "$root/catfood" register ib workbench "$workspace/ib" >/dev/null
 sh "$root/catfood" where ib | grep -F "$workspace/ib" >/dev/null
 git -C "$CATFOOD_TEST_SEED" -c user.name=Fixture -c user.email=fixture@example.invalid commit -q --allow-empty -m update
 expected=$(git -C "$CATFOOD_TEST_SEED" rev-parse HEAD)
-sh "$root/update-tools.ysh" "$workspace" 1 "$CATFOOD_MANIFEST" 0 > "$work/feed.log" 2>&1
+"$stage_one" "$root/update-tools.ysh" "$workspace" 1 "$CATFOOD_MANIFEST" 0 > "$work/feed.log" 2>&1
 test "$(git -C "$workspace/ib" rev-parse HEAD)" = "$expected"
 test "$(git -C "$workspace/ib" remote get-url origin)" = https://github.com/isomorphisms/ib.git
 
 git -C "$workspace/ib" remote set-url origin https://github.com/dilapidated-shed/ib.git
 sh "$root/catfood" where ib | grep -F "$workspace/ib" >/dev/null
+if [ "$stage_one" != sh ]; then
+    export CATFOOD_YSH=$stage_one
+fi
 CATFOOD_DEPTH=1 sh "$root/bootstrap.sh" > "$work/bootstrap.log" 2>&1
 test "$(git -C "$workspace/grease" rev-parse HEAD)" = "$expected"
 test "$(git -C "$workspace/grease" remote get-url origin)" = https://github.com/isomorphisms/grease.git
@@ -65,7 +69,7 @@ if sh "$root/catfood" where ib > "$work/unrelated.out" 2>&1; then
     echo 'lookup accepted an unrelated origin' >&2
     exit 1
 fi
-if sh "$root/update-tools.ysh" "$workspace" 1 "$CATFOOD_MANIFEST" 0 > "$work/unrelated-feed.log" 2>&1; then
+if "$stage_one" "$root/update-tools.ysh" "$workspace" 1 "$CATFOOD_MANIFEST" 0 > "$work/unrelated-feed.log" 2>&1; then
     echo 'feed accepted an unrelated origin' >&2
     exit 1
 fi

@@ -28,7 +28,7 @@ validate_repository_aliases() {
     ' "$catfood_repository_aliases"
 }
 
-canonical_repository_url() (
+canonical_repository_url() {
     repository_url=${1%/}
     repository_url=${repository_url%.git}
     case $repository_url in
@@ -45,12 +45,12 @@ canonical_repository_url() (
         tolower($1) == tolower(repository_url) { canonical = $2 }
         END { print canonical }
     ' "$catfood_repository_aliases"
-)
+}
 
-same_repository_url() (
-    left=$(canonical_repository_url "$1") || exit 1
-    right=$(canonical_repository_url "$2") || exit 1
-    [ "$left" = "$right" ]
-)
+same_repository_url() {
+    catfood_left_url=$(canonical_repository_url "$1") || return 1
+    catfood_right_url=$(canonical_repository_url "$2") || return 1
+    [ "$catfood_left_url" = "$catfood_right_url" ]
+}
 
 validate_repository_aliases || exit 1

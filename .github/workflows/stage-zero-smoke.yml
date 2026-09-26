@@ -129,6 +129,11 @@ jobs:
           foreign_owner=$(find "$CATFOOD_ROOT" "$CATFOOD_PREFIX" "$CATFOOD_CACHE" \
             ! -user root -print -quit)
           test -z "$foreign_owner"
+      - name: Exercise transferred checkouts with the provisioned stage-one shell
+        shell: sh
+        env:
+          CATFOOD_TEST_STAGE_ONE: ${{ runner.temp }}/prefix/bin/ysh
+        run: sh tests/repository-identities.sh
       - name: Verify commands
         if: ${{ hashFiles('provision.sh') != '' }}
         env:
