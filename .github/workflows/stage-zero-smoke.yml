@@ -19,7 +19,7 @@ jobs:
             provision.sh install-binaries.sh activate.sh build-tools.sh refresh.sh doctor.sh import-config.sh \
             android/check.sh android/install.sh android/install-local-clients.sh \
             tests/check-manifest.sh tests/entrypoint.sh tests/targets.sh tests/android-delivery.sh \
-            tests/android-local-clients.sh tests/runtime-binaries.sh
+            tests/android-local-clients.sh tests/android-miro-phone-setup.sh tests/runtime-binaries.sh
           do
             if [ -f "$script" ]; then
               dash -n "$script"
@@ -47,6 +47,9 @@ jobs:
       - name: Verify Android local client feed
         shell: sh
         run: sh tests/android-local-clients.sh
+      - name: Verify MIRO phone setup policy
+        shell: sh
+        run: sh tests/android-miro-phone-setup.sh
       - name: Exercise az through the stable command path
         shell: bash
         run: |
