@@ -73,9 +73,13 @@ jobs:
                 printf '%s\n' '{"access_token":"test-token","expires_in":3600}'
                 exit 0
                 ;;
-              https://mock/catalog/v1/searchItems)
+              'https://www.amazon.com/s?k=small%20useful%20book')
+                printf '%s\n' '<div data-asin="B098765432">A Small Useful Book</div>'
+                exit 0
+                ;;
+              https://mock/catalog/v1/getItems)
                 cat <<'JSON'
-          {"searchResult":{"items":[{"asin":"B098765432","detailPageURL":"https://www.amazon.com/dp/B098765432?tag=macguyver03-20&linkCode=osi","itemInfo":{"title":{"displayValue":"A Small Useful Book"}},"offersV2":{"listings":[{"isBuyBoxWinner":true,"price":{"money":{"amount":12.34,"currency":"USD"}}}]}}]}}
+          {"itemsResult":{"items":[{"asin":"B098765432","detailPageURL":"https://www.amazon.com/dp/B098765432?tag=macguyver03-20","offersV2":{"listings":[{"price":{"money":{"amount":12.34,"currency":"USD"}}}]}}]}}
           JSON
                 exit 0
                 ;;
@@ -87,13 +91,23 @@ jobs:
           chmod +x "$fake_bin/curl"
 
           export PATH="$fake_bin:$PATH"
+          export AZ_CONFIG_DIR="$RUNNER_TEMP/az-smoke-config"
+          export AZ_STATE_DIR="$RUNNER_TEMP/az-smoke-state"
+          export AZ_CACHE_DIR="$RUNNER_TEMP/az-smoke-cache"
+
+          # Search is keyless and deliberately does not invent prices or titles.
+          output=$(az search small useful book)
+          printf '%s\n' "$output"
+          expected=$'B098765432\t\t\thttps://www.amazon.com/dp/B098765432?tag=macguyver03-20\t'
+          grep -Fx "$expected" <<<"$output"
+
           export AZ_AMAZON_CREDENTIAL_ID=test-id
           export AZ_AMAZON_CREDENTIAL_SECRET=test-secret
           export AZ_AMAZON_CREDENTIAL_VERSION=3.1
           export AZ_AMAZON_TOKEN_ENDPOINT=https://mock/token
           export AZ_CREATORS_API_BASE=https://mock
 
-          output=$(az search small useful book)
+          # Price still exercises the credentialed Creators GetItems path.
+          output=$(az price B098765432)
           printf '%s\n' "$output"
           grep -F $'B098765432\t12.34\tUSD' <<<"$output"
-          grep -F 'A Small Useful Book' <<<"$output"
