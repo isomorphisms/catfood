@@ -53,4 +53,6 @@ same_repository_url() {
     [ "$catfood_left_url" = "$catfood_right_url" ]
 }
 
-validate_repository_aliases || exit 1
+# All callers use errexit. Keep this call unconditional: Grease rejects shell
+# functions in boolean contexts where errexit would be disabled.
+validate_repository_aliases
