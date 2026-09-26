@@ -25,6 +25,8 @@ cat > "$fixture/catfood" <<'EOF_CATFOOD'
 #!/bin/sh
 if [ "${1:-}" = --target ]; then
     printf '%s\n' "${CATFOOD_TARGET:-cloud}"
+elif [ "${1:-}" = where ]; then
+    printf 'grease\tworkbench\t%s/grease\n' "$CATFOOD_ROOT"
 fi
 EOF_CATFOOD
 chmod +x "$fixture/catfood"
@@ -33,6 +35,45 @@ for name in entrypoint targets android-delivery; do
 done
 printf '%s\n' '# base provision' > "$fixture/provision.sh"
 printf '%s\n' '# android base' > "$fixture/android/install-example.sh"
+
+# Isolate the provenance verifier: these fake commands are fixtures, never
+# runtime evidence. A good stamp must pass; missing/mismatched provenance must
+# fail before the consumer's doctor could lend it false confidence.
+workbench=$tmp/workbench
+mkdir -p "$workbench/bin" "$workbench/.build/stamps" "$workbench/grease/source"
+printf '%s\n' '#!/bin/sh' 'exit 0' > "$workbench/bin/catfood-doctor"
+chmod +x "$workbench/bin/catfood-doctor"
+printf '%s\n' '#!/bin/sh' 'echo canonical-grease' > "$workbench/bin/grease"
+chmod +x "$workbench/bin/grease"
+git -C "$workbench/grease/source" init -q
+git -C "$workbench/grease/source" -c user.name=test -c user.email=test@example.invalid commit --allow-empty -qm source
+source_pin=$(git -C "$workbench/grease/source" rev-parse HEAD)
+git -C "$workbench/grease" init -q
+git -C "$workbench/grease" update-index --add --cacheinfo "160000,$source_pin,source"
+git -C "$workbench/grease" -c user.name=test -c user.email=test@example.invalid commit -qm gitlink
+grease_head=$(git -C "$workbench/grease" rev-parse HEAD)
+printf '%s %s\n' "$grease_head" "$source_pin" > "$workbench/.build/stamps/grease"
+CATFOOD_ROOT="$workbench" CATFOOD_PREFIX="$tmp/prefix" \
+    sh "$root/followers/accept-x86.sh" github "$fixture" > "$tmp/provenance-good.log"
+for hostile in missing-stamp wrong-source wrong-runtime missing-source; do
+    case $hostile in
+        missing-stamp) rm "$workbench/.build/stamps/grease" ;;
+        wrong-source) printf '%s %s\n' "$grease_head" "$grease_head" > "$workbench/.build/stamps/grease" ;;
+        wrong-runtime)
+            printf '%s %s\n' "$grease_head" "$source_pin" > "$workbench/.build/stamps/grease"
+            printf '%s\n' '#!/bin/sh' 'exec bash "$@"' > "$workbench/bin/grease"
+            ;;
+        missing-source)
+            printf '%s %s\n' "$grease_head" "$source_pin" > "$workbench/.build/stamps/grease"
+            rm -rf "$workbench/grease/source"
+            ;;
+    esac
+    if CATFOOD_ROOT="$workbench" CATFOOD_PREFIX="$tmp/prefix" \
+        sh "$root/followers/accept-x86.sh" github "$fixture" > "$tmp/provenance-$hostile.log" 2>&1; then
+        printf 'runtime provenance accepted %s\n' "$hostile" >&2
+        exit 1
+    fi
+done
 
 (
     cd "$fixture"
