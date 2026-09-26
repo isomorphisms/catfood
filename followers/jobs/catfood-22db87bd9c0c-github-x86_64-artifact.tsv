@@ -1,9 +1,9 @@
 schema	aici-follower-job-v1
-job_id	catfood-c188848c7a30-github-x86_64-artifact
+job_id	catfood-22db87bd9c0c-github-x86_64-artifact
 repository	isomorphisms/catfood
 branch	cleanup/transferred-repositories
 pr	81
-trigger_commit	c188848c7a30014b39b2e1fbc39a6177c5e9e421
+trigger_commit	22db87bd9c0cfbbfe672ed31ef911593d9061192
 leader_platform	container-x86_64
 leader_arch	x86_64
 leader_evidence	-
@@ -12,14 +12,14 @@ artifact_sha256	-
 follower_platform	github-x86_64-artifact
 follower_arch	x86_64
 required	yes
-action	carry forward unfinished inventory artifact acceptance from catfood-85ffafbeaa7d-github-x86_64-artifact; fetch exact trigger c188848c7a30014b39b2e1fbc39a6177c5e9e421, validate its published inventory, and record exact evidence.
+action	carry forward unfinished inventory artifact acceptance from catfood-85ffafbeaa7d-github-x86_64-artifact; fetch exact trigger 22db87bd9c0cfbbfe672ed31ef911593d9061192, validate its published inventory, and record exact evidence.
 acceptance_kind	artifact
 acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
-state	superseded
+state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	carry-forward-android-artifact-and-device
-superseded_by	catfood-22db87bd9c0c-github-x86_64-artifact
+superseded_by	-
 follow_policy	exact
