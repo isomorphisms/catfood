@@ -6,6 +6,14 @@ verifier=$1
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
+if (
+    unset CATFOOD_ROOT CATFOOD_PREFIX
+    sh "$root/followers/accept-x86.sh" container
+) > "$tmp/no-workbench.log" 2>&1; then
+    echo 'unprovisioned host was accepted as runtime follower evidence' >&2
+    exit 1
+fi
+grep -F 'requires CATFOOD_ROOT and CATFOOD_PREFIX' "$tmp/no-workbench.log" >/dev/null
 fixture=$tmp/repo
 mkdir -p "$fixture/followers/jobs" "$fixture/followers/receipts" \
     "$fixture/tests" "$fixture/android" "$fixture/.github/workflows"

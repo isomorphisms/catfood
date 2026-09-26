@@ -11,8 +11,19 @@ case $mode in
     *) printf 'usage: %s github|container|cloud [SOURCE_ROOT]\n' "$0" >&2; exit 2 ;;
 esac
 
-# These checks validate portable control-plane/runtime contracts. They do not
-# claim physical Android or persistent-Hetzner acceptance.
+# Runtime acceptance requires an explicitly provisioned workbench. Contract
+# fixtures and target detection alone cannot establish delivered execution.
+if [ -z "${CATFOOD_ROOT:-}" ] || [ -z "${CATFOOD_PREFIX:-}" ]; then
+    printf '%s\n' 'x86 follower acceptance requires CATFOOD_ROOT and CATFOOD_PREFIX for the provisioned workbench' >&2
+    exit 1
+fi
+if [ ! -x "$CATFOOD_ROOT/bin/catfood-doctor" ]; then
+    printf '%s\n' 'x86 follower acceptance requires the installed catfood-doctor' >&2
+    exit 1
+fi
+"$CATFOOD_ROOT/bin/catfood-doctor"
+
+# These additional contract checks do not claim physical Android acceptance.
 sh "$root/tests/entrypoint.sh"
 sh "$root/tests/targets.sh"
 sh "$root/tests/android-delivery.sh"

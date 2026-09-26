@@ -71,7 +71,7 @@ receipt or changing the current job's pending/blocked/accepted state.
 
 ## GitHub x86-64
 
-The follower workflow resolves the current integrated source state to the exact follower trigger, checks out that trigger into a detached worktree, and runs `followers/accept-x86.sh` against that tree. This is runtime-oriented acceptance, not syntax-only CI. Its receipt is published as a workflow artifact and records the exact trigger, runner runtime, command, and evidence URL.
+The follower workflow resolves the current integrated source state to the exact follower trigger, checks out that trigger into a detached worktree, provisions its complete workbench, and runs `followers/accept-x86.sh` against that tree. The acceptance command requires explicit `CATFOOD_ROOT` and `CATFOOD_PREFIX` paths and executes the installed doctor, including its delivered-program smoke checks. Contract fixtures or target detection alone cannot produce a runtime receipt. Its receipt is published as a workflow artifact and records the exact trigger, runner runtime, command, and evidence URL.
 
 A workflow artifact is evidence available for recording; it does not mutate the repository ledger by itself. The checked-in job becomes accepted only after a matching receipt is recorded. Thus GitHub cannot silently promote itself merely because some unrelated check is green.
 

@@ -63,7 +63,18 @@ jobs:
 
           source_root="$RUNNER_TEMP/catfood-trigger-$short"
           git worktree add --detach "$source_root" "$trigger"
-          sh followers/accept-x86.sh github "$source_root"
+          workspace="$RUNNER_TEMP/catfood-follower-$short"
+          prefix="$RUNNER_TEMP/catfood-prefix-$short"
+          sudo env \
+            CATFOOD_TARGET=container \
+            CATFOOD_ROOT="$workspace" CATFOOD_PREFIX="$prefix" \
+            CATFOOD_CACHE="$RUNNER_TEMP/catfood-cache-$short" \
+            CATFOOD_DEPTH=1 CATFOOD_NO_PROFILE=1 \
+            "$source_root/catfood"
+          sudo env \
+            CATFOOD_ROOT="$workspace" CATFOOD_PREFIX="$prefix" \
+            PATH="$prefix/bin:$workspace/bin:$PATH" \
+            sh followers/accept-x86.sh github "$source_root"
 
           artifact=$(awk -F '\t' '$1 == "artifact" {print $2}' "$job")
           artifact_sha256=$(awk -F '\t' '$1 == "artifact_sha256" {print $2}' "$job")
@@ -80,7 +91,7 @@ jobs:
           attempt_commit	$trigger
           os_runtime	$(uname -srmo)
           build_command	-
-          test_command	sh followers/accept-x86.sh github <worktree-at-$trigger>
+          test_command	provision exact worktree; run installed catfood-doctor and sh followers/accept-x86.sh github <worktree-at-$trigger>
           artifact	$artifact
           artifact_sha256	$artifact_sha256
           evidence_url	${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
