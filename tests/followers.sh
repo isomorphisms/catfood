@@ -57,6 +57,12 @@ printf '%s\n' '# android base' > "$fixture/android/install-example.sh"
     count=$(find followers/jobs -name '*.tsv' -type f | wc -l | tr -d ' ')
     [ "$count" -eq 5 ]
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh reconcile "$trigger" >/dev/null
+    # The read-only renderer must retain the canonical verifier's columns.
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh pending > "$tmp/verified-pending"
+    AICI_FOLLOWERS= sh followers/manage.sh pending > "$tmp/read-only-pending"
+    sort "$tmp/verified-pending" > "$tmp/verified-sorted"
+    sort "$tmp/read-only-pending" > "$tmp/read-only-sorted"
+    cmp "$tmp/verified-sorted" "$tmp/read-only-sorted"
 
     id=catfood-$(printf '%s' "$trigger" | cut -c1-12)-github-x86_64
     cat > "$tmp/github-receipt.tsv" <<EOF_RECEIPT

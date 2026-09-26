@@ -469,15 +469,15 @@ merge_blockers() {
 
 fallback_pending() {
     trigger=${1:-}
-    printf 'job_id\ttrigger_commit\tfollower_platform\tfollower_arch\tacceptance_kind\tstate\taction\tblocker\n'
+    printf 'job_id\trepository\ttrigger_commit\tfollower_platform\tfollower_arch\tacceptance_kind\tstate\taction\tblocker\n'
     for file in "$jobs"/*.tsv; do
         [ -f "$file" ] || continue
         state=$(record_value "$file" state)
         case $state in pending|blocked|unsupported) ;; *) continue ;; esac
         commit=$(record_value "$file" trigger_commit)
         [ -z "$trigger" ] || [ "$commit" = "$trigger" ] || continue
-        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-            "$(record_value "$file" job_id)" "$commit" \
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$(record_value "$file" job_id)" "$(record_value "$file" repository)" "$commit" \
             "$(record_value "$file" follower_platform)" \
             "$(record_value "$file" follower_arch)" \
             "$(record_value "$file" acceptance_kind)" "$state" \

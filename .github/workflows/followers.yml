@@ -37,7 +37,7 @@ jobs:
           # Old unfinished PRs may no longer have a branch. Preserve their exact
           # history before classifying target impact; failed fetches stay red.
           sh followers/manage.sh pending > "$RUNNER_TEMP/pending-followers.tsv"
-          while IFS="$(printf '\t')" read -r job commit rest; do
+          while IFS="$(printf '\t')" read -r job repository commit rest; do
             test "$job" != job_id || continue
             git cat-file -e "$commit^{commit}" 2>/dev/null || git fetch --no-tags origin "$commit"
           done < "$RUNNER_TEMP/pending-followers.tsv"
