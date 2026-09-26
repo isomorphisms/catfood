@@ -34,6 +34,13 @@ jobs:
         env:
           AICI_FOLLOWERS: ${{ runner.temp }}/aici-followers
         run: |
+          # Old unfinished PRs may no longer have a branch. Preserve their exact
+          # history before classifying target impact; failed fetches stay red.
+          sh followers/manage.sh pending > "$RUNNER_TEMP/pending-followers.tsv"
+          while IFS="$(printf '\t')" read -r job commit rest; do
+            test "$job" != job_id || continue
+            git cat-file -e "$commit^{commit}" 2>/dev/null || git fetch --no-tags origin "$commit"
+          done < "$RUNNER_TEMP/pending-followers.tsv"
           source_trigger=$(sh followers/manage.sh latest)
           trigger=$(sh followers/manage.sh resolve "$source_trigger")
           if [ "$source_trigger" != "$trigger" ]; then
@@ -41,7 +48,8 @@ jobs:
               "$source_trigger" "$trigger"
           fi
           sh followers/manage.sh reconcile "$trigger"
-          sh followers/manage.sh pending "$trigger"
+          # Include older exact obligations retained because their targets were unaffected.
+          sh followers/manage.sh pending
           sh followers/stale.sh
       - name: Run GitHub x86 acceptance against the exact trigger
         id: github_follower

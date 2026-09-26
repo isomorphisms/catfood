@@ -97,6 +97,49 @@ EOF_RECEIPT
 
     git add followers
     git commit -qm follower-ledger
+    printf '%s\n' '# CI-only repair' > .github/workflows/check.yml
+    git add .github/workflows/check.yml
+    git commit -qm ci-only
+    ci_trigger=$(git rev-parse HEAD)
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
+        prepare "$ci_trigger" phone armv7 - phone/example 2 >/dev/null
+    [ "$(find followers/jobs -name '*.tsv' -type f | wc -l | tr -d ' ')" -eq 6 ]
+    sh followers/manage.sh supersede-ancestors "$ci_trigger" >/dev/null
+    sh followers/stale.sh >/dev/null
+    [ "$(sh followers/manage.sh stale-target "$trigger" "$ci_trigger" phone)" = no ]
+    awk -F '\t' '$1=="state" {exit $2!="pending"}' "$tablet"
+    # Retained debt remains bound to its original exact source in the merge view.
+    sh followers/manage.sh blockers "$ci_trigger" | awk -F '\t' \
+        -v old="$trigger" 'NR>1 && $3==old && $4==old && $6=="pending" {found=1} END {exit !found}'
+    if sh followers/manage.sh affected deadbeef >/dev/null 2>&1; then
+        echo 'missing source history became empty successful inference' >&2
+        exit 1
+    fi
+    if sh followers/manage.sh stale-target deadbeef "$ci_trigger" phone >/dev/null 2>&1; then
+        echo 'missing ancestor history was treated as unaffected' >&2
+        exit 1
+    fi
+    git clone -q --depth 1 "file://$fixture" "$tmp/shallow"
+    if sh "$tmp/shallow/followers/manage.sh" stale-target "$trigger" "$ci_trigger" phone > "$tmp/shallow.log" 2>&1; then
+        echo 'shallow history was treated as proof of unchanged target' >&2
+        exit 1
+    fi
+    grep -F 'full history is required' "$tmp/shallow.log" >/dev/null
+    cp followers/impact-rules.tsv "$tmp/policy"
+    sed '/^default/d' "$tmp/policy" > followers/impact-rules.tsv
+    if sh followers/manage.sh affected "$trigger" >/dev/null 2>&1; then
+        echo 'unmatched source path became empty successful inference' >&2
+        exit 1
+    fi
+    [ "$(sh followers/manage.sh stale-target "$trigger" "$ci_trigger" phone)" = yes ]
+    git add followers/impact-rules.tsv
+    git commit -qm changed-policy
+    policy_trigger=$(git rev-parse HEAD)
+    cp "$tmp/policy" followers/impact-rules.tsv
+    # Reading old policy from the working tree must not hide CURRENT's policy change.
+    [ "$(sh followers/manage.sh stale-target "$trigger" "$policy_trigger" phone)" = yes ]
+    git add followers
+    git commit -qm restore-policy-and-ci-ledger
     printf '%s\n' '# Android artifact change' >> android/install-example.sh
     git add android/install-example.sh
     git commit -qm android-artifact
@@ -124,10 +167,13 @@ EOF_RECEIPT
     printf '%s\n' "$blockers" | awk -F '\t' -v current="$android_trigger" \
         'NR>1 && $4==current && $2=="no" {found=1} END {exit !found}'
 
-    if sh followers/manage.sh supersede-ancestors "$android_trigger" >/dev/null 2>&1; then
-        echo 'narrow Android trigger erased older container/Hetzner obligations' >&2
-        exit 1
-    fi
+    sh followers/manage.sh supersede-ancestors "$android_trigger" >/dev/null
+    sh followers/stale.sh >/dev/null
+    # Android delivery changes require device successors; unrelated host debt stays exact.
+    [ "$(sh followers/manage.sh stale-target "$trigger" "$android_trigger" phone)" = yes ]
+    [ "$(sh followers/manage.sh stale-target "$trigger" "$android_trigger" hetzner-x86_64)" = no ]
+    old_host=followers/jobs/catfood-$(printf '%s' "$trigger" | cut -c1-12)-hetzner-x86_64.tsv
+    awk -F '\t' '$1=="state" {exit $2!="pending"}' "$old_host"
 
     printf '%s\n' '# combined portable successor' >> provision.sh
     printf '%s\n' '# combined Android successor' >> android/install-example.sh

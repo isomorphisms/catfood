@@ -15,11 +15,11 @@ required	yes
 action	carry forward unfinished inventory artifact acceptance from catfood-85ffafbeaa7d-github-x86_64-artifact; fetch exact trigger 06ab8c9b645ff2cb1848ddbd9271300ad1a59597, validate its published inventory, and record exact evidence.
 acceptance_kind	artifact
 acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
-state	superseded
+state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	carry-forward-android-artifact-and-device
-superseded_by	catfood-c188848c7a30-github-x86_64-artifact
+superseded_by	-
 follow_policy	exact

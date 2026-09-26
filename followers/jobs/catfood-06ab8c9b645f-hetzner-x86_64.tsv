@@ -15,11 +15,11 @@ required	yes
 action	follower target for Cat Food commit 06ab8c9b645ff2cb1848ddbd9271300ad1a59597 on hetzner-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh cloud
-state	superseded
+state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	shared-portable
-superseded_by	catfood-c188848c7a30-hetzner-x86_64
+superseded_by	-
 follow_policy	exact

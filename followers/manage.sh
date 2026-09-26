@@ -55,12 +55,21 @@ changed_for_commit() {
 
 affected() {
     trigger=$1
-    tmp=$(mktemp)
-    trap 'rm -f "$tmp"' EXIT HUP INT TERM
-    changed_for_commit "$trigger" | while IFS= read -r path; do
+    tmp=$(mktemp -d)
+    trap 'rm -rf "$tmp"' EXIT HUP INT TERM
+    changed_for_commit "$trigger" > "$tmp/paths" || fatal "cannot inspect trigger $trigger"
+    affected_paths "$tmp/paths" "$tmp"
+    rm -rf "$tmp"
+    trap - EXIT HUP INT TERM
+}
+
+affected_paths() {
+    paths=$1 scratch=$2
+    while IFS= read -r path; do
         [ -n "$path" ] || continue
         rule_for_path "$path"
-    done | while IFS="$tab" read -r follower reason; do
+    done < "$paths" > "$scratch/rules"
+    while IFS="$tab" read -r follower reason; do
         [ "$follower" != - ] || continue
         oldifs=$IFS
         IFS=,
@@ -72,9 +81,45 @@ affected() {
             IFS=,
         done
         IFS=$oldifs
-    done | sort -u > "$tmp"
-    cat "$tmp"
-    rm -f "$tmp"
+    done < "$scratch/rules" > "$scratch/targets"
+    sort -u "$scratch/targets"
+}
+
+# This retains the old exact obligation, never acceptance of a newer revision.
+stale_target() {
+    [ "$#" -eq 3 ] || fatal 'stale-target OLD CURRENT TARGET'
+    old_trigger=$1 current_trigger=$2 follow_target=$3
+    target_line "$follow_target" >/dev/null || fatal "unknown target $follow_target"
+    [ "$(git -C "$root" rev-parse --is-shallow-repository)" = false ] || fatal 'full history is required to classify follower impact'
+    git -C "$root" cat-file -e "${old_trigger}^{commit}" || fatal "unknown trigger $old_trigger"
+    git -C "$root" cat-file -e "${current_trigger}^{commit}" || fatal "unknown trigger $current_trigger"
+    if [ "$old_trigger" = "$current_trigger" ]; then printf 'no\n'; return; fi
+    if git -C "$root" merge-base --is-ancestor "$old_trigger" "$current_trigger"; then
+        :
+    else
+        ancestry_status=$?
+        [ "$ancestry_status" -eq 1 ] || fatal 'cannot establish follower ancestry'
+        printf 'no\n'
+        return
+    fi
+    tmp=$(mktemp -d)
+    trap 'rm -rf "$tmp"' EXIT HUP INT TERM
+    # A changed policy cannot retroactively prove that an old target was unaffected.
+    for policy in followers/impact-rules.tsv followers/targets.tsv; do
+        if ! git -C "$root" show "$old_trigger:$policy" > "$tmp/old-policy" ||
+            ! git -C "$root" show "$current_trigger:$policy" > "$tmp/current-policy" ||
+            ! cmp -s "$tmp/old-policy" "$tmp/current-policy" ||
+            ! cmp -s "$tmp/current-policy" "$root/$policy"; then
+            printf 'yes\n'
+            rm -rf "$tmp"
+            trap - EXIT HUP INT TERM
+            return
+        fi
+    done
+    git -C "$root" diff --name-only "$old_trigger" "$current_trigger" > "$tmp/paths" || fatal 'cannot inspect follower source difference'
+    affected_paths "$tmp/paths" "$tmp" > "$tmp/affected"
+    awk -F '\t' -v target="$follow_target" '$1==target {found=1} END {print found ? "yes" : "no"}' "$tmp/affected"
+    rm -rf "$tmp"
     trap - EXIT HUP INT TERM
 }
 
@@ -362,8 +407,9 @@ supersede_ancestors() {
         case $state in pending|blocked|unsupported) ;; *) continue ;; esac
         old=$(record_value "$file" trigger_commit)
         [ "$old" != "$current" ] || continue
-        git -C "$root" merge-base --is-ancestor "$old" "$current" 2>/dev/null || continue
         target=$(record_value "$file" follower_platform)
+        stale=$(sh "$root/followers/manage.sh" stale-target "$old" "$current" "$target")
+        [ "$stale" = yes ] || continue
         successor_file=$(job_for "$current" "$target") || {
             rm -f "$plan"
             fatal "stale job $(record_value "$file" job_id) has no same-target successor at $current"
@@ -400,17 +446,24 @@ merge_blockers() {
         [ -f "$file" ] || continue
         state=$(record_value "$file" state)
         trigger=$(record_value "$file" trigger_commit)
+        obligation=$current
+        action=run-follower
         if [ "$trigger" = "$current" ]; then
             :
         else
             case $state in pending|blocked|unsupported) ;; *) continue ;; esac
-            git -C "$root" merge-base --is-ancestor "$trigger" "$current" 2>/dev/null || continue
+            target=$(record_value "$file" follower_platform)
+            stale=$(sh "$root/followers/manage.sh" stale-target "$trigger" "$current" "$target")
+            git -C "$root" merge-base --is-ancestor "$trigger" "$current" || continue
+            if [ "$stale" = yes ]; then action=supersede-ancestors
+            else obligation=$trigger
+            fi
         fi
         printf '%s\tno\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-            "$(record_value "$file" job_id)" "$trigger" "$current" \
+            "$(record_value "$file" job_id)" "$trigger" "$obligation" \
             "$(record_value "$file" acceptance_kind)" "$state" \
             "$(record_value "$file" superseded_by)" "$file" \
-            "$([ "$trigger" = "$current" ] && printf run-follower || printf supersede-ancestors)"
+            "$action"
     done
 }
 
@@ -454,6 +507,7 @@ matrix() {
 
 case ${1:-} in
     affected) [ "$#" -eq 2 ] || fatal 'affected TRIGGER'; affected "$2" ;;
+    stale-target) shift; stale_target "$@" ;;
     latest) [ "$#" -eq 1 ] || fatal 'latest takes no arguments'; latest_source ;;
     resolve) [ "$#" -eq 2 ] || fatal 'resolve TRIGGER'; resolve_trigger "$2" ;;
     prepare) shift; prepare "$@" ;;

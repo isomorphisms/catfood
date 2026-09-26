@@ -57,17 +57,29 @@ sh followers/stale.sh
 Food's current exact follower jobs are durable post-merge debt and therefore
 carry `blocking=no`; they do not prove acceptance, but they also do not force a
 source PR to wait unless that PR declares the same evidence as an explicit
-promotion condition. An unresolved ancestor trigger is different: it is stale
-bookkeeping and produces `FOLLOWER_STALE` until reconciled.
+promotion condition. An unresolved ancestor obligation is stale only when its
+target is affected by later work; that produces `FOLLOWER_STALE` until reconciled.
 
 `supersede-ancestors CURRENT_TRIGGER` handles the common one-for-one case
-mechanically. It preflights every unresolved ancestor job, requires a current
+mechanically. It preflights every affected unresolved ancestor job, requires a current
 job for the same concrete target and the same acceptance kind, and then records
 the exact successor. It refuses changed acceptance kinds or missing successors
 instead of guessing. This retires obsolete bookkeeping without inventing a
 receipt or changing the current job's pending/blocked/accepted state.
 
-`reconcile` first resolves an integration commit to its canonical exact follower trigger when necessary, then re-infers the affected target set and fails if a required follower job disappeared or references a removed target. `stale.sh` uses the same canonical trigger and fails when unresolved work remains on an ancestor of it. Finish it or record explicit supersession; moving or merging the branch does not erase the dependency.
+An ancestor job stays at its original exact trigger when the intervening source
+diff does not affect its target under the unchanged impact and target policy.
+For example, repairing a GitHub-only workflow does not renew phone, tablet or
+Hetzner jobs. Missing history or unmatched paths fail closed; changed policy
+requires renewed obligations. No old receipt becomes acceptance of a newer head.
+Use `pending` without a trigger to see all retained debt. In `blockers`,
+`current_trigger` is the exact obligation still current for that row's target;
+it can remain older than the latest repository source commit.
+
+`reconcile` resolves integration commits and checks inferred jobs and targets.
+`stale.sh` fails when affected ancestor work lacks explicit supersession.
+Unchanged-target debt remains pending; neither a branch move nor a CI pass
+erases it.
 
 ## GitHub x86-64
 
