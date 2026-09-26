@@ -156,9 +156,7 @@ workspace=$(dirname -- "$bin_dir")
 name=$(basename -- "$0")
 script=$workspace/az/bin/$name
 
-# az's checked-in test suite and shell features target Bash.  Keep the stable
-# command on that tested interpreter until the repository adds a YSH gate.
-exec bash "$script" "$@"
+exec "$workspace/bin/grease" "$script" "$@"
 EOF
     then
         failures=1
@@ -229,7 +227,7 @@ script=$workspace/az/bin/aa
 command=${1:-}
 status=0
 
-"$workspace/bin/ysh" "$script" "$@" || status=$?
+"$workspace/bin/grease" "$script" "$@" || status=$?
 
 if test "$command" = search && test "$status" -eq 0; then
     printf '%s\n' 'next: aa resolve <MD5> | gdl    # gdl = go_down_load = gopeed' >&2
