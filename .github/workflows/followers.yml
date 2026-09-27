@@ -65,11 +65,26 @@ jobs:
           source_root="$RUNNER_TEMP/catfood-trigger-$short"
           git worktree add --detach "$source_root" "$trigger"
           printf 'CATFOOD_SOURCE_ROOT=%s\nCATFOOD_TRIGGER=%s\n' "$source_root" "$trigger" >> "$GITHUB_ENV"
-          sudo env \
+          if ! sudo env \
             CATFOOD_TARGET=container \
             CATFOOD_ROOT="$CATFOOD_ROOT" CATFOOD_PREFIX="$CATFOOD_PREFIX" \
             CATFOOD_CACHE="$CATFOOD_CACHE" CATFOOD_DEPTH=1 CATFOOD_NO_PROFILE=1 \
             "$source_root/catfood"
+          then
+            sudo env \
+              HOME=/root \
+              PATH="$CATFOOD_PREFIX/bin:$CATFOOD_ROOT/bin:$PATH" \
+              CATFOOD_ROOT="$CATFOOD_ROOT" \
+              sh -c '
+                printf "%s\\n" "Abe public-link diagnostic after provisioning failure:" >&2
+                "$CATFOOD_ROOT/bin/abe" link "https://www.abebooks.com/servlet/BookDetailsPL?bi=1"
+                status=$?
+                printf "abe exit status: %s\\n" "$status" >&2
+                "$CATFOOD_ROOT/bin/jq" --version >&2 || :
+                exit 1
+              '
+            exit 1
+          fi
           foreign_owner=$(find "$CATFOOD_ROOT" "$CATFOOD_PREFIX" "$CATFOOD_CACHE" \
             ! -user root -print -quit)
           test -z "$foreign_owner"
