@@ -10,10 +10,6 @@ permissions:
 jobs:
   follower-reconciliation:
     runs-on: ubuntu-24.04
-    env:
-      CATFOOD_ROOT: ${{ runner.temp }}/cat-food
-      CATFOOD_PREFIX: ${{ runner.temp }}/prefix
-      CATFOOD_CACHE: ${{ runner.temp }}/cache
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -28,6 +24,8 @@ jobs:
       - name: Compile the follower verifier
         shell: sh
         run: |
+          printf 'CATFOOD_ROOT=%s/cat-food\nCATFOOD_PREFIX=%s/prefix\nCATFOOD_CACHE=%s/cache\n' \
+            "$RUNNER_TEMP" "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
           cc -std=c17 -Wall -Wextra -Werror -pedantic -O2 \
             -o "$RUNNER_TEMP/aici-followers" _ai-ci/src/aici_followers.c
       - name: Prove inference and receipt transitions

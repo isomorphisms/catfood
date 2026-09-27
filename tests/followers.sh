@@ -56,15 +56,15 @@ printf '%s %s\n' "$grease_head" "$source_pin" > "$workbench/.build/stamps/grease
 CATFOOD_ROOT="$workbench" CATFOOD_PREFIX="$tmp/prefix" \
     sh "$root/followers/accept-x86.sh" github "$fixture" > "$tmp/provenance-good.log"
 for hostile in missing-stamp wrong-source wrong-runtime missing-source; do
+    printf '%s %s\n' "$grease_head" "$source_pin" > "$workbench/.build/stamps/grease"
+    printf '%s\n' '#!/bin/sh' 'echo canonical-grease' > "$workbench/bin/grease"
     case $hostile in
         missing-stamp) rm "$workbench/.build/stamps/grease" ;;
         wrong-source) printf '%s %s\n' "$grease_head" "$grease_head" > "$workbench/.build/stamps/grease" ;;
         wrong-runtime)
-            printf '%s %s\n' "$grease_head" "$source_pin" > "$workbench/.build/stamps/grease"
             printf '%s\n' '#!/bin/sh' 'exec bash "$@"' > "$workbench/bin/grease"
             ;;
         missing-source)
-            printf '%s %s\n' "$grease_head" "$source_pin" > "$workbench/.build/stamps/grease"
             rm -rf "$workbench/grease/source"
             ;;
     esac
