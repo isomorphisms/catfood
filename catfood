@@ -9,6 +9,10 @@ usage: ./catfood [--target]
        ./catfood help [tool]
        ./catfood where [tool]
        ./catfood register TOOL ROLE PATH
+       ./catfood inspect
+       ./catfood record INVENTORY|-
+       ./catfood compare [DEVICE|INVENTORY]
+       ./catfood report
 
 Feed the selected Cat Food target.
 
@@ -33,6 +37,13 @@ Local checkout lookup:
   ./catfood register TOOL ROLE PATH
                           register a verified noncanonical or additional checkout
   roles: workbench, acceptance, test, cache, control, other
+
+Device state:
+  ./catfood inspect       observe this Android device and emit an inventory
+  ./catfood record FILE   record an inventory in Cat Food Manager
+  ./catfood compare ARG   compare a recorded device or inventory with current intent
+  ./catfood report        summarize all devices known to Cat Food Manager
+  record also accepts - on standard input. These commands do not repair devices.
 
 Overrides:
   CATFOOD_TARGET=phone|tablet|container|cloud|termux|hetzner
@@ -429,6 +440,9 @@ case ${1:-} in
         fi
         register_checkout "$2" "$3" "$4"
         exit $?
+        ;;
+    inspect|record|compare|report)
+        exec sh "$root/device-state.sh" "$@"
         ;;
     *) usage >&2; exit 2 ;;
 esac
