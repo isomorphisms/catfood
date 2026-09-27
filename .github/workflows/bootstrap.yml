@@ -23,6 +23,7 @@ jobs:
           dash -n bootstrap.sh
           dash -n update-tools.ysh
           dash -n catfood
+          dash -n device-state.sh
           dash -n provision.sh
           dash -n install-binaries.sh
           dash -n android/check.sh
@@ -30,6 +31,7 @@ jobs:
           dash -n tests/android-delivery.sh
           dash -n tests/runtime-binaries.sh
           dash -n tests/entrypoint.sh
+          dash -n tests/device-state.sh
       - name: Exercise Android delivery contracts
         shell: sh
         run: sh tests/android-delivery.sh
@@ -39,6 +41,9 @@ jobs:
       - name: Exercise cloud and generic Termux entrypoints
         shell: sh
         run: sh tests/entrypoint.sh
+      - name: Exercise device inventory and Manager reporting
+        shell: sh
+        run: sh tests/device-state.sh
       - name: Feed toolchain with POSIX sh
         shell: sh
         env:
