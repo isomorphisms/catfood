@@ -61,6 +61,14 @@ Package verification uses an existing `sha256sum` when present and otherwise And
 
 Runtime state stays directly under `~/opt` by default: stable commands in `~/opt/bin`, installed packages in `~/opt/packages`, receipts in `~/opt/receipts`, and downloads in `~/opt/downloads`.
 
+### Device inventory and Cat Food Manager
+
+Cat Food can observe Android device state without repairing it. `./catfood inspect` emits a portable TSV inventory and retains the latest observation plus timestamped inspection history in the user's state directory. The inventory records stable Cat Food device identity, Android identity fields, Cat Food package receipts and package trees, user-installed Android package names, and Termux package versions when those facilities are available.
+
+`./catfood record INVENTORY` stores an observation in Cat Food Manager's device register; `-` accepts an inventory on standard input so transport can remain separate from the state model. `./catfood compare [DEVICE|INVENTORY]` compares the observation with the current Android package profile and reports states such as `current`, `missing`, `different`, `unconfirmed`, `unrecorded`, `undeclared`, and `other_revision`. Those are observations, not removal or installation instructions. `./catfood report` reevaluates every recorded device against the repository's current package profile, so a repository change can become visible before the next physical-device inspection.
+
+The default local device state is `${XDG_STATE_HOME:-$HOME/.local/state}/catfood/device`; the Manager defaults to the sibling `manager` directory. `CATFOOD_DEVICE_ID`, `CATFOOD_DEVICE_NAME`, `CATFOOD_DEVICE_STATE`, and `CATFOOD_MANAGER_STATE` can override those details. The existing doctor remains the active diagnostic layer; inventory inspection itself does not run deep health checks or prescribe repairs.
+
 Cat Food also owns a small platform-binary feed in [`runtime-binaries.tsv`](runtime-binaries.tsv). It currently pins jq 1.8.2 and Miller 6.21.0 (`mlr`) from their upstream release assets for Linux ARMv7, AArch64, x86-64, and RISC-V 64. Each asset is bound to an exact SHA-256 and must pass its version probe after installation. The ARMv7 phone, AArch64 tablet, and x86-64 Linux targets therefore consume prebuilt binaries rather than compiling these utilities locally or relying on a target package-manager version. The RISC-V row is binary availability only; it does not create or imply a maintained RISC-V acceptance target.
 
 ## Fresh Hetzner / Ubuntu workbench
