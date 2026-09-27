@@ -68,11 +68,20 @@ common() {
         "$@"
 }
 
+android_packages_sha256=$(printf '%s\n' com.example.maps com.example.reader | LC_ALL=C sort -u | sha256sum | awk '{ print $1 }')
+termux_packages_sha256=$(printf 'curl\t8.0\ntermux-api\t1.0\n' | LC_ALL=C sort -u | sha256sum | awk '{ print $1 }')
+
 common sh "$root/catfood" inspect > "$tmp/inventory.tsv"
 grep -Fx 'meta	device_id	miro-a1-fixture	local-state' "$tmp/inventory.tsv" >/dev/null
 grep -Fx 'meta	model	MIRO A1	getprop' "$tmp/inventory.tsv" >/dev/null
 grep -Fx 'android_package	com.example.reader	-	pm-user' "$tmp/inventory.tsv" >/dev/null
 grep -Fx 'termux_package	curl	8.0	dpkg-query' "$tmp/inventory.tsv" >/dev/null
+grep -Fx "meta	android_packages_sha256	$android_packages_sha256	pm-user+sha256" "$tmp/inventory.tsv" >/dev/null
+grep -Fx "meta	termux_packages_sha256	$termux_packages_sha256	dpkg-query+sha256" "$tmp/inventory.tsv" >/dev/null
+
+common sh "$root/catfood" packages > "$tmp/package-list.tsv"
+grep -Fx 'android_package	com.example.reader	-	pm-user' "$tmp/package-list.tsv" >/dev/null
+grep -Fx 'termux_package	termux-api	1.0	dpkg-query' "$tmp/package-list.tsv" >/dev/null
 test -f "$state/catfood/device/inventory.tsv"
 test "$(find "$state/catfood/device/inspections" -type f | wc -l | tr -d ' ')" -eq 1
 
@@ -88,8 +97,8 @@ grep -Fx 'missing	missing-phone	-	3333333333333333333333333333333333333333	not-o
 grep -Fx 'undeclared	old-phone	9999999999999999999999999999999999999999	-	receipt:PASS' "$tmp/compare.tsv" >/dev/null
 
 common sh "$root/catfood" report > "$tmp/report.tsv"
-grep -F 'miro-a1-fixture	main-a1	MIRO A1	phone	' "$tmp/report.tsv" |
-    grep -F '	1	1	0	0	1	1	0' >/dev/null
+grep -F "miro-a1-fixture	main-a1	MIRO A1	phone	" "$tmp/report.tsv" |
+    grep -F "	$android_packages_sha256	$termux_packages_sha256	1	1	0	0	1	1	0" >/dev/null
 
 # Re-evaluate the saved observation against changed repository intent without
 # asking the phone to inspect itself again.
@@ -103,8 +112,8 @@ CATFOOD_ROOT="$workspace" \
 CATFOOD_ANDROID_PACKAGES="$packages_v2" \
 CATFOOD_MANAGER_STATE="$manager" \
     sh "$root/catfood" report > "$tmp/report-v2.tsv"
-grep -F 'miro-a1-fixture	main-a1	MIRO A1	phone	' "$tmp/report-v2.tsv" |
-    grep -F '	0	1	1	0	1	1	1' >/dev/null
+grep -F "miro-a1-fixture	main-a1	MIRO A1	phone	" "$tmp/report-v2.tsv" |
+    grep -F "	$android_packages_sha256	$termux_packages_sha256	0	1	1	0	1	1	1" >/dev/null
 
 # Inspection, recording, comparison, and reporting never remove observed state.
 test -d "$workspace/packages/old-phone/9999999999999999999999999999999999999999"
