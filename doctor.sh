@@ -158,11 +158,8 @@ if [ -x "$workspace/bin/az" ]; then
 fi
 
 if [ -x "$workspace/bin/abe" ]; then
-    if abe_link_output=$("$workspace/bin/abe" link 'https://www.abebooks.com/servlet/BookDetailsPL?bi=1' 2>&1); then
-        :
-    else
+    if ! "$workspace/bin/abe" link 'https://www.abebooks.com/servlet/BookDetailsPL?bi=1' >/dev/null 2>&1; then
         printf '%-22s public link smoke failed\n' abe >&2
-        printf '%s\n' "$abe_link_output" >&2
         failures=1
     fi
     if [ -f "$abebooks_secret" ] && ! "$workspace/bin/abe" doctor >/dev/null 2>&1; then
