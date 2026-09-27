@@ -14,11 +14,13 @@ usage() {
 usage: device-state.sh inspect
        device-state.sh record INVENTORY|-
        device-state.sh compare [DEVICE|INVENTORY]
+       device-state.sh packages [DEVICE|INVENTORY]
        device-state.sh report
 
 inspect   observe this Android device and emit a portable inventory
 record    store an inventory in the Cat Food Manager device register
 compare   compare an inventory with the current Android package profile
+packages  show recorded Android and Termux package rows
 report    summarize all devices recorded by Cat Food Manager
 
 These commands observe and compare only. They do not install, remove, or repair anything.
@@ -35,6 +37,20 @@ row() {
         "$(clean_field "$2")" \
         "$(clean_field "$3")" \
         "$(clean_field "$4")"
+}
+
+hash_file() {
+    file=$1
+    if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum "$file" | awk '{ print $1 }'
+        return
+    fi
+    toybox=${CATFOOD_TOYBOX:-/system/bin/toybox}
+    if [ -x "$toybox" ]; then
+        "$toybox" sha256sum "$file" | awk '{ print $1 }'
+        return
+    fi
+    return 127
 }
 
 prop() {
@@ -170,8 +186,39 @@ inspect_device() {
     [ -n "$abi" ] || abi=$(prop ro.product.cpu.abi)
 
     mkdir -p "$device_state/inspections"
-    inventory=$device_state/.inventory.$$
-    trap 'rm -f "$inventory"' EXIT HUP INT TERM
+    inventory=$device_state/.inventory.$
+    android_packages=$device_state/.android-packages.$
+    termux_packages=$device_state/.termux-packages.$
+    : > "$android_packages"
+    : > "$termux_packages"
+    trap 'rm -f "$inventory" "$android_packages" "$termux_packages"' EXIT HUP INT TERM
+
+    android_packages_evidence=unavailable
+    android_packages_sha256=-
+    if command -v pm >/dev/null 2>&1; then
+        pm list packages -3 2>/dev/null |
+        sed -n 's/^package://p' |
+        LC_ALL=C sort -u > "$android_packages"
+        android_packages_evidence=pm-user
+        if android_packages_sha256=$(hash_file "$android_packages"); then
+            android_packages_evidence=pm-user+sha256
+        else
+            android_packages_sha256=-
+        fi
+    fi
+
+    termux_packages_evidence=unavailable
+    termux_packages_sha256=-
+    if command -v dpkg-query >/dev/null 2>&1; then
+        dpkg-query -W -f='${Package}\t${Version}\n' 2>/dev/null |
+        LC_ALL=C sort -u > "$termux_packages"
+        termux_packages_evidence=dpkg-query
+        if termux_packages_sha256=$(hash_file "$termux_packages"); then
+            termux_packages_evidence=dpkg-query+sha256
+        else
+            termux_packages_sha256=-
+        fi
+    fi
 
     {
         printf '%s\n' '# catfood-device-inventory-v1'
@@ -186,6 +233,8 @@ inspect_device() {
         row meta android_release "$(prop ro.build.version.release)" getprop
         row meta android_sdk "$(prop ro.build.version.sdk)" getprop
         row meta abi "$abi" getprop
+        row meta android_packages_sha256 "$android_packages_sha256" "$android_packages_evidence"
+        row meta termux_packages_sha256 "$termux_packages_sha256" "$termux_packages_evidence"
 
         for receipt in "$workspace/receipts/$target-"*.tsv; do
             [ -f "$receipt" ] || continue
@@ -208,28 +257,22 @@ inspect_device() {
             done
         done
 
-        if command -v pm >/dev/null 2>&1; then
-            pm list packages -3 2>/dev/null | while IFS= read -r package_line; do
-                case $package_line in
-                    package:*) row android_package "${package_line#package:}" - pm-user ;;
-                esac
-            done
-        fi
+        while IFS= read -r package; do
+            [ -n "$package" ] || continue
+            row android_package "$package" - pm-user
+        done < "$android_packages"
 
-        if command -v dpkg-query >/dev/null 2>&1; then
-            dpkg-query -W -f='${Package}\t${Version}\n' 2>/dev/null |
-            while IFS="$tab" read -r package version; do
-                [ -n "$package" ] || continue
-                row termux_package "$package" "${version:--}" dpkg-query
-            done
-        fi
+        while IFS="$tab" read -r package version; do
+            [ -n "$package" ] || continue
+            row termux_package "$package" "${version:--}" dpkg-query
+        done < "$termux_packages"
     } > "$inventory"
 
     validate_inventory "$inventory"
     cp "$inventory" "$device_state/inventory.tsv"
     cp "$inventory" "$device_state/inspections/$stamp.tsv"
     cat "$inventory"
-    rm -f "$inventory"
+    rm -f "$inventory" "$android_packages" "$termux_packages"
     trap - EXIT HUP INT TERM
 }
 
@@ -366,9 +409,19 @@ compare_command() {
     compare_inventory "$resolved_inventory"
 }
 
+packages_command() {
+    [ "$#" -le 1 ] || { usage >&2; return 2; }
+    resolve_inventory "${1:-}"
+    validate_inventory "$resolved_inventory"
+    printf '# device\t%s\n' "$(meta "$resolved_inventory" device_id)"
+    printf '# observed_at\t%s\n' "$(meta "$resolved_inventory" observed_at)"
+    printf '%s\n' '# kind<TAB>name<TAB>version<TAB>evidence'
+    awk -F '\t' '$1 == "android_package" || $1 == "termux_package" { print }' "$resolved_inventory"
+}
+
 report_manager() {
     register=$manager_state/register.tsv
-    printf '%s\n' '# device_id<TAB>name<TAB>model<TAB>target<TAB>observed_at<TAB>current<TAB>missing<TAB>different<TAB>unconfirmed<TAB>unrecorded<TAB>undeclared<TAB>other_revision'
+    printf '%s\n' '# device_id<TAB>name<TAB>model<TAB>target<TAB>observed_at<TAB>android_packages_sha256<TAB>termux_packages_sha256<TAB>current<TAB>missing<TAB>different<TAB>unconfirmed<TAB>unrecorded<TAB>undeclared<TAB>other_revision'
     [ -f "$register" ] || return 0
 
     while IFS="$tab" read -r id name manufacturer model target observed_at; do
@@ -389,8 +442,13 @@ report_manager() {
             END { printf "%d\t%d\t%d\t%d\t%d\t%d\t%d", current, missing, different, unconfirmed, unrecorded, undeclared, other_revision }
         ' "$comparison")
         rm -f "$comparison"
-        printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
-            "$id" "$name" "$model" "$target" "$observed_at" "$counts"
+        android_packages_sha256=$(meta "$inventory" android_packages_sha256)
+        termux_packages_sha256=$(meta "$inventory" termux_packages_sha256)
+        [ -n "$android_packages_sha256" ] || android_packages_sha256=-
+        [ -n "$termux_packages_sha256" ] || termux_packages_sha256=-
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$id" "$name" "$model" "$target" "$observed_at" \
+            "$android_packages_sha256" "$termux_packages_sha256" "$counts"
     done < "$register"
 }
 
@@ -407,6 +465,10 @@ case $command in
     compare)
         shift
         compare_command "$@"
+        ;;
+    packages)
+        shift
+        packages_command "$@"
         ;;
     report)
         [ "$#" -eq 1 ] || { usage >&2; exit 2; }
