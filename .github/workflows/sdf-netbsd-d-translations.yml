@@ -71,7 +71,7 @@ jobs:
         with:
           release: "9.3"
           arch: x86_64
-          sync: rsync
+          sync: sshfs
           run: |
             set -eu
             test "$(uname -s)" = NetBSD
@@ -272,7 +272,7 @@ jobs:
         with:
           release: "9.3"
           arch: x86_64
-          sync: rsync
+          sync: sshfs
           run: |
             set -eux
             package="$GITHUB_WORKSPACE/_/d-translations"
