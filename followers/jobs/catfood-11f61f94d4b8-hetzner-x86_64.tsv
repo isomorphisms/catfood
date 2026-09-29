@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-11f61f94d4b8-hetzner-x86_64
+repository	isomorphisms/catfood
+branch	sdf/netbsd-grease
+pr	-
+trigger_commit	11f61f94d4b8048c9a97873a892d776713a62bd9
+leader_platform	sdf
+leader_arch	amd64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	hetzner-x86_64
+follower_arch	x86_64
+required	yes
+action	hetzner-x86_64 target for Cat Food source trigger 11f61f94d4b8048c9a97873a892d776713a62bd9; run the named acceptance action on that exact target and record a matching receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh cloud
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable; current source state changes bootstrap remote preflight and repository inventory while carrying the SDF runtime integration
+superseded_by	-
+follow_policy	exact
