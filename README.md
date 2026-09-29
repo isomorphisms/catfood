@@ -10,14 +10,15 @@ It is deliberately small. Cloud, container, and generic Termux targets are workb
 ./catfood
 ```
 
-The entrypoint selects one of four concrete targets:
+The entrypoint selects one of five concrete targets:
 
 - `phone`: 32-bit ARMv7 Android/Termux runtime delivery;
 - `tablet`: AArch64 Android/Termux runtime delivery;
 - `container`: disposable Debian/Ubuntu workbench, selected explicitly;
-- `cloud`: persistent Debian/Ubuntu workbench, including Hetzner.
+- `cloud`: persistent Debian/Ubuntu workbench, including Hetzner;
+- `sdf`: NetBSD amd64/x86_64 runtime delivery, including SDF.
 
-`termux` remains a compatibility source-workbench target for an unknown or explicitly forced Termux architecture. `hetzner` is an alias for `cloud`. See [TARGETS.md](TARGETS.md).
+`termux` remains a compatibility source-workbench target for an unknown or explicitly forced Termux architecture. `hetzner` is an alias for `cloud`. Unknown non-Termux systems fail closed rather than being assumed to be Debian/Ubuntu. See [TARGETS.md](TARGETS.md).
 
 ## Android delivery
 
@@ -62,6 +63,19 @@ Package verification uses an existing `sha256sum` when present and otherwise And
 Runtime state stays directly under `~/opt` by default: stable commands in `~/opt/bin`, installed packages in `~/opt/packages`, receipts in `~/opt/receipts`, and downloads in `~/opt/downloads`.
 
 Cat Food also owns a small platform-binary feed in [`runtime-binaries.tsv`](runtime-binaries.tsv). It currently pins jq 1.8.2 and Miller 6.21.0 (`mlr`) from their upstream release assets for Linux ARMv7, AArch64, x86-64, and RISC-V 64. Each asset is bound to an exact SHA-256 and must pass its version probe after installation. The ARMv7 phone, AArch64 tablet, and x86-64 Linux targets therefore consume prebuilt binaries rather than compiling these utilities locally or relying on a target package-manager version. The RISC-V row is binary availability only; it does not create or imply a maintained RISC-V acceptance target.
+
+## SDF / NetBSD runtime
+
+On NetBSD amd64/x86_64, Cat Food selects `sdf` automatically. The SDF path does not invoke apt, pkgsrc, `gh`, SSH, or the Linux workbench provisioner. It checks the observed platform and installed transfer/hash tools, downloads the commit-specific Grease release asset, verifies SHA-256, installs under `$HOME/opt`, and smoke-tests the installed command.
+
+```sh
+./catfood --target
+./catfood
+export PATH="$HOME/opt/bin:$PATH"
+grease -c 'echo hello from Grease'
+```
+
+NetBSD's base `ftp` is accepted as a downloader; existing `curl` or `wget` also work. SHA-256 verification accepts NetBSD `sha256` or `cksum -a SHA256`, GNU `sha256sum`, or OpenSSL.
 
 ## Fresh Hetzner / Ubuntu workbench
 
