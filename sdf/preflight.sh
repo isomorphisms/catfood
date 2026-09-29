@@ -17,7 +17,7 @@ for command_name in awk cp ln mkdir mv rm tar; do
 done
 
 root=${CATFOOD_ROOT:-"$HOME/opt"}
-mkdir -p "$root"
+mkdir -p "$root" "$root/receipts"
 [ -d "$root" ] && [ -w "$root" ] || {
     printf 'cat food sdf install root is not writable: %s\n' "$root" >&2
     exit 1
