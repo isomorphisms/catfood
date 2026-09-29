@@ -15,6 +15,7 @@ Idric	runtime	gap:android-package-missing	gap:android-package-missing	compiler-i
 Idric-Net	host	n/a	n/a	ICU-networking-semantics-build-dependency
 idric-cli	runtime	gap:android-package-missing	gap:android-package-missing	command-line-runtime
 issh	runtime	gap:android-package-missing	gap:android-package-missing	libssh2-runtime-library-not-shell-command
+crawlspace	runtime	package:crawlspace-phone	package:crawlspace-tablet	shell-identity-bridge-runtime
 fieldmouse	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
 idris-arm-backend	host	n/a	n/a	experimental-compiler-backend-not-delivery-prerequisite
 idris-shader-backend	host	n/a	n/a	experimental-compiler-backend-not-delivery-prerequisite
