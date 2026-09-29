@@ -89,6 +89,8 @@ choose_shell() {
 
 need git
 need awk
+GIT_TERMINAL_PROMPT=0
+export GIT_TERMINAL_PROMPT
 
 # Prove every declared remote branch and the separately bootstrapped Grease
 # branch before creating the workspace or cloning anything. A valid-looking

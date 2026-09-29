@@ -16,19 +16,22 @@ for command_name in awk cp ln mkdir mv rm tar; do
     }
 done
 
-root=${CATFOOD_ROOT:-"$HOME/opt"}
-mkdir -p "$root" "$root/receipts"
-[ -d "$root" ] && [ -w "$root" ] || {
-    printf 'cat food sdf install root is not writable: %s\n' "$root" >&2
-    exit 1
-}
-
 downloader=$(catfood_sdf_choose_downloader)
 sha256_backend=$(catfood_sdf_sha256_backend)
 empty_sha256=$(catfood_sdf_sha256 /dev/null)
 expected_empty_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 [ "$empty_sha256" = "$expected_empty_sha256" ] || {
     printf 'cat food sdf SHA-256 probe failed with %s: %s\n' "$sha256_backend" "$empty_sha256" >&2
+    exit 1
+}
+
+root=${CATFOOD_ROOT:-"$HOME/opt"}
+if ! mkdir -p "$root" "$root/receipts"; then
+    printf 'cat food sdf cannot create install root: %s\n' "$root" >&2
+    exit 1
+fi
+[ -d "$root" ] && [ -w "$root" ] || {
+    printf 'cat food sdf install root is not writable: %s\n' "$root" >&2
     exit 1
 }
 

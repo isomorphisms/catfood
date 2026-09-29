@@ -16,6 +16,10 @@ chmod +x "$tmp/bin/awk"
 trace=$tmp/git.trace
 cat > "$tmp/bin/git" <<'EOF'
 #!/bin/sh
+[ "${GIT_TERMINAL_PROMPT:-}" = 0 ] || {
+    printf '%s\n' 'remote preflight did not disable Git terminal prompting' >&2
+    exit 96
+}
 printf '%s\n' "$*" >> "$CATFOOD_TEST_GIT_TRACE"
 case ${1:-} in
     ls-remote)

@@ -103,6 +103,7 @@ if HOME="$tmp/home" CATFOOD_ROOT="$tmp/home/opt-bad" CATFOOD_SDF_DOWNLOADER=defi
     printf '%s\n' 'preflight accepted an unsupported downloader name' >&2
     exit 1
 fi
+test ! -e "$tmp/home/opt-bad"
 
 mkdir -p "$tmp/wrong-bin"
 cat > "$tmp/wrong-bin/uname" <<'EOF'

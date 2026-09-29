@@ -1,6 +1,12 @@
 #!/bin/sh
 set -eu
 
+command -v awk >/dev/null 2>&1 || {
+    printf '%s\n' 'manifest checking needs awk' >&2
+    exit 127
+}
+
+
 root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
 
