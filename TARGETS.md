@@ -1,6 +1,6 @@
 # Cat Food targets
 
-Cat Food has one control plane and four concrete acceptance targets. Shared mechanics do not imply shared acceptance.
+Cat Food has one control plane and five concrete acceptance targets. Shared mechanics do not imply shared acceptance.
 
 | Target | Environment | Normal policy | What a passing target receipt may prove |
 | --- | --- | --- | --- |
@@ -8,6 +8,7 @@ Cat Food has one control plane and four concrete acceptance targets. Shared mech
 | `tablet` | Termux on AArch64 Android | `$HOME/opt`; download, verify, and install published `arm64-v8a` runtime packages only | The exact available tablet packages installed and the recorded physical-tablet checks ran. It does not erase explicit inventory gaps or accept the phone. |
 | `container` | Disposable Debian/Ubuntu container or sandbox | full source workbench; depth 1; no shell-profile modification | A clean ephemeral Linux workbench can provision and build. It does not prove persistent-host or Android behavior. |
 | `cloud` | Persistent Debian/Ubuntu host, including Hetzner | `/opt`; full source workbench and host tool builds | The persistent cloud workbench path provisions and builds. Hetzner-specific acceptance may add provider checks. |
+| `sdf` | NetBSD amd64/x86_64, including SDF | `$HOME/opt`; fetch, verify, and install the published Grease NetBSD runtime without root | The exact NetBSD package passed preflight, checksum verification, installation, and runtime smoke checks on the host. |
 
 `termux` remains a compatibility source-workbench target for an unknown or explicitly generic Termux architecture. `hetzner` is an alias for `cloud`.
 
@@ -17,7 +18,7 @@ Cat Food has one control plane and four concrete acceptance targets. Shared mech
 ./catfood
 ```
 
-On Termux, `armv7*`/`armv8l` selects `phone` and `aarch64`/`arm64` selects `tablet`. Non-Termux systems continue to select `cloud` automatically. Container detection is deliberately not guessed; select it explicitly:
+On Termux, `armv7*`/`armv8l` selects `phone` and `aarch64`/`arm64` selects `tablet`. Outside Termux, selection uses positive platform evidence: Debian or Ubuntu Linux selects `cloud`, and NetBSD amd64/x86_64 selects `sdf`. Unknown operating systems, unsupported Linux distributions, and unsupported NetBSD architectures fail closed instead of falling through to `cloud`. Container detection is deliberately not guessed; select it explicitly:
 
 ```sh
 CATFOOD_TARGET=container ./catfood
