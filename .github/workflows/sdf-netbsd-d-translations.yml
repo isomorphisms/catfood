@@ -1,0 +1,343 @@
+name: SDF NetBSD D translations
+
+on:
+  push:
+    branches: [sdf/netbsd-d-translations]
+    paths:
+      - '.github/workflows/sdf-netbsd-d-translations.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  NETBSD_RELEASE: "9.3"
+  NETBSD_TARGET: x86_64-unknown-netbsd
+  ICK_REVISION: 5684ab4d2ff655a36f6bf88a391260ea288ac855
+  SURFER_REVISION: bf1fb6ed1ded947dbd1caa5f23408fc00ba0d2f1
+  YSH_D_REVISION: d5ef8cad8a41600c8ab2699cd0572d45e79397e6
+  DRIVE_D_REVISION: 20f15a513ece9f8f93a6e32036ecf8a8ff3f0dca
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Check out exact Cat Food revision
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Check out qualified Icky GDC source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          repository: dilapidated-shed/ick
+          ref: ${{ env.ICK_REVISION }}
+          path: _src/ick
+          submodules: true
+          persist-credentials: false
+
+      - name: Check out buildable D translations
+        shell: bash
+        run: |
+          set -euxo pipefail
+          git clone --no-checkout https://github.com/isomorphismes/algebraic-variety-explorer-mobile.git _src/surfer
+          git -C _src/surfer checkout --detach "$SURFER_REVISION"
+          git clone --no-checkout https://github.com/dilapidated-shed/oils.git _src/oils
+          git -C _src/oils checkout --detach "$YSH_D_REVISION"
+          git clone --no-checkout https://github.com/dilapidated-shed/cloud-storage-api.git _src/drive
+          git -C _src/drive checkout --detach "$DRIVE_D_REVISION"
+          test "$(git -C _src/surfer rev-parse HEAD)" = "$SURFER_REVISION"
+          test "$(git -C _src/oils rev-parse HEAD)" = "$YSH_D_REVISION"
+          test "$(git -C _src/drive rev-parse HEAD)" = "$DRIVE_D_REVISION"
+
+      - name: Stage NetBSD pkgsrc libcurl runtime
+        uses: vmactions/netbsd-vm@c8a0d7ddb84619a7a8cc4e652efa7950b3fd9f92
+        with:
+          release: "9.3"
+          arch: x86_64
+          sync: rsync
+          run: |
+            set -eu
+            test "$(uname -s)" = NetBSD
+            test "$(uname -m)" = amd64
+            /usr/sbin/pkg_add -I curl
+            rm -rf "$GITHUB_WORKSPACE/_netbsd-pkg"
+            mkdir -p "$GITHUB_WORKSPACE/_netbsd-pkg/lib"
+            cp /usr/pkg/lib/libcurl.so* "$GITHUB_WORKSPACE/_netbsd-pkg/lib/"
+            ldd /usr/pkg/bin/curl > "$GITHUB_WORKSPACE/_netbsd-pkg/curl.ldd"
+            awk '
+              {
+                for (i = 1; i <= NF; i++) {
+                  if ($i ~ /^\/usr\/pkg\/lib\/.*\.so/) {
+                    print $i
+                  }
+                }
+              }
+            ' "$GITHUB_WORKSPACE/_netbsd-pkg/curl.ldd" | sort -u > /tmp/pkg-libs
+            while IFS= read -r library; do
+              [ -f "$library" ] || continue
+              cp "$library" "$GITHUB_WORKSPACE/_netbsd-pkg/lib/"
+              real=$(/usr/bin/readlink -f "$library" 2>/dev/null || printf '%s\n' "$library")
+              [ "$real" = "$library" ] || cp "$real" "$GITHUB_WORKSPACE/_netbsd-pkg/lib/"
+            done < /tmp/pkg-libs
+            ls -l "$GITHUB_WORKSPACE/_netbsd-pkg/lib"
+
+      - name: Install Icky GDC build dependencies
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential gdc flex bison texinfo curl xz-utils \
+            libgmp-dev libmpfr-dev libmpc-dev libisl-dev libzstd-dev
+
+      - name: Materialize pinned ICK and GCC source
+        shell: bash
+        run: |
+          set -euxo pipefail
+          cd _src/ick
+          sh ick/materialize.sh gcc source
+          test -d source/libphobos/libdruntime
+          test -d source/libphobos/src
+
+      - name: Materialize verified NetBSD 9.3 amd64 sysroot
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sets="https://cdn.netbsd.org/pub/NetBSD/NetBSD-${NETBSD_RELEASE}/amd64/binary/sets"
+          mkdir -p _netbsd-sets _netbsd-sysroot
+          curl --fail --location --proto '=https' --tlsv1.2 "$sets/SHA512" -o _netbsd-sets/SHA512
+          for archive in base.tar.xz comp.tar.xz; do
+            curl --fail --location --proto '=https' --tlsv1.2 "$sets/$archive" -o "_netbsd-sets/$archive"
+            expected=$(awk -v name="($archive)" '$2 == name { print $4 }' _netbsd-sets/SHA512)
+            test -n "$expected"
+            actual=$(sha512sum "_netbsd-sets/$archive" | awk '{ print $1 }')
+            test "$actual" = "$expected"
+            tar -xJpf "_netbsd-sets/$archive" -C _netbsd-sysroot
+          done
+          test -f _netbsd-sysroot/usr/include/sys/types.h
+          test -f _netbsd-sysroot/usr/lib/crt0.o
+          test -f _netbsd-sysroot/usr/lib/libc.so
+
+      - name: Provide x86-64 GNU target tools
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p _netbsd-tools
+          for tool in as ld ar nm ranlib strip objcopy objdump readelf; do
+            host_tool=$(command -v "$tool")
+            test -n "$host_tool"
+            ln -s "$host_tool" "_netbsd-tools/${NETBSD_TARGET}-$tool"
+          done
+          printf '%s\n' "$GITHUB_WORKSPACE/_netbsd-tools" >> "$GITHUB_PATH"
+
+      - name: Build Icky GDC with full NetBSD druntime and Phobos
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir _build-gdc _stage-gdc
+          cd _build-gdc
+          "$GITHUB_WORKSPACE/_src/ick/source/configure" \
+            --target="$NETBSD_TARGET" \
+            --prefix="$GITHUB_WORKSPACE/_stage-gdc" \
+            --with-sysroot="$GITHUB_WORKSPACE/_netbsd-sysroot" \
+            --with-native-system-header-dir=/usr/include \
+            --enable-languages=c,d \
+            --enable-libphobos \
+            --with-libphobos-druntime-only=no \
+            --disable-bootstrap \
+            --disable-multilib \
+            --disable-nls \
+            --disable-shared \
+            --disable-libatomic \
+            --disable-libgomp \
+            --disable-libquadmath \
+            --disable-libssp \
+            --disable-libvtv
+          make -j"$(nproc)" all-gcc all-target-libgcc all-target-libphobos
+          make install-gcc install-target-libgcc install-target-libphobos
+          "$GITHUB_WORKSPACE/_stage-gdc/bin/${NETBSD_TARGET}-gdc" --version
+
+      - name: Compile generic and X5460-tuned D translations
+        shell: bash
+        run: |
+          set -euxo pipefail
+          gdc="$GITHUB_WORKSPACE/_stage-gdc/bin/${NETBSD_TARGET}-gdc"
+          package="$GITHUB_WORKSPACE/_/d-translations"
+          mkdir -p "$package/google-drive-api-d/lib"
+
+          common=(-O3 -frelease -flto -static-libphobos -static-libgcc)
+          generic=(-march=x86-64)
+          x5460=(-march=core2 -mtune=core2 -msse4.1)
+
+          mapfile -t surfer_sources < <(find _src/surfer/d/source -type f -name '*.d' -print | LC_ALL=C sort)
+          test "${#surfer_sources[@]}" -gt 0
+          "$gdc" "${common[@]}" "${generic[@]}" -I_src/surfer/d/source \
+            "${surfer_sources[@]}" -o "$package/surfer-d-generic"
+          "$gdc" "${common[@]}" "${x5460[@]}" -I_src/surfer/d/source \
+            "${surfer_sources[@]}" -o "$package/surfer-d-x5460"
+
+          mapfile -t ysh_sources < <(find _src/oils/ysh/d/source/yshd -type f -name '*.d' -print | LC_ALL=C sort)
+          test "${#ysh_sources[@]}" -gt 0
+          "$gdc" "${common[@]}" "${generic[@]}" -I_src/oils/ysh/d/source \
+            _src/oils/ysh/d/source/app.d "${ysh_sources[@]}" -o "$package/ysh-d-slice-generic"
+          "$gdc" "${common[@]}" "${x5460[@]}" -I_src/oils/ysh/d/source \
+            _src/oils/ysh/d/source/app.d "${ysh_sources[@]}" -o "$package/ysh-d-slice-x5460"
+
+          cp -R _netbsd-pkg/lib/. "$package/google-drive-api-d/lib/"
+          drive_link=(-L"$GITHUB_WORKSPACE/_netbsd-pkg/lib" -Wl,-rpath-link,"$GITHUB_WORKSPACE/_netbsd-pkg/lib" -Wl,-rpath,'$ORIGIN/lib' -lcurl)
+          "$gdc" "${common[@]}" "${generic[@]}" -J_src/drive/commands \
+            _src/drive/commands/google_drive_api.d "${drive_link[@]}" \
+            -o "$package/google-drive-api-d/google-drive-api-d-generic"
+          "$gdc" "${common[@]}" "${x5460[@]}" -J_src/drive/commands \
+            _src/drive/commands/google_drive_api.d "${drive_link[@]}" \
+            -o "$package/google-drive-api-d/google-drive-api-d-x5460"
+
+          "$GITHUB_WORKSPACE/_netbsd-tools/${NETBSD_TARGET}-strip" "$package/surfer-d-generic" "$package/surfer-d-x5460"
+          "$GITHUB_WORKSPACE/_netbsd-tools/${NETBSD_TARGET}-strip" "$package/ysh-d-slice-generic" "$package/ysh-d-slice-x5460"
+          "$GITHUB_WORKSPACE/_netbsd-tools/${NETBSD_TARGET}-strip" \
+            "$package/google-drive-api-d/google-drive-api-d-generic" \
+            "$package/google-drive-api-d/google-drive-api-d-x5460"
+
+          cat > "$package/select-x5460.sh" <<'EOF'
+          #!/bin/sh
+          model=$(/sbin/sysctl -n hw.model 2>/dev/null || true)
+          case $model in
+              *X5460*) printf '%s\n' x5460 ;;
+              *) printf '%s\n' generic ;;
+          esac
+          EOF
+          chmod 755 "$package/select-x5460.sh"
+
+          cat > "$package/surfer-d" <<'EOF'
+          #!/bin/sh
+          here=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+          variant=$("$here/select-x5460.sh")
+          exec "$here/surfer-d-$variant" "$@"
+          EOF
+          chmod 755 "$package/surfer-d"
+
+          cat > "$package/ysh-d-slice" <<'EOF'
+          #!/bin/sh
+          here=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+          variant=$("$here/select-x5460.sh")
+          exec "$here/ysh-d-slice-$variant" "$@"
+          EOF
+          chmod 755 "$package/ysh-d-slice"
+
+          cat > "$package/google-drive-api-d/google-drive-api-d" <<'EOF'
+          #!/bin/sh
+          here=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+          model=$(/sbin/sysctl -n hw.model 2>/dev/null || true)
+          case $model in
+              *X5460*) variant=x5460 ;;
+              *) variant=generic ;;
+          esac
+          LD_LIBRARY_PATH="$here/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+          export LD_LIBRARY_PATH
+          exec "$here/google-drive-api-d-$variant" "$@"
+          EOF
+          chmod 755 "$package/google-drive-api-d/google-drive-api-d"
+
+          cat > "$package/receipt.txt" <<EOF
+          target=NetBSD 9.3 amd64
+          tuned_cpu=Intel Xeon X5460
+          generic_flags=-O3 -frelease -flto -static-libphobos -static-libgcc -march=x86-64
+          x5460_flags=-O3 -frelease -flto -static-libphobos -static-libgcc -march=core2 -mtune=core2 -msse4.1
+          ick_revision=$ICK_REVISION
+          surfer_revision=$SURFER_REVISION
+          ysh_d_revision=$YSH_D_REVISION
+          ysh_d_status=partial-translation-slice
+          drive_d_revision=$DRIVE_D_REVISION
+          EOF
+
+      - name: Execute generic products on NetBSD 9.3
+        uses: vmactions/netbsd-vm@c8a0d7ddb84619a7a8cc4e652efa7950b3fd9f92
+        with:
+          release: "9.3"
+          arch: x86_64
+          sync: rsync
+          run: |
+            set -eux
+            package="$GITHUB_WORKSPACE/_/d-translations"
+            test "$(uname -s)" = NetBSD
+            test "$(uname -m)" = amd64
+
+            "$package/ysh-d-slice-generic" '1 + 2 * 3' | grep -Fx 7
+            "$package/ysh-d-slice-generic" -c 'var x = 1; setvar x = 42'
+
+            rm -f "$GITHUB_WORKSPACE/_/sphere.ppm"
+            "$package/surfer-d-generic" --output "$GITHUB_WORKSPACE/_/sphere.ppm" --width 64 --height 64 --aa 1x1
+            test -s "$GITHUB_WORKSPACE/_/sphere.ppm"
+            test "$(head -c 2 "$GITHUB_WORKSPACE/_/sphere.ppm")" = P6
+
+            drive="$package/google-drive-api-d"
+            test "$("$drive/google-drive-api-d-generic" methods | wc -l | tr -d '[:space:]')" = 64
+            "$drive/google-drive-api-d-generic" surface | cmp "$GITHUB_WORKSPACE/_src/drive/commands/google-drive-v3-methods.tsv" -
+
+            file "$package/ysh-d-slice-generic" "$package/surfer-d-generic" "$drive/google-drive-api-d-generic"
+            ldd "$package/ysh-d-slice-generic" || true
+            ldd "$package/surfer-d-generic" || true
+            LD_LIBRARY_PATH="$drive/lib" ldd "$drive/google-drive-api-d-generic" || true
+
+      - name: Archive package and record hashes
+        id: package
+        shell: bash
+        run: |
+          set -euxo pipefail
+          archive="_/catfood-d-translations-netbsd-9.3-amd64.tar.gz"
+          tar -C _/d-translations -czf "$archive" .
+          sha256sum "$archive" > "$archive.sha256"
+          sha=$(cut -d' ' -f1 "$archive.sha256")
+          printf 'sha256=%s\n' "$sha" >> "$GITHUB_OUTPUT"
+          sha256sum _/d-translations/surfer-d-* _/d-translations/ysh-d-slice-* \
+            _/d-translations/google-drive-api-d/google-drive-api-d-* > _/d-translations/SHA256SUMS
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: catfood-d-translations-netbsd-9.3-amd64-${{ github.sha }}
+          path: |
+            _/catfood-d-translations-netbsd-9.3-amd64.tar.gz
+            _/catfood-d-translations-netbsd-9.3-amd64.tar.gz.sha256
+            _/d-translations/receipt.txt
+            _/d-translations/SHA256SUMS
+            _/sphere.ppm
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Publish immutable prerelease
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE_SHA256: ${{ steps.package.outputs.sha256 }}
+        run: |
+          set -euxo pipefail
+          short=${GITHUB_SHA:0:12}
+          tag="sdf-d-netbsd-9.3-amd64-$short"
+          cat > _/release-notes.txt <<EOF
+          NetBSD 9.3 amd64 D-translation package for Cat Food.
+
+          Included:
+          - SURFER desktop D renderer from $SURFER_REVISION
+          - partial YSH D executable slice from $YSH_D_REVISION
+          - Google Drive API D client from $DRIVE_D_REVISION
+
+          Compiler/runtime source: Ick $ICK_REVISION
+          X5460 variants: -O3 -frelease -flto -march=core2 -mtune=core2 -msse4.1
+          Generic variants: -O3 -frelease -flto -march=x86-64
+          Archive SHA-256: $PACKAGE_SHA256
+
+          The generic binaries were executed on NetBSD 9.3 amd64 in this workflow.
+          The X5460 binaries are separate and selected only when the runtime CPU model contains X5460.
+          EOF
+          gh release create "$tag" \
+            _/catfood-d-translations-netbsd-9.3-amd64.tar.gz \
+            _/catfood-d-translations-netbsd-9.3-amd64.tar.gz.sha256 \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "Cat Food D translations NetBSD 9.3 amd64 $short" \
+            --notes-file _/release-notes.txt
