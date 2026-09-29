@@ -21,6 +21,7 @@ jobs:
         shell: sh
         run: |
           dash -n bootstrap.sh
+          dash -n tests/bootstrap-preflight.sh
           dash -n update-tools.ysh
           dash -n catfood
           dash -n provision.sh
@@ -30,6 +31,9 @@ jobs:
           dash -n tests/android-delivery.sh
           dash -n tests/runtime-binaries.sh
           dash -n tests/entrypoint.sh
+      - name: Prove remote refs before workspace mutation
+        shell: sh
+        run: sh tests/bootstrap-preflight.sh
       - name: Exercise Android delivery contracts
         shell: sh
         run: sh tests/android-delivery.sh

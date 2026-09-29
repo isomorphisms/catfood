@@ -88,7 +88,17 @@ choose_shell() {
 }
 
 need git
-CATFOOD_MANIFEST=$manifest sh "$root/check-manifest.sh"
+need awk
+
+# Prove every declared remote branch and the separately bootstrapped Grease
+# branch before creating the workspace or cloning anything. A valid-looking
+# manifest row is not evidence that its remote ref exists.
+CATFOOD_MANIFEST=$manifest sh "$root/check-manifest.sh" --remote
+if ! git ls-remote --exit-code --heads "$grease_url" "refs/heads/$grease_branch" >/dev/null 2>&1; then
+    printf 'grease remote branch does not exist: %s %s\n' "$grease_url" "$grease_branch" >&2
+    exit 1
+fi
+
 mkdir -p "$workspace"
 update_grease
 
