@@ -1,0 +1,142 @@
+name: ICK hosted GitHub runner probe
+
+on:
+  push:
+    paths:
+      - ci/ick-host-probe.c
+      - ci/build-toolchain.tsv
+      - .github/workflows/ick-host-runner.yml
+  pull_request:
+    paths:
+      - ci/ick-host-probe.c
+      - ci/build-toolchain.tsv
+      - .github/workflows/ick-host-runner.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  ICK_REVISION: 9f5c10a7c97ce297568190a48aaac77f450e838e
+
+jobs:
+  hosted-linux-x86-64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - name: Check out exact Cat Food head
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Check out pinned ICK
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: dilapidated-shed/ick
+          ref: ${{ env.ICK_REVISION }}
+          path: _ick
+          persist-credentials: false
+          submodules: true
+
+      - name: Install ICK bootstrap dependencies
+        shell: sh
+        run: |
+          set -eu
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential flex bison texinfo \
+            libgmp-dev libmpfr-dev libmpc-dev libisl-dev libzstd-dev
+
+      - name: Materialize and build hosted ICK
+        shell: sh
+        run: |
+          set -eu
+          source_dir="$RUNNER_TEMP/ick-source"
+          build_dir="$RUNNER_TEMP/ick-build"
+          stage_dir="$RUNNER_TEMP/ick-stage"
+
+          test "$(git -C _ick rev-parse HEAD)" = "$ICK_REVISION"
+          sh _ick/ick/materialize.sh _ick/gcc "$source_dir"
+
+          mkdir "$build_dir" "$stage_dir"
+          (
+            cd "$build_dir"
+            "$source_dir/configure" \
+              --prefix="$stage_dir" \
+              --enable-languages=c \
+              --disable-bootstrap \
+              --disable-multilib \
+              --disable-nls \
+              --disable-libsanitizer \
+              --disable-libgomp \
+              --disable-libquadmath \
+              --disable-libvtv
+            make -j2 all-gcc all-target-libgcc
+            make install-gcc install-target-libgcc
+          )
+
+          ick="$stage_dir/bin/gcc"
+          if test ! -x "$ick"; then
+            triplet=$(gcc -dumpmachine)
+            ick="$stage_dir/bin/$triplet-gcc"
+          fi
+          test -x "$ick"
+
+          cc1=$("$ick" -print-prog-name=cc1)
+          case "$cc1" in
+            "$stage_dir"/*) ;;
+            *)
+              printf 'ICK cc1 escaped the staged installation: %s\n' "$cc1" >&2
+              exit 1
+              ;;
+          esac
+
+          printf 'ICK=%s\n' "$ick" >> "$GITHUB_ENV"
+          printf 'ICK_STAGE=%s\n' "$stage_dir" >> "$GITHUB_ENV"
+
+      - name: Compile and run Cat Food hosted probe with ICK
+        shell: sh
+        run: |
+          set -eu
+          output="$RUNNER_TEMP/catfood-ick-host-probe"
+
+          "$ICK" -std=c17 -Wall -Wextra -Werror -pedantic -O2 \
+            ci/ick-host-probe.c -o "$output"
+
+          file "$output"
+          readelf -h "$output" | tee "$RUNNER_TEMP/probe.elf"
+          grep -q 'Class:.*ELF64' "$RUNNER_TEMP/probe.elf"
+          grep -q 'Machine:.*Advanced Micro Devices X86-64' "$RUNNER_TEMP/probe.elf"
+
+          "$output" | tee "$RUNNER_TEMP/probe.out"
+          grep -q '^catfood-ick-host-probe[[:space:]]PASS[[:space:]]' \
+            "$RUNNER_TEMP/probe.out"
+
+          probe_sha=$(sha256sum "$output" | awk '{print $1}')
+          catfood_commit=$(git rev-parse HEAD)
+          cc1=$("$ICK" -print-prog-name=cc1)
+
+          {
+            printf 'field\tvalue\n'
+            printf 'catfood_commit\t%s\n' "$catfood_commit"
+            printf 'ick_revision\t%s\n' "$ICK_REVISION"
+            printf 'target\tlinux-x86_64\n'
+            printf 'toolchain\tick\n'
+            printf 'compiler\t%s\n' "$ICK"
+            printf 'cc1\t%s\n' "$cc1"
+            printf 'probe_sha256\t%s\n' "$probe_sha"
+            printf 'compile\tPASS\n'
+            printf 'runtime\tPASS\n'
+          } > "$RUNNER_TEMP/ick-host-receipt.tsv"
+
+      - name: Upload ICK-built probe and receipt
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: catfood-ick-host-probe-${{ github.event.pull_request.head.sha || github.sha }}
+          path: |
+            ${{ runner.temp }}/catfood-ick-host-probe
+            ${{ runner.temp }}/ick-host-receipt.tsv
+            ${{ runner.temp }}/probe.out
+            ${{ runner.temp }}/probe.elf
+          if-no-files-found: error
