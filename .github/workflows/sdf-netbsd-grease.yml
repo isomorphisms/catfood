@@ -1,0 +1,29 @@
+name: SDF NetBSD Grease helpers
+
+on:
+  push:
+    branches: [sdf/netbsd-grease]
+  pull_request:
+    paths:
+      - sdf/**
+      - tests/sdf-netbsd-grease.sh
+      - .github/workflows/sdf-netbsd-grease.yml
+
+permissions:
+  contents: read
+
+jobs:
+  helper-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out exact Cat Food revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Check POSIX shell syntax
+        shell: sh
+        run: sh -n sdf/install-grease.sh sdf/benchmark-grep.sh tests/sdf-netbsd-grease.sh
+      - name: Exercise installer and benchmark harness
+        shell: sh
+        run: sh tests/sdf-netbsd-grease.sh
