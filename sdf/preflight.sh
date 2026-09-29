@@ -22,6 +22,12 @@ mkdir -p "$root"
 
 downloader=$(catfood_sdf_choose_downloader)
 sha256_backend=$(catfood_sdf_sha256_backend)
+empty_sha256=$(catfood_sdf_sha256 /dev/null)
+expected_empty_sha256=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+[ "$empty_sha256" = "$expected_empty_sha256" ] || {
+    printf 'cat food sdf SHA-256 probe failed with %s: %s\n' "$sha256_backend" "$empty_sha256" >&2
+    exit 1
+}
 
 printf 'system=%s\n' "$(catfood_sdf_system)"
 printf 'release=%s\n' "$(uname -r 2>/dev/null || printf '%s\n' unknown)"
