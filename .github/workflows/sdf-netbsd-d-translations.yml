@@ -120,11 +120,25 @@ jobs:
         shell: bash
         run: |
           set -euxo pipefail
-          sets="https://cdn.netbsd.org/pub/NetBSD/NetBSD-${NETBSD_RELEASE}/amd64/binary/sets"
           mkdir -p _netbsd-sets _netbsd-sysroot
-          curl --fail --location --proto '=https' --tlsv1.2 "$sets/SHA512" -o _netbsd-sets/SHA512
+          fetch_set() {
+            relative=$1
+            output=$2
+            for base in \
+              "https://cdn.netbsd.org/pub/NetBSD/NetBSD-${NETBSD_RELEASE}/amd64/binary/sets" \
+              "https://ftp.netbsd.org/pub/NetBSD/NetBSD-${NETBSD_RELEASE}/amd64/binary/sets"; do
+              if curl --fail --location --proto '=https' --tlsv1.2 \
+                --retry 6 --retry-delay 2 --retry-all-errors \
+                "$base/$relative" -o "$output"; then
+                return 0
+              fi
+            done
+            printf 'failed to fetch NetBSD set: %s\n' "$relative" >&2
+            return 1
+          }
+          fetch_set SHA512 _netbsd-sets/SHA512
           for archive in base.tar.xz comp.tar.xz; do
-            curl --fail --location --proto '=https' --tlsv1.2 "$sets/$archive" -o "_netbsd-sets/$archive"
+            fetch_set "$archive" "_netbsd-sets/$archive"
             expected=$(awk -v name="($archive)" '$2 == name { print $4 }' _netbsd-sets/SHA512)
             test -n "$expected"
             actual=$(sha512sum "_netbsd-sets/$archive" | awk '{ print $1 }')
