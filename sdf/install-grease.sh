@@ -23,8 +23,8 @@ catfood_sdf_require_platform
 root=${CATFOOD_ROOT:-"$HOME/opt"}
 packages=$root/packages
 bin=$root/bin
-dest=$packages/grease-netbsd-9.3-amd64
-stage=$packages/.grease-netbsd-9.3-amd64.$$
+dest=$packages/grease-netbsd-9.3-amd64-$GREASE_REPOSITORY_REVISION
+stage=$packages/.grease-netbsd-9.3-amd64-$GREASE_REPOSITORY_REVISION.$
 
 cleanup() {
     rm -rf "$stage"
@@ -56,9 +56,12 @@ rm -rf "$dest"
 mv "$stage" "$dest"
 trap - EXIT HUP INT TERM
 
-ln -sf "$dest/greasecpp" "$bin/greasecpp"
-ln -sf "$dest/grease" "$bin/grease"
-ln -sf "$dest/oils-for-unix" "$bin/oils-for-unix"
+for name in greasecpp oils-for-unix grease; do
+    link_tmp=$bin/.$name.$
+    rm -f "$link_tmp"
+    ln -s "$dest/$name" "$link_tmp"
+    mv -f "$link_tmp" "$bin/$name"
+done
 
 "$bin/greasecpp" -c 'echo greasecpp-sdf-ready'
 "$bin/grease" -c 'echo grease-sdf-ready'
