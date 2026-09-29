@@ -67,8 +67,19 @@ Before changing phone/tablet delivery, read [`android/README.md`](android/README
 - Every `tools.tsv` row plus the separate Grease bootstrap entry must have exactly one Android delivery classification.
 - Do not omit a difficult intended runtime to make the distribution look green. Leave it as `gap:<reason>` or unresolved `review` work.
 - Phone and tablet are runtime consumers. Their normal path must not clone the source fleet, bootstrap compilers, install build toolchains, or fall back to source builds.
-- Direct DEX/ART plus explicitly intended JNI/NDK code is the current Android path where needed. Do not substitute Java/Kotlin/Gradle/d8 or RefC/generated-C lowering.
-- Unfinished ARM/Thumb or other experimental native backends are not prerequisites for unrelated Android delivery.
+- Android producer builds follow the shared AICI ICK-or-NDK rule. `dex-jni`
+  describes a package/runtime shape, not a third build toolchain. Maintained
+  compile/link stages use qualified ICK when its exact required surface is
+  proven; a stage uses Android NDK only with the exact ICK revision, a specific
+  ICK capability gap, and durable evidence. A hybrid ICK-object/NDK-link build
+  records those as separate stages rather than hiding either toolchain.
+- Direct DEX/ART remains a runtime representation and may remain in an existing
+  package or reviewed common trampoline; it is not permission to generate new
+  application code through Java/Kotlin/Gradle/d8 or another undeclared build
+  path. Do not substitute RefC/generated-C lowering.
+- An unfinished ICK capability is not an unrelated Android delivery prerequisite:
+  record the exact gap on the stage that needs NDK instead of claiming broader
+  ICK maturity or silently switching compilers.
 - Bind packages to exact source/package commits, ABI, URL, SHA-256, runtime dependencies, and package dependencies.
 - Keep publication, digest verification, installation, launch, behavior, emulator evidence, and physical-device evidence separate.
 - `gopeed`, `gdl`, and `go_down_load` on phone/tablet are Cat Food control-plane helpers installed after YSH is delivered; their presence does not claim that Cat Food delivered or accepted the Gopeed Android app. Ordinary unprivileged Termux must use Gopeed's TCP loopback API for cross-app control; do not assume an app-private Unix socket is reachable and do not rewrite Gopeed's private settings on the user's behalf.
