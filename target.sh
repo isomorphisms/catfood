@@ -31,9 +31,15 @@ catfood_detect_target() {
                 printf 'cat food cannot identify Linux distribution: %s is not readable\n' "$os_release" >&2
                 return 2
             }
-            os_id=$(awk -F= '$1 == "ID" { print $2; exit }' "$os_release")
+            os_id=
+            while IFS='=' read -r os_key os_value; do
+                [ "$os_key" = ID ] || continue
+                os_id=$os_value
+                break
+            done < "$os_release"
             case $os_id in
                 \"*\") os_id=${os_id#\"}; os_id=${os_id%\"} ;;
+                \'*\') os_id=${os_id#\'}; os_id=${os_id%\'} ;;
             esac
             case $os_id in
                 debian|ubuntu) printf '%s\n' cloud ;;
