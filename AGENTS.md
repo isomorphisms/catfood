@@ -67,6 +67,7 @@ Before changing phone/tablet delivery, read [`android/README.md`](android/README
 - Every `tools.tsv` row plus the separate Grease bootstrap entry must have exactly one Android delivery classification.
 - Do not omit a difficult intended runtime to make the distribution look green. Leave it as `gap:<reason>` or unresolved `review` work.
 - Phone and tablet are runtime consumers. Their normal path must not clone the source fleet, bootstrap compilers, install build toolchains, or fall back to source builds.
+- Treat a missing command on a phone or tablet as a delivery defect, not as permission to compile on the device. Check Cat Food inventory and Android delivery first; when the artifact is missing, fix producer publication plus the pinned delivery manifest rather than adding an on-device build recipe.
 - Crawl Space is a declared first-party Android runtime, not a device build project. The phone installs the pinned ARMv7 binary through Cat Food and uses `crawlspace-bootstrap` for the current post-reboot shell-daemon start. Never tell the phone or tablet to compile Crawl Space. Once discovery reports the daemon ready, do not route repeated operations back through ADB. Keep the tablet's separately deferred ADB boundary intact.
 - Direct DEX/ART plus explicitly intended JNI/NDK code is the current Android path where needed. Do not substitute Java/Kotlin/Gradle/d8 or RefC/generated-C lowering.
 - Unfinished ARM/Thumb or other experimental native backends are not prerequisites for unrelated Android delivery.
