@@ -88,5 +88,5 @@ jobs:
               | grep -Fx 'live-greasecpp-netbsd-9.3'
             "$live_home/opt/bin/grease" -c 'echo live-grease-default-netbsd-9.3' \
               | grep -Fx 'live-grease-default-netbsd-9.3'
-            grep -F 'b70d3d222458512dbf67424a33fe463ae79b2c61dc41915424f810cc66d4f8ea' \
-              "$live_home/opt/receipts/grease-netbsd-9.3-amd64-3af742a82a96983f92e13155f9b4787940c32d8e.tsv"
+            grep -F 'a7f5e35feebd1a222e2ae724bbbf4a2c1fe28c5683ac3aa6561ed770a9bb3136' \
+              "$live_home/opt/receipts/grease-netbsd-9.3-amd64-60641ddd99844655c0788f790cd3a8a14c7166fd.tsv"
