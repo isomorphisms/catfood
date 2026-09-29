@@ -84,7 +84,7 @@ catfood_sdf_sha256() (
             if digest=$(cksum -a SHA256 -q "$file" 2>/dev/null); then
                 printf '%s\n' "$digest"
             elif digest=$(cksum -a sha256 "$file" 2>/dev/null); then
-                printf '%s\n' "$digest" | awk '{print $1}'
+                printf '%s\n' "$digest" | awk '{print $NF}'
             else
                 printf '%s\n' 'installed cksum cannot compute SHA-256' >&2
                 return 127
