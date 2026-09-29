@@ -64,9 +64,9 @@ AICI host check -> SDF preflight -> download checksum -> compare pinned checksum
 
 The published package comes from
 `dilapidated-shed/grease:netbsd/sdf-grease`. The current pin is Grease commit
-`3af742a82a96983f92e13155f9b4787940c32d8e`, built and smoke-tested inside
+`60641ddd99844655c0788f790cd3a8a14c7166fd`, built and smoke-tested inside
 NetBSD 9.3 before publication. Cat Food pins both that commit-specific release
-and SHA-256 `b70d3d222458512dbf67424a33fe463ae79b2c61dc41915424f810cc66d4f8ea`;
+and SHA-256 `a7f5e35feebd1a222e2ae724bbbf4a2c1fe28c5683ac3aa6561ed770a9bb3136`;
 the downloadable checksum file must agree with the independent Cat Food pin.
 
 For local/offline testing, `CATFOOD_GREASE_URL` and
