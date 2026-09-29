@@ -1,0 +1,32 @@
+#!/bin/sh
+set -eu
+
+root_script=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+. "$root_script/platform.sh"
+
+catfood_sdf_require_platform
+
+for command_name in awk cp ln mkdir mv rm tar; do
+    command -v "$command_name" >/dev/null 2>&1 || {
+        printf 'cat food sdf needs %s\n' "$command_name" >&2
+        exit 127
+    }
+done
+
+root=${CATFOOD_ROOT:-"$HOME/opt"}
+mkdir -p "$root"
+[ -d "$root" ] && [ -w "$root" ] || {
+    printf 'cat food sdf install root is not writable: %s\n' "$root" >&2
+    exit 1
+}
+
+downloader=$(catfood_sdf_choose_downloader)
+sha256_backend=$(catfood_sdf_sha256_backend)
+
+printf 'system=%s\n' "$(catfood_sdf_system)"
+printf 'release=%s\n' "$(uname -r 2>/dev/null || printf '%s\n' unknown)"
+printf 'machine=%s\n' "$(catfood_sdf_machine)"
+printf 'root=%s\n' "$root"
+printf 'downloader=%s\n' "$downloader"
+printf 'sha256=%s\n' "$sha256_backend"
+printf '%s\n' 'preflight=pass'
