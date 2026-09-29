@@ -91,7 +91,11 @@ printf 'CLASSPATH=%s\n' "${CLASSPATH:-}" >> "$CATFOOD_APP_LOG"
 printf 'ARGS=%s\n' "$*" >> "$CATFOOD_APP_LOG"
 exit 0
 EOF_APP_PROCESS
-chmod 0755 "$fake_bin/curl" "$fake_bin/pkg" "$fake_bin/idris-arm-backend" "$fake_bin/app_process"
+cat > "$fake_bin/adb" <<'EOF_ADB'
+#!/bin/sh
+exit 0
+EOF_ADB
+chmod 0755 "$fake_bin/curl" "$fake_bin/pkg" "$fake_bin/idris-arm-backend" "$fake_bin/app_process" "$fake_bin/adb"
 
 # Establish a known-bad experimental backend, then prove package delivery does
 # not invoke or depend on it.
@@ -117,7 +121,7 @@ idris-arm-backend	host	n/a	n/a	known-bad-experimental-backend
 EOF_DELIVERY
 cat > "$fixture_packages" <<EOF_PACKAGES
 # package	target	abi	mode	source	source_ref	package_ref	url	sha256	command	entrypoint	main_class	jni_library	jni_property	install_requires	termux_packages	runtime_requires	package_requires
-app-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime	-	-
+app-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime,android-tools	-	-
 EOF_PACKAGES
 
 CATFOOD_TOOLS="$fixture_tools" \
@@ -136,8 +140,8 @@ idris-arm-backend	host	n/a	n/a	known-bad-experimental-backend
 EOF_SUITE_DELIVERY
 cat > "$suite_packages" <<EOF_SUITE_PACKAGES
 # package	target	abi	mode	source	source_ref	package_ref	url	sha256	command	entrypoint	main_class	jni_library	jni_property	install_requires	termux_packages	runtime_requires	package_requires
-app-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime	-	-
-helper-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	helper	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime	-	-
+app-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime,android-tools	-	-
+helper-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	helper	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime,android-tools	-	-
 EOF_SUITE_PACKAGES
 CATFOOD_TOOLS="$fixture_tools" \
 CATFOOD_ANDROID_DELIVERY="$suite_delivery" \
@@ -386,6 +390,10 @@ if grep -F 'install -y curl' "$pkg_log" >/dev/null; then
 fi
 if grep -F 'install -y jq' "$pkg_log" >/dev/null; then
     printf '%s\n' 'Android provisioner substituted the Termux jq package for the pinned binary' >&2
+    exit 1
+fi
+if grep -F 'install -y android-tools' "$pkg_log" >/dev/null; then
+    printf '%s\n' 'Android provisioner reinstalled android-tools even though adb was already available' >&2
     exit 1
 fi
 test ! -s "$backend_log"
