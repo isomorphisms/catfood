@@ -1,27 +1,47 @@
 # SDF / NetBSD Grease
 
-This is the deliberately small Cat Food path for SDF. It does not run the
-Debian/Ubuntu provisioner and it does not try to feed the whole source fleet
-onto a shared NetBSD host.
-
-## Install the NetBSD Grease package
-
-Build the matching artifact from the Grease branch
-`netbsd/sdf-grease`, copy `grease-netbsd-11-amd64.tar.gz` to SDF, then run:
+Cat Food treats SDF as a concrete NetBSD runtime target, not as a Debian/Ubuntu
+cloud host. On NetBSD amd64/x86_64:
 
 ```sh
-sh sdf/install-grease.sh ~/grease-netbsd-11-amd64.tar.gz
+./catfood --target
+# sdf
+
+./catfood
 export PATH="$HOME/opt/bin:$PATH"
 grease -c 'echo hello from Grease'
 ```
 
-The install stays under `$HOME/opt` by default and needs no root access.
+The SDF path runs `sdf/preflight.sh` before network access. Preflight verifies:
 
-To enter a Grease/YSH session:
+- the observed operating system is NetBSD;
+- the observed machine is amd64/x86_64;
+- the selected install root is writable;
+- the basic archive/file commands exist;
+- at least one installed downloader is usable: NetBSD `ftp`, `curl`, or `wget`;
+- at least one SHA-256 implementation is usable: `sha256`, `cksum`,
+  `sha256sum`, or OpenSSL.
 
-```sh
-exec "$HOME/opt/bin/grease"
+It does not assume `gh`, an SSH key, root access, or a package manager.
+
+## Grease binary feed
+
+`sdf/grease-package.conf` pins a commit-specific Grease release. The normal
+path is:
+
 ```
+preflight -> download checksum -> download tarball -> verify SHA-256
+          -> install under ~/opt -> execute Grease smoke test -> receipt
+```
+
+The published package comes from
+`dilapidated-shed/grease:netbsd/sdf-grease`. That workflow compiles and
+smoke-tests the exact pinned Oils-derived source inside NetBSD 11 before
+publishing the tarball as an immutable commit-specific prerelease asset.
+
+For local/offline testing, `CATFOOD_GREASE_URL` and
+`CATFOOD_GREASE_SHA256_URL` may point at `file://` paths. A specific
+installed downloader can be selected with `CATFOOD_SDF_DOWNLOADER=ftp|curl|wget`.
 
 ## Mailbox pipeline benchmark
 
