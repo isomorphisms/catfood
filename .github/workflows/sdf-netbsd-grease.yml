@@ -5,7 +5,11 @@ on:
     branches: [sdf/netbsd-grease]
   pull_request:
     paths:
+      - catfood
+      - provision.sh
+      - target.sh
       - sdf/**
+      - tests/targets.sh
       - tests/sdf-netbsd-grease.sh
       - .github/workflows/sdf-netbsd-grease.yml
 
@@ -23,8 +27,11 @@ jobs:
           persist-credentials: false
       - name: Check POSIX shell syntax
         shell: sh
-        run: sh -n sdf/install-grease.sh sdf/benchmark-grep.sh tests/sdf-netbsd-grease.sh
-      - name: Exercise installer and benchmark harness
+        run: sh -n target.sh catfood provision.sh sdf/platform.sh sdf/preflight.sh sdf/fetch-grease.sh sdf/provision.sh sdf/install-grease.sh sdf/benchmark-grep.sh tests/targets.sh tests/sdf-netbsd-grease.sh
+      - name: Exercise target detection
+        shell: sh
+        run: sh tests/targets.sh
+      - name: Exercise SDF preflight, fetch, install, and benchmark harness
         shell: sh
         run: sh tests/sdf-netbsd-grease.sh
 
@@ -45,5 +52,6 @@ jobs:
             set -eu
             uname -a
             cd "$GITHUB_WORKSPACE"
-            sh -n sdf/install-grease.sh sdf/benchmark-grep.sh tests/sdf-netbsd-grease.sh
+            sh -n target.sh catfood provision.sh sdf/platform.sh sdf/preflight.sh sdf/fetch-grease.sh sdf/provision.sh sdf/install-grease.sh sdf/benchmark-grep.sh tests/targets.sh tests/sdf-netbsd-grease.sh
+            sh tests/targets.sh
             sh tests/sdf-netbsd-grease.sh
