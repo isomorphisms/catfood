@@ -2,7 +2,7 @@
 
 Cat Food lets phone or tablet work lead, but every affected maintained target must either produce independent acceptance evidence or remain durable unfinished work.
 
-The target meanings remain defined in [`TARGETS.md`](../TARGETS.md). Physical phone, physical tablet, disposable/container Linux, GitHub-hosted Linux, and persistent Hetzner/cloud acceptance are not interchangeable.
+The target meanings remain defined in [`TARGETS.md`](../TARGETS.md). Physical phone, physical tablet, disposable/container Linux, GitHub-hosted Linux, persistent Hetzner/cloud, and SDF NetBSD acceptance are not interchangeable.
 
 ## Source state and bookkeeping
 
@@ -12,15 +12,16 @@ Git integration can create a different commit identity for source state that alr
 
 Resolution is deliberately fail-closed. No matching exact trigger stays red. More than one matching trigger stays red. A merge or later commit that changes any non-control source file stays red. The resolver therefore does not manufacture a receipt or claim that the integration commit itself ran on a follower; it identifies the exact source commit whose already-declared follower work describes the same product state.
 
-`followers/targets.tsv` is the concrete maintained target registry. `termux-generic` remains a compatibility selector rather than a concrete independently accepted machine. If it becomes a maintained concrete environment, give it a real acceptance action and promote it in the registry rather than treating generic Termux selection as proof.
+`followers/targets.tsv` is the concrete maintained target registry. `sdf` is the explicit SDF NetBSD amd64 runtime target; a NetBSD VM or generic NetBSD host does not satisfy it. `termux-generic` remains a compatibility selector rather than a concrete independently accepted machine. If it becomes a maintained concrete environment, give it a real acceptance action and promote it in the registry rather than treating generic Termux selection as proof.
 
 `followers/impact-rules.tsv` maps changed paths to affected targets. Rules are first-match and conservative:
 
 - follower-control and policy files do not create product follower debt;
 - `android/` changes affect the physical phone, physical tablet, and GitHub artifact-contract follower;
 - Android contract tests affect the GitHub artifact-contract follower;
+- SDF runtime, SDF contract, and vendored SDF host-context paths affect the SDF target;
 - ordinary GitHub workflow changes affect GitHub-hosted x86-64;
-- everything else defaults to the concrete phone, tablet, GitHub x86-64, independent container/local x86-64, and Hetzner x86-64 targets.
+- everything else defaults to the concrete phone, tablet, GitHub x86-64, independent container/local x86-64, Hetzner x86-64, and SDF targets.
 
 That default is intentional for shared source, command-line tools, parsers, host build/install code, native boundaries, packaging, tests, and other portable mechanics. Add a narrower rule only when the design really is platform-specific.
 
@@ -77,7 +78,12 @@ A workflow artifact is evidence available for recording; it does not mutate the 
 
 The x86 path is also an independent portability check. Shared code should expose accidental ARM width/alignment assumptions, Android/Bionic-only filesystem or libc assumptions, shell/tool assumptions, JNI/DEX leakage into portable layers, backend coupling, and unsupported assembly rather than concealing them. Platform-specific implementation remains platform-specific when the rules say so.
 
+## SDF
+
+SDF is a concrete NetBSD amd64 runtime target, not a synonym for every NetBSD host and not satisfied by a NetBSD VM. The acceptance action is `CATFOOD_TARGET=sdf ./catfood` on an explicitly established SDF session. VM tests remain useful producer/portability evidence, but the SDF follower stays pending until an SDF receipt is recorded.
+
 ## Hetzner
+
 
 Hetzner is the persistent `cloud` acceptance environment, not an alias for a GitHub runner or disposable container receipt. A Hetzner job contains enough source and command information for an agent on that host to execute it cold. If the host or credentials are unavailable, the job stays blocked; no surrogate receipt is manufactured.
 
