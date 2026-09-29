@@ -78,3 +78,15 @@ jobs:
             sh -n target.sh catfood provision.sh sdf/platform.sh sdf/preflight.sh sdf/fetch-grease.sh sdf/provision.sh sdf/install-grease.sh sdf/benchmark-grep.sh vendor/ai-ci/host-context/execute.sh tests/targets.sh tests/sdf-netbsd-grease.sh
             sh tests/targets.sh
             sh tests/sdf-netbsd-grease.sh
+
+            live_home="$GITHUB_WORKSPACE/_/sdf-live-home"
+            rm -rf "$live_home"
+            mkdir -p "$live_home"
+            HOME="$live_home" CATFOOD_ROOT="$live_home/opt" CATFOOD_TARGET=sdf \
+              sh ./catfood
+            "$live_home/opt/bin/greasecpp" -c 'echo live-greasecpp-netbsd-9.3' \
+              | grep -Fx 'live-greasecpp-netbsd-9.3'
+            "$live_home/opt/bin/grease" -c 'echo live-grease-default-netbsd-9.3' \
+              | grep -Fx 'live-grease-default-netbsd-9.3'
+            grep -F 'b70d3d222458512dbf67424a33fe463ae79b2c61dc41915424f810cc66d4f8ea' \
+              "$live_home/opt/receipts/grease-netbsd-9.3-amd64.tsv"
