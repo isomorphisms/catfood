@@ -75,10 +75,10 @@ test -x "$tmp/home/opt/bin/grease"
 test -x "$tmp/home/opt/bin/greasecpp"
 "$tmp/home/opt/bin/grease" -c 'echo installed-grease-works' |
     grep -Fx 'installed-grease-works' >/dev/null
-package_receipt="$tmp/home/opt/receipts/grease-netbsd-9.3-amd64-3af742a82a96983f92e13155f9b4787940c32d8e.tsv"
+package_receipt="$tmp/home/opt/receipts/grease-netbsd-9.3-amd64-60641ddd99844655c0788f790cd3a8a14c7166fd.tsv"
 grep -F 'repository_revision' "$package_receipt" >/dev/null
 grep -F "pinned_sha256	$sha" "$package_receipt" >/dev/null
-test -d "$tmp/home/opt/packages/grease-netbsd-9.3-amd64-3af742a82a96983f92e13155f9b4787940c32d8e"
+test -d "$tmp/home/opt/packages/grease-netbsd-9.3-amd64-60641ddd99844655c0788f790cd3a8a14c7166fd"
 
 set -- "$tmp/home/opt/receipts"/sdf-provision.*.preflight.tsv
 [ -f "$1" ]
