@@ -104,7 +104,21 @@ if HOME="$tmp/home" CATFOOD_ROOT="$tmp/home/opt-bad" CATFOOD_SDF_DOWNLOADER=defi
     exit 1
 fi
 
-if HOME="$tmp/home" CATFOOD_ROOT="$tmp/home/opt-release" CATFOOD_TEST_RELEASE=11.0 PATH=$test_path \
+mkdir -p "$tmp/wrong-bin"
+cat > "$tmp/wrong-bin/uname" <<'EOF'
+#!/bin/sh
+case ${1:-} in
+    -s) printf '%s\n' NetBSD ;;
+    -m) printf '%s\n' amd64 ;;
+    -r) printf '%s\n' 11.0 ;;
+    -n) printf '%s\n' catfood-wrong-release-test ;;
+    *) exit 2 ;;
+esac
+EOF
+chmod +x "$tmp/wrong-bin/uname"
+wrong_release_path=$tmp/wrong-bin:$PATH
+
+if HOME="$tmp/home" CATFOOD_ROOT="$tmp/home/opt-release" PATH=$wrong_release_path \
     sh "$tmp/sdf/provision.sh" >"$tmp/wrong-release.out" 2>"$tmp/wrong-release.err"; then
     printf '%s\n' 'SDF provision accepted the wrong NetBSD release' >&2
     exit 1
