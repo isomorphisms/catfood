@@ -14,11 +14,13 @@ downloads=$root/downloads
 receipts=$root/receipts
 archive=$downloads/$GREASE_ARCHIVE_NAME
 checksum=$archive.sha256
-archive_tmp=$archive.tmp.$$
-checksum_tmp=$checksum.tmp.$$
+archive_tmp=$archive.tmp.$
+checksum_tmp=$checksum.tmp.$
+receipt=$receipts/grease-netbsd-9.3-amd64-$GREASE_REPOSITORY_REVISION.tsv
+receipt_tmp=$receipt.tmp.$
 
 cleanup() {
-    rm -f "$archive_tmp" "$checksum_tmp"
+    rm -f "$archive_tmp" "$checksum_tmp" "$receipt_tmp"
 }
 trap cleanup EXIT HUP INT TERM
 
@@ -58,7 +60,6 @@ trap - EXIT HUP INT TERM
 
 CATFOOD_ROOT=$root sh "$root_script/install-grease.sh" "$archive"
 
-receipt=$receipts/grease-netbsd-9.3-amd64.tsv
 {
     printf 'repository_revision\t%s\n' "$GREASE_REPOSITORY_REVISION"
     printf 'release_tag\t%s\n' "$GREASE_RELEASE_TAG"
@@ -66,6 +67,7 @@ receipt=$receipts/grease-netbsd-9.3-amd64.tsv
     printf 'sha256\t%s\n' "$actual"
     printf 'pinned_sha256\t%s\n' "$GREASE_SHA256"
     printf 'source_url\t%s\n' "$url"
-} > "$receipt"
+} > "$receipt_tmp"
+mv "$receipt_tmp" "$receipt"
 
 printf 'receipt=%s\n' "$receipt"
