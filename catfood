@@ -2,6 +2,7 @@
 set -eu
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+. "$root/target.sh"
 
 usage() {
     cat <<'EOF'
@@ -17,11 +18,12 @@ The target is detected automatically when possible:
   tablet     Termux on AArch64; install verified runtime packages only
   container  disposable Debian/Ubuntu workbench; select explicitly
   cloud      persistent Debian/Ubuntu/Hetzner workbench
+  sdf        NetBSD amd64 runtime delivery for SDF-style hosts
 
 Compatibility targets:
   termux     generic Termux source workbench when architecture is unknown/forced
   hetzner    alias for cloud
-  CATFOOD_TARGET=cloud|termux remains valid
+  CATFOOD_TARGET=cloud|termux|sdf remains valid
 
 Help:
   ./catfood help          list every Cat Food tool
@@ -35,7 +37,7 @@ Local checkout lookup:
   roles: workbench, acceptance, test, cache, control, other
 
 Overrides:
-  CATFOOD_TARGET=phone|tablet|container|cloud|termux|hetzner
+  CATFOOD_TARGET=phone|tablet|container|cloud|termux|sdf|hetzner
   CATFOOD_ROOT=/path/to/workspace
   CATFOOD_BUILD_TOOLS=0|1
   CATFOOD_INSTALL_YSH=0|1
@@ -112,17 +114,7 @@ show_help_page() {
 }
 
 detect_target() {
-    case ${PREFIX:-}:${TERMUX_VERSION:-} in
-        /data/data/com.termux/*:*|*:*?*)
-            machine=$(uname -m 2>/dev/null || printf '%s\n' unknown)
-            case $machine in
-                armv7*|armv8l|arm) printf '%s\n' phone ;;
-                aarch64|arm64) printf '%s\n' tablet ;;
-                *) printf '%s\n' termux ;;
-            esac
-            ;;
-        *) printf '%s\n' cloud ;;
-    esac
+    catfood_detect_target
 }
 
 normalize_repository_url() {
@@ -174,11 +166,11 @@ lookup_workspace() {
                 printf '%s\n' "$HOME/opt"
             fi
             ;;
-        phone|tablet|termux)
+        phone|tablet|termux|sdf)
             printf '%s\n' "$HOME/opt"
             ;;
         *)
-            printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, or hetzner; found: %s\n' "$lookup_target" >&2
+            printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, sdf, or hetzner; found: %s\n' "$lookup_target" >&2
             return 2
             ;;
     esac
@@ -438,14 +430,7 @@ if [ "$target" = auto ]; then
     target=$(detect_target)
 fi
 
-case $target in
-    hetzner) target=cloud ;;
-    phone|tablet|container|cloud|termux) ;;
-    *)
-        printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, or hetzner; found: %s\n' "$target" >&2
-        exit 2
-        ;;
-esac
+target=$(catfood_normalize_target "$target") || exit $?
 
 if [ "$show_target" -eq 1 ]; then
     printf '%s\n' "$target"
@@ -472,9 +457,18 @@ case $target in
         CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-0}
         CATFOOD_INSTALL_YSH=${CATFOOD_INSTALL_YSH:-0}
         ;;
+    sdf)
+        CATFOOD_ROOT=${CATFOOD_ROOT:-$HOME/opt}
+        CATFOOD_BUILD_TOOLS=0
+        CATFOOD_INSTALL_YSH=0
+        ;;
 esac
 
 CATFOOD_TARGET=$target
 export CATFOOD_TARGET CATFOOD_ROOT CATFOOD_BUILD_TOOLS CATFOOD_INSTALL_YSH
+
+if [ "$target" = sdf ]; then
+    exec sh "$root/sdf/provision.sh"
+fi
 
 exec sh "$root/provision.sh"
