@@ -28,6 +28,21 @@ The SDF path runs `sdf/preflight.sh` before network access. Preflight verifies:
 
 It does not assume `gh`, an SSH key, root access, or a package manager.
 
+## Observed SDF host
+
+Direct SDF measurements on 2026-09-29 establish the current production target as:
+
+- NetBSD 9.3 GENERIC, amd64 / x86_64;
+- Supermicro X7DBT, Intel Blackford/Tumwater platform, legacy BIOS;
+- two Intel Xeon X5460 packages at 3.16 GHz, four cores per package, no SMT (8 CPUs total);
+- 16,382 MB physical memory, 15,883 MB available at boot;
+- NetBSD base GCC 7.5.0 (nb4) and GNU ld / NetBSD binutils 2.31.1 (nb1);
+- local root disk `wd0`, Seagate ST3500630AS, 465 GB;
+- the live kernel log has shown NFS traffic to `mx1:/sdf`, so deployment and benchmarks must not assume every SDF path has local-filesystem behavior;
+- `/sbin` is not in the ordinary login `PATH`; `/sbin/sysctl` and `/sbin/dmesg` exist, and `/var/run/dmesg.boot` preserves the boot-time hardware enumeration after the live dmesg ring wraps.
+
+The SDF Grease compatibility build therefore targets **NetBSD 9.3 amd64**. A newer NetBSD VM is not acceptance evidence for this host. CPU-specific tuning, if added, must target the X5460/Core-2-era instruction set explicitly rather than using the CI VM's `-march=native` result.
+
 ## Grease binary feed
 
 `sdf/grease-package.conf` pins a commit-specific Grease release. The normal
