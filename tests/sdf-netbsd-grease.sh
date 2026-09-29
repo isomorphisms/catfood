@@ -54,10 +54,6 @@ printf '%s  %s\n' "$sha" grease-netbsd-9.3-amd64.tar.gz > "$tmp/grease.tar.gz.sh
 # The fetch path must still reject a checksum file that disagrees with its
 # independent configured pin, so generate a test-only config copy.
 sed "s/^GREASE_SHA256=.*/GREASE_SHA256=$sha/" "$root/sdf/grease-package.conf" > "$tmp/grease-package.conf"
-cp "$root/sdf/grease-package.conf" "$tmp/grease-package.original"
-cp "$tmp/grease-package.conf" "$root/sdf/grease-package.conf.test.$$"
-trap 'rm -rf "$tmp"; rm -f "$root/sdf/grease-package.conf.test.$$"' EXIT HUP INT TERM
-
 # Point the scripts at a temporary copy of the SDF directory so production
 # package metadata in the checkout is never rewritten by the test.
 mkdir -p "$tmp/sdf"
