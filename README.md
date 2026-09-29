@@ -29,9 +29,9 @@ Phone and tablet use the same repository-side delivery architecture under [`andr
 
 The device path is download → verify → install. It does not clone project repositories, install a compiler toolchain, bootstrap a compiler, or fall back to a local source build when a package is absent. The tablet's additional storage does not change this boundary.
 
-For programs delivered through ART, the generic `dex-jni` package mode installs direct DEX plus the declared JNI/NDK library and invokes `/system/bin/app_process`. The package receipt must match the target, ABI, source commit, and packaging commit. Direct DEX generation and NDK/JNI compilation happen on build hosts. Unfinished ARM/Thumb or other experimental native compiler backends are not Android delivery prerequisites merely because they live nearby or may produce separate development evidence.
+For programs delivered through ART, the generic `dex-jni` package mode installs direct DEX plus the declared JNI/NDK library and invokes `/system/bin/app_process`. The package receipt must match the target, ABI, source commit, and packaging commit. That mode describes packaging and runtime representation, not a separate build-toolchain exemption.
 
-This path does not authorize Java, Kotlin, Gradle, d8, RefC, or generated-C substitution. A future native compiler path can replace it only after that transition is explicitly chosen.
+Producer compile/link stages follow AICI's ICK-or-NDK contract. Use ICK when the exact target and required surface are qualified. Use Android NDK only for a stage whose exact ICK revision has a recorded capability gap and evidence. If ICK compiles an object and NDK performs the final Android platform link, record those as separate build stages. Existing reviewed DEX payloads or a common trampoline may still be delivered, but new application code must not be generated through Java, Kotlin, Gradle, d8, RefC, generated-C lowering, or another undeclared compiler path. An unfinished ICK capability becomes an explicit gap, not a reason to pretend a different build path is ICK.
 
 Current gaps are inspectable without pretending the distribution is complete:
 
