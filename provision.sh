@@ -1,27 +1,25 @@
 #!/bin/sh
 set -eu
 
-catfood_locale=${CATFOOD_LOCALE:-C.UTF-8}
+root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+. "$root/target.sh"
+
+target=${CATFOOD_TARGET:-auto}
+if [ "$target" = auto ]; then
+    target=$(catfood_detect_target)
+fi
+target=$(catfood_normalize_target "$target") || exit $?
+CATFOOD_TARGET=$target
+export CATFOOD_TARGET
+
+case $target in
+    sdf) default_locale=C ;;
+    *) default_locale=C.UTF-8 ;;
+esac
+catfood_locale=${CATFOOD_LOCALE:-$default_locale}
 LANG=$catfood_locale
 LC_ALL=$catfood_locale
 export LANG LC_ALL
-
-root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
-target=${CATFOOD_TARGET:-auto}
-if [ "$target" = auto ]; then
-    case ${PREFIX:-}:${TERMUX_VERSION:-} in
-        /data/data/com.termux/*:*|*:*?*)
-            machine=$(uname -m 2>/dev/null || printf '%s\n' unknown)
-            case $machine in
-                armv7*|armv8l|arm) target=phone ;;
-                aarch64|arm64) target=tablet ;;
-                *) target=termux ;;
-            esac
-            ;;
-        *) target=cloud ;;
-    esac
-fi
-case $target in hetzner) target=cloud ;; esac
 
 case $target in
     cloud)
@@ -36,14 +34,11 @@ case $target in
         default_workspace=$HOME/opt
         termux_target=1
         ;;
-    *)
-        printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, or hetzner; found: %s\n' "$target" >&2
-        exit 2
+    sdf)
+        default_workspace=$HOME/opt
+        termux_target=0
         ;;
 esac
-
-CATFOOD_TARGET=$target
-export CATFOOD_TARGET
 workspace=${CATFOOD_ROOT:-$default_workspace}
 cache=${CATFOOD_CACHE:-${XDG_CACHE_HOME:-$HOME/.cache}/catfood}
 oils_version=${CATFOOD_OILS_VERSION:-0.37.0}
@@ -77,6 +72,10 @@ case $target in
         exit 0
         ;;
 esac
+
+if [ "$target" = sdf ]; then
+    CATFOOD_ROOT=$workspace exec sh "$root/sdf/provision.sh"
+fi
 
 as_root() {
     if [ "$(id -u)" -eq 0 ]; then
