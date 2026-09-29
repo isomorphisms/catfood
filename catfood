@@ -18,12 +18,13 @@ The target is detected automatically when possible:
   tablet     Termux on AArch64; install verified runtime packages only
   container  disposable Debian/Ubuntu workbench; select explicitly
   cloud      persistent Debian/Ubuntu/Hetzner workbench
-  sdf        NetBSD amd64 runtime delivery for SDF-style hosts
+  netbsd     recognized generic NetBSD host; no automatic provisioning
+  sdf        explicit SDF NetBSD 9.3 amd64 runtime target
 
 Compatibility targets:
   termux     generic Termux source workbench when architecture is unknown/forced
   hetzner    alias for cloud
-  CATFOOD_TARGET=cloud|termux|sdf remains valid
+  CATFOOD_TARGET=cloud|termux|netbsd|sdf remains valid
 
 Help:
   ./catfood help          list every Cat Food tool
@@ -37,7 +38,7 @@ Local checkout lookup:
   roles: workbench, acceptance, test, cache, control, other
 
 Overrides:
-  CATFOOD_TARGET=phone|tablet|container|cloud|termux|sdf|hetzner
+  CATFOOD_TARGET=phone|tablet|container|cloud|termux|netbsd|sdf|hetzner
   CATFOOD_ROOT=/path/to/workspace
   CATFOOD_BUILD_TOOLS=0|1
   CATFOOD_INSTALL_YSH=0|1
