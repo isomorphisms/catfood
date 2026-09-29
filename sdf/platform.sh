@@ -8,6 +8,10 @@ catfood_sdf_machine() {
     uname -m 2>/dev/null || printf '%s\n' unknown
 }
 
+catfood_sdf_release() {
+    uname -r 2>/dev/null || printf '%s\n' unknown
+}
+
 catfood_sdf_require_platform() (
     system=$(catfood_sdf_system)
     machine=$(catfood_sdf_machine)
@@ -24,6 +28,15 @@ catfood_sdf_require_platform() (
             return 2
             ;;
     esac
+
+    required_release=${CATFOOD_SDF_EXPECT_RELEASE:-}
+    if [ -n "$required_release" ]; then
+        release=$(catfood_sdf_release)
+        if [ "$release" != "$required_release" ]; then
+            printf 'cat food sdf requires NetBSD release %s; found: %s\n' "$required_release" "$release" >&2
+            return 2
+        fi
+    fi
 )
 
 catfood_sdf_choose_downloader() (

@@ -5,18 +5,26 @@ cloud host. Public and historical machine evidence is kept in
 [`PUBLIC-TARGET-INVENTORY.md`](PUBLIC-TARGET-INVENTORY.md); live host receipts remain
 the authority for the exact session and any CPU-specific build decision.
 
-On NetBSD amd64/x86_64:
+On a generic NetBSD amd64/x86_64 host, automatic detection deliberately stops at the host class:
 
 ```sh
 ./catfood --target
-# sdf
+# netbsd
+```
 
-./catfood
+That class does not provision anything. Once the session is explicitly established as SDF:
+
+```sh
+CATFOOD_TARGET=sdf ./catfood
 export PATH="$HOME/opt/bin:$PATH"
 grease -c 'echo hello from Grease'
 ```
 
-The SDF path runs `sdf/preflight.sh` before network access. Preflight verifies:
+Not every NetBSD host is SDF; the explicit target declaration prevents Cat Food from turning an OS observation into a site identity.
+
+The SDF path first runs a byte-pinned copy of AICI's host-context executor from commit `7062767b79c5778ed907cc9709fdac918fab24cf`. The executor measures NetBSD, amd64, and release 9.3 itself before it launches either the SDF preflight or fetch stage. Cat Food CI checks the vendored bytes against that exact AICI revision.
+
+Inside that mediated entrypoint, `sdf/preflight.sh` verifies:
 
 - the observed operating system is NetBSD;
 - the observed machine is amd64/x86_64;
@@ -49,14 +57,17 @@ The SDF Grease compatibility build therefore targets **NetBSD 9.3 amd64**. A new
 path is:
 
 ```
-preflight -> download checksum -> download tarball -> verify SHA-256
-          -> install under ~/opt -> execute Grease smoke test -> receipt
+AICI host check -> SDF preflight -> download checksum -> compare pinned checksum
+          -> download tarball -> verify pinned SHA-256 -> install under ~/opt
+          -> execute greasecpp + grease smoke tests -> receipts
 ```
 
 The published package comes from
-`dilapidated-shed/grease:netbsd/sdf-grease`. That workflow compiles and
-smoke-tests the exact pinned Oils-derived source inside NetBSD 11 before
-publishing the tarball as an immutable commit-specific prerelease asset.
+`dilapidated-shed/grease:netbsd/sdf-grease`. The current pin is Grease commit
+`3af742a82a96983f92e13155f9b4787940c32d8e`, built and smoke-tested inside
+NetBSD 9.3 before publication. Cat Food pins both that commit-specific release
+and SHA-256 `b70d3d222458512dbf67424a33fe463ae79b2c61dc41915424f810cc66d4f8ea`;
+the downloadable checksum file must agree with the independent Cat Food pin.
 
 For local/offline testing, `CATFOOD_GREASE_URL` and
 `CATFOOD_GREASE_SHA256_URL` may point at `file://` paths. A specific

@@ -50,8 +50,8 @@ assert_target termux "$(
     HOME=$temporary/home     PREFIX=/data/data/com.termux/files/usr     TERMUX_VERSION=0.118.3     CATFOOD_TEST_SYSTEM=Linux     CATFOOD_TEST_ARCH=x86_64     PATH=$fake_bin:$PATH         sh "$root/catfood" --target
 )"
 
-assert_target sdf "$(run_detect NetBSD amd64)"
-assert_target sdf "$(run_detect NetBSD x86_64)"
+assert_target netbsd "$(run_detect NetBSD amd64)"
+assert_target netbsd "$(run_detect NetBSD x86_64)"
 assert_target cloud "$(run_detect Linux x86_64 "$debian_release")"
 assert_target cloud "$(run_detect Linux x86_64 "$ubuntu_release")"
 
@@ -72,7 +72,22 @@ fi
 
 assert_target container "$(CATFOOD_TARGET=container sh "$root/catfood" --target)"
 assert_target cloud "$(CATFOOD_TARGET=hetzner sh "$root/catfood" --target)"
+assert_target netbsd "$(CATFOOD_TARGET=netbsd sh "$root/catfood" --target)"
 assert_target sdf "$(CATFOOD_TARGET=sdf sh "$root/catfood" --target)"
+
+if HOME=$temporary/home PREFIX= TERMUX_VERSION= CATFOOD_TEST_SYSTEM=NetBSD CATFOOD_TEST_ARCH=amd64 PATH=$fake_bin:$PATH \
+    sh "$root/catfood" >"$temporary/netbsd.out" 2>"$temporary/netbsd.err"; then
+    printf '%s\n' 'generic NetBSD unexpectedly entered provisioning' >&2
+    exit 1
+fi
+grep -F 'generic NetBSD host' "$temporary/netbsd.err" >/dev/null
+
+if HOME=$temporary/home PREFIX= TERMUX_VERSION= CATFOOD_TEST_SYSTEM=NetBSD CATFOOD_TEST_ARCH=amd64 PATH=$fake_bin:$PATH \
+    sh "$root/provision.sh" >"$temporary/netbsd-provision.out" 2>"$temporary/netbsd-provision.err"; then
+    printf '%s\n' 'direct provision.sh unexpectedly provisioned generic NetBSD' >&2
+    exit 1
+fi
+grep -F 'generic NetBSD host' "$temporary/netbsd-provision.err" >/dev/null
 
 if CATFOOD_TARGET=not-a-target sh "$root/catfood" --target >/dev/null 2>&1; then
     printf '%s\n' 'invalid target unexpectedly succeeded' >&2
@@ -80,6 +95,6 @@ if CATFOOD_TARGET=not-a-target sh "$root/catfood" --target >/dev/null 2>&1; then
 fi
 
 sh "$root/catfood" --help |
-    grep -F 'phone|tablet|container|cloud|termux|sdf|hetzner' >/dev/null
+    grep -F 'phone|tablet|container|cloud|termux|netbsd|sdf|hetzner' >/dev/null
 
 printf '%s\n' 'cat food target profiles pass'

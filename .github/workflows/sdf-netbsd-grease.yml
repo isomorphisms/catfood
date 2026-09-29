@@ -8,7 +8,9 @@ on:
       - catfood
       - provision.sh
       - target.sh
+      - TARGETS.md
       - sdf/**
+      - vendor/ai-ci/host-context/**
       - tests/targets.sh
       - tests/sdf-netbsd-grease.sh
       - .github/workflows/sdf-netbsd-grease.yml
@@ -16,42 +18,63 @@ on:
 permissions:
   contents: read
 
+env:
+  AICI_HOST_CONTEXT_REVISION: 7062767b79c5778ed907cc9709fdac918fab24cf
+
 jobs:
   helper-contract:
     runs-on: ubuntu-24.04
     steps:
       - name: Check out exact Cat Food revision
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+      - name: Check out pinned AICI host-context source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: isomorphisms/ai-ci
+          ref: ${{ env.AICI_HOST_CONTEXT_REVISION }}
+          path: _aici-host-context
+          persist-credentials: false
+      - name: Prove vendored executor is byte-identical to AICI pin
+        shell: sh
+        run: cmp vendor/ai-ci/host-context/execute.sh _aici-host-context/host-context/execute.sh
       - name: Check POSIX shell syntax
         shell: sh
-        run: sh -n target.sh catfood provision.sh sdf/platform.sh sdf/preflight.sh sdf/fetch-grease.sh sdf/provision.sh sdf/install-grease.sh sdf/benchmark-grep.sh tests/targets.sh tests/sdf-netbsd-grease.sh
+        run: sh -n target.sh catfood provision.sh sdf/platform.sh sdf/preflight.sh sdf/fetch-grease.sh sdf/provision.sh sdf/install-grease.sh sdf/benchmark-grep.sh vendor/ai-ci/host-context/execute.sh tests/targets.sh tests/sdf-netbsd-grease.sh
       - name: Exercise target detection
         shell: sh
         run: sh tests/targets.sh
-      - name: Exercise SDF preflight, fetch, install, and benchmark harness
+      - name: Exercise SDF mediated preflight, fetch, install, and benchmark harness
         shell: sh
         run: sh tests/sdf-netbsd-grease.sh
 
-  netbsd-helper-contract:
+  netbsd-9_3-helper-contract:
     runs-on: ubuntu-24.04
     steps:
       - name: Check out exact Cat Food revision
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - name: Exercise helper contract in NetBSD 11
+      - name: Check out pinned AICI host-context source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: isomorphisms/ai-ci
+          ref: ${{ env.AICI_HOST_CONTEXT_REVISION }}
+          path: _aici-host-context
+          persist-credentials: false
+      - name: Exercise helper contract in NetBSD 9.3
         uses: vmactions/netbsd-vm@c8a0d7ddb84619a7a8cc4e652efa7950b3fd9f92
         with:
-          release: "11.0"
+          release: "9.3"
           arch: x86_64
           run: |
             set -eu
             uname -a
             cd "$GITHUB_WORKSPACE"
-            sh -n target.sh catfood provision.sh sdf/platform.sh sdf/preflight.sh sdf/fetch-grease.sh sdf/provision.sh sdf/install-grease.sh sdf/benchmark-grep.sh tests/targets.sh tests/sdf-netbsd-grease.sh
+            cmp vendor/ai-ci/host-context/execute.sh _aici-host-context/host-context/execute.sh
+            sh -n target.sh catfood provision.sh sdf/platform.sh sdf/preflight.sh sdf/fetch-grease.sh sdf/provision.sh sdf/install-grease.sh sdf/benchmark-grep.sh vendor/ai-ci/host-context/execute.sh tests/targets.sh tests/sdf-netbsd-grease.sh
             sh tests/targets.sh
             sh tests/sdf-netbsd-grease.sh

@@ -166,11 +166,11 @@ lookup_workspace() {
                 printf '%s\n' "$HOME/opt"
             fi
             ;;
-        phone|tablet|termux|sdf)
+        phone|tablet|termux|netbsd|sdf)
             printf '%s\n' "$HOME/opt"
             ;;
         *)
-            printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, sdf, or hetzner; found: %s\n' "$lookup_target" >&2
+            printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, netbsd, sdf, or hetzner; found: %s\n' "$lookup_target" >&2
             return 2
             ;;
     esac
@@ -435,6 +435,11 @@ target=$(catfood_normalize_target "$target") || exit $?
 if [ "$show_target" -eq 1 ]; then
     printf '%s\n' "$target"
     exit 0
+fi
+
+if [ "$target" = netbsd ]; then
+    printf '%s\n' 'cat food recognized a generic NetBSD host but has no generic NetBSD provisioner; set CATFOOD_TARGET=sdf only when this host is explicitly being treated as SDF' >&2
+    exit 2
 fi
 
 case $target in

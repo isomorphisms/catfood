@@ -8,23 +8,33 @@ Cat Food has one control plane and five concrete acceptance targets. Shared mech
 | `tablet` | Termux on AArch64 Android | `$HOME/opt`; download, verify, and install published `arm64-v8a` runtime packages only | The exact available tablet packages installed and the recorded physical-tablet checks ran. It does not erase explicit inventory gaps or accept the phone. |
 | `container` | Disposable Debian/Ubuntu container or sandbox | full source workbench; depth 1; no shell-profile modification | A clean ephemeral Linux workbench can provision and build. It does not prove persistent-host or Android behavior. |
 | `cloud` | Persistent Debian/Ubuntu host, including Hetzner | `/opt`; full source workbench and host tool builds | The persistent cloud workbench path provisions and builds. Hetzner-specific acceptance may add provider checks. |
-| `sdf` | NetBSD amd64/x86_64, including SDF | `$HOME/opt`; fetch, verify, and install the published Grease NetBSD runtime without root | The exact NetBSD package passed preflight, checksum verification, installation, and runtime smoke checks on the host. |
+| `sdf` | Explicitly declared SDF NetBSD 9.3 amd64 session | `$HOME/opt`; fetch, verify, and install the pinned Grease NetBSD 9.3 runtime without root | The pinned package passed the executor-owned host checks, checksum verification, installation, and runtime smoke checks on the tested host. |
 
 `termux` remains a compatibility source-workbench target for an unknown or explicitly generic Termux architecture. `hetzner` is an alias for `cloud`.
+
+`netbsd` is a **recognized host class, not a provisioner**. Automatic detection of NetBSD amd64/x86_64 returns `netbsd`; Cat Food then fails closed instead of assuming that every NetBSD machine is SDF. Select `CATFOOD_TARGET=sdf` only when the human or an external machine binding explicitly establishes that role.
 
 ## Selection
 
 ```sh
-./catfood
+./catfood --target
 ```
 
-On Termux, `armv7*`/`armv8l` selects `phone` and `aarch64`/`arm64` selects `tablet`. Outside Termux, selection uses positive platform evidence: Debian or Ubuntu Linux selects `cloud`, and NetBSD amd64/x86_64 selects `sdf`. Unknown operating systems, unsupported Linux distributions, and unsupported NetBSD architectures fail closed instead of falling through to `cloud`. Container detection is deliberately not guessed; select it explicitly:
+On Termux, `armv7*`/`armv8l` selects `phone` and `aarch64`/`arm64` selects `tablet`. Outside Termux, positive platform evidence selects Debian/Ubuntu Linux as `cloud` and NetBSD amd64/x86_64 as the non-provisioning `netbsd` class. Unknown operating systems, unsupported Linux distributions, and unsupported NetBSD architectures fail closed.
+
+Container detection is deliberately not guessed:
 
 ```sh
 CATFOOD_TARGET=container ./catfood
 ```
 
-Any target can be forced explicitly, and `./catfood --target` reports selection without provisioning.
+For a session explicitly established as SDF:
+
+```sh
+CATFOOD_TARGET=sdf ./catfood
+```
+
+Any target can be forced explicitly, and `./catfood --target` reports the normalized selection without provisioning.
 
 ## Android rule
 

@@ -1,0 +1,4 @@
+repository	https://github.com/isomorphisms/ai-ci.git
+revision	7062767b79c5778ed907cc9709fdac918fab24cf
+path	host-context/execute.sh
+git_blob	5dc9ddb4d1c5e743363cb113a3d5cd0c4a199bbc

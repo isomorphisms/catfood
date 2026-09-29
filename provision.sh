@@ -12,6 +12,11 @@ target=$(catfood_normalize_target "$target") || exit $?
 CATFOOD_TARGET=$target
 export CATFOOD_TARGET
 
+if [ "$target" = netbsd ]; then
+    printf '%s\n' 'cat food recognized a generic NetBSD host but has no generic NetBSD provisioner; set CATFOOD_TARGET=sdf only when this host is explicitly being treated as SDF' >&2
+    exit 2
+fi
+
 case $target in
     sdf) default_locale=C ;;
     *) default_locale=C.UTF-8 ;;

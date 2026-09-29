@@ -18,7 +18,7 @@ catfood_detect_target() {
         NetBSD)
             machine=$(uname -m 2>/dev/null || printf '%s\n' unknown)
             case $machine in
-                amd64|x86_64) printf '%s\n' sdf ;;
+                amd64|x86_64) printf '%s\n' netbsd ;;
                 *)
                     printf 'unsupported NetBSD architecture: %s\n' "$machine" >&2
                     return 2
@@ -53,9 +53,9 @@ catfood_detect_target() {
 catfood_normalize_target() {
     case $1 in
         hetzner) printf '%s\n' cloud ;;
-        phone|tablet|container|cloud|termux|sdf) printf '%s\n' "$1" ;;
+        phone|tablet|container|cloud|termux|netbsd|sdf) printf '%s\n' "$1" ;;
         *)
-            printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, sdf, or hetzner; found: %s\n' "$1" >&2
+            printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, netbsd, sdf, or hetzner; found: %s\n' "$1" >&2
             return 2
             ;;
     esac
