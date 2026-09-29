@@ -1,7 +1,11 @@
 # SDF / NetBSD Grease
 
 Cat Food treats SDF as a concrete NetBSD runtime target, not as a Debian/Ubuntu
-cloud host. On NetBSD amd64/x86_64:
+cloud host. Public and historical machine evidence is kept in
+[`PUBLIC-TARGET-INVENTORY.md`](PUBLIC-TARGET-INVENTORY.md); live host receipts remain
+the authority for the exact session and any CPU-specific build decision.
+
+On NetBSD amd64/x86_64:
 
 ```sh
 ./catfood --target
