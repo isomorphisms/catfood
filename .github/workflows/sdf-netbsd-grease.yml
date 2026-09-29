@@ -27,3 +27,23 @@ jobs:
       - name: Exercise installer and benchmark harness
         shell: sh
         run: sh tests/sdf-netbsd-grease.sh
+
+  netbsd-helper-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out exact Cat Food revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Exercise helper contract in NetBSD 11
+        uses: vmactions/netbsd-vm@c8a0d7ddb84619a7a8cc4e652efa7950b3fd9f92
+        with:
+          release: "11.0"
+          arch: x86_64
+          run: |
+            set -eu
+            uname -a
+            cd "$GITHUB_WORKSPACE"
+            sh -n sdf/install-grease.sh sdf/benchmark-grep.sh tests/sdf-netbsd-grease.sh
+            sh tests/sdf-netbsd-grease.sh
