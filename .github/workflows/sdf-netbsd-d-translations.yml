@@ -7,6 +7,10 @@ on:
       - '.github/workflows/sdf-netbsd-d-translations.yml'
   workflow_dispatch:
 
+concurrency:
+  group: sdf-netbsd-d-translations
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -38,19 +42,29 @@ jobs:
           submodules: true
           persist-credentials: false
 
-      - name: Check out buildable D translations
-        shell: bash
-        run: |
-          set -euxo pipefail
-          git clone --no-checkout https://github.com/isomorphismes/algebraic-variety-explorer-mobile.git _src/surfer
-          git -C _src/surfer checkout --detach "$SURFER_REVISION"
-          git clone --no-checkout https://github.com/dilapidated-shed/oils.git _src/oils
-          git -C _src/oils checkout --detach "$YSH_D_REVISION"
-          git clone --no-checkout https://github.com/dilapidated-shed/cloud-storage-api.git _src/drive
-          git -C _src/drive checkout --detach "$DRIVE_D_REVISION"
-          test "$(git -C _src/surfer rev-parse HEAD)" = "$SURFER_REVISION"
-          test "$(git -C _src/oils rev-parse HEAD)" = "$YSH_D_REVISION"
-          test "$(git -C _src/drive rev-parse HEAD)" = "$DRIVE_D_REVISION"
+      - name: Check out SURFER D
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          repository: isomorphismes/algebraic-variety-explorer-mobile
+          ref: ${{ env.SURFER_REVISION }}
+          path: _src/surfer
+          persist-credentials: false
+
+      - name: Check out YSH D slice
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          repository: dilapidated-shed/oils
+          ref: ${{ env.YSH_D_REVISION }}
+          path: _src/oils
+          persist-credentials: false
+
+      - name: Check out Google Drive D
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          repository: dilapidated-shed/cloud-storage-api
+          ref: ${{ env.DRIVE_D_REVISION }}
+          path: _src/drive
+          persist-credentials: false
 
       - name: Stage NetBSD pkgsrc libcurl runtime
         uses: vmactions/netbsd-vm@c8a0d7ddb84619a7a8cc4e652efa7950b3fd9f92
