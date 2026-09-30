@@ -37,6 +37,16 @@ executable location, shared storage, or removable storage:
   external SD card as `~/storage/external-1` (historically resolving to
   `/storage/4A21-0000/Android/data/com.termux/files`), but removable media must
   still be verified before use. Do not project either fact onto the tablet.
+- **Phone Shizuku terminal export, verified 2026-09-29 on MIRO A1:** Shizuku's
+  exported terminal files are in shared storage at `~/storage/shared/Shizuku`
+  (Android path `/storage/emulated/0/Shizuku`), containing `rish` and
+  `rish_shizuku.dex`. A convenience link exists at `~/opt/Shizuku ->
+  ../storage/shared/Shizuku/`. This is observed device state, not a Cat Food
+  delivery claim. On Android 14+, `app_process` cannot load a writable DEX, so
+  consumers that actually execute `rish_shizuku.dex` must copy it into
+  Termux-private storage and make it non-writable rather than assuming the
+  shared-storage copy is executable/loadable. Do not project this path or link
+  onto the tablet or another phone without fresh verification.
 - **Tablet observation, verified 2026-09-18:** physical `TAB_P10`,
   `sun65iw1p1`, `aarch64`; `~/storage/downloads` resolves to
   `/storage/emulated/0/Download`; `~/storage/external-1` is absent; no
