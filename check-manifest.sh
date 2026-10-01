@@ -42,8 +42,8 @@ awk '
         failed = 1
     }
 
-    $4 != "none" && $4 != "recursive" {
-        printf "%s:%d: submodules must be none or recursive: %s\n", FILENAME, NR, $4 > "/dev/stderr"
+    $4 != "none" && $4 != "recursive" && $4 != "skip" {
+        printf "%s:%d: submodules must be none, recursive, or skip: %s\n", FILENAME, NR, $4 > "/dev/stderr"
         failed = 1
     }
 
