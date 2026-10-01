@@ -283,7 +283,7 @@ printf 'bin_dir=%s\n' "$bin_dir"
 printf 'removable_storage=not_required\n'
 
 if ! choose_source; then
-    warn 'No controlled Shizuku rish source is available. Cat Food does not silently substitute the installed APK or shared export; set CATFOOD_SHIZUKU_ALLOW_DEVICE_SOURCE=1 only when that fallback is intentional. Removable SD storage is not involved.'
+    warn 'No controlled Shizuku rish source is available. Cat Food does not silently substitute the installed APK or shared export; set CATFOOD_SHIZUKU_ALLOW_DEVICE_SOURCE=1 only when that fallback is intentional; removable SD storage is not involved.'
     printf 'shizuku_rish\tpending\tsource=unavailable\n'
     exit 0
 fi
