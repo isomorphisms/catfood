@@ -23,7 +23,7 @@ programmers-keyboard https://github.com/isomorphisms/programmers-keyboard.git ma
 icu https://github.com/dilapidated-shed/icu.git icu none
 
 # Workbench, browser, publication, and shared-CI repositories
-az https://github.com/isomorphisms/az.git main none
+az https://github.com/Ashtray-Archer/az.git main none
 ib https://github.com/isomorphisms/ib.git main recursive
 internetarchive https://github.com/isomorphisms/internetarchive.git master none
 bookreader https://github.com/isomorphisms/bookreader.git master none
