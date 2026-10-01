@@ -46,7 +46,7 @@ HOME="$home" CATFOOD_ROOT="$workspace" CATFOOD_STATE_HOME="$state" \
     sh "$root/android/preserve-shizuku.sh" restore "$restore" >/dev/null
 cmp "$workspace/rish" "$restore/rish"
 cmp "$workspace/rish_shizuku.dex" "$restore/rish_shizuku.dex"
-test ! -w "$restore/rish_shizuku.dex"
+test "$(stat -c '%a' "$restore/rish_shizuku.dex")" = 400
 
 empty=$temporary/empty
 mkdir -p "$empty"
