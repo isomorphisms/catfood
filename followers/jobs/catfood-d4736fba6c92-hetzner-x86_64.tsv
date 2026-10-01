@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-d4736fba6c92-hetzner-x86_64
+repository	isomorphisms/catfood
+branch	shizuku-state
+pr	94
+trigger_commit	d4736fba6c928dfb12b2f01d2a166d1afea94bfe
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	hetzner-x86_64
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit d4736fba6c928dfb12b2f01d2a166d1afea94bfe on hetzner-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh cloud
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	-
+follow_policy	exact
