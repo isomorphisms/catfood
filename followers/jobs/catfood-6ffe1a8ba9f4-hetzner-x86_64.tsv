@@ -1,9 +1,9 @@
 schema	aici-follower-job-v1
-job_id	catfood-4bbbd68ed9f4-hetzner-x86_64
+job_id	catfood-6ffe1a8ba9f4-hetzner-x86_64
 repository	isomorphisms/catfood
 branch	android/miro-phone-first-run
 pr	80
-trigger_commit	4bbbd68ed9f453ee90b9fcc4be5405e4c034bce2
+trigger_commit	6ffe1a8ba9f42fb4035c1ad469e2985b71223882
 leader_platform	github-x86_64
 leader_arch	x86_64
 leader_evidence	-
@@ -12,14 +12,14 @@ artifact_sha256	-
 follower_platform	hetzner-x86_64
 follower_arch	x86_64
 required	yes
-action	follower target for Cat Food commit 4bbbd68ed9f453ee90b9fcc4be5405e4c034bce2 on hetzner-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+action	follower target for Cat Food commit 6ffe1a8ba9f42fb4035c1ad469e2985b71223882 on hetzner-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh cloud
-state	superseded
+state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	shared-portable
-superseded_by	catfood-6ffe1a8ba9f4-hetzner-x86_64
+superseded_by	-
 follow_policy	exact
