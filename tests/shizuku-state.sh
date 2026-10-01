@@ -56,6 +56,41 @@ grep -F "source_dir	$workspace" "$precedence_snapshot/receipt.tsv" >/dev/null
 cmp "$workspace/rish" "$precedence_snapshot/rish"
 cmp "$workspace/rish_shizuku.dex" "$precedence_snapshot/rish_shizuku.dex"
 
+# An explicit source must outrank ~/opt.
+explicit=$temporary/explicit
+explicit_state=$temporary/explicit-state
+mkdir -p "$explicit"
+printf '%s\n' '#!/system/bin/sh' 'printf explicit-rish\\n' > "$explicit/rish"
+printf '%s\n' 'explicit-dex' > "$explicit/rish_shizuku.dex"
+chmod 0755 "$explicit/rish"
+chmod 0400 "$explicit/rish_shizuku.dex"
+HOME="$home" CATFOOD_ROOT="$other_workspace" CATFOOD_SHIZUKU_RISH_DIR="$explicit" \
+    CATFOOD_STATE_HOME="$explicit_state" \
+    sh "$root/android/preserve-shizuku.sh" save >/dev/null
+explicit_id=$(cat "$explicit_state/shizuku/current")
+explicit_snapshot=$explicit_state/shizuku/snapshots/$explicit_id
+grep -F "source_dir	$explicit" "$explicit_snapshot/receipt.tsv" >/dev/null
+cmp "$explicit/rish" "$explicit_snapshot/rish"
+cmp "$explicit/rish_shizuku.dex" "$explicit_snapshot/rish_shizuku.dex"
+
+# PATH is the final discovery tier when ~/opt is absent.
+path_home=$temporary/path-home
+path_source=$temporary/path-source
+path_state=$temporary/path-state
+mkdir -p "$path_home" "$path_source"
+printf '%s\n' '#!/system/bin/sh' 'printf path-rish\\n' > "$path_source/rish"
+printf '%s\n' 'path-dex' > "$path_source/rish_shizuku.dex"
+chmod 0755 "$path_source/rish"
+chmod 0400 "$path_source/rish_shizuku.dex"
+HOME="$path_home" PATH="$path_source:$PATH" CATFOOD_ROOT="$other_workspace" \
+    CATFOOD_STATE_HOME="$path_state" \
+    sh "$root/android/preserve-shizuku.sh" save >/dev/null
+path_id=$(cat "$path_state/shizuku/current")
+path_snapshot=$path_state/shizuku/snapshots/$path_id
+grep -F "source_dir	$path_source" "$path_snapshot/receipt.tsv" >/dev/null
+cmp "$path_source/rish" "$path_snapshot/rish"
+cmp "$path_source/rish_shizuku.dex" "$path_snapshot/rish_shizuku.dex"
+
 restore=$temporary/restore
 HOME="$home" CATFOOD_ROOT="$workspace" CATFOOD_STATE_HOME="$state" \
     sh "$root/android/preserve-shizuku.sh" restore "$restore" >/dev/null
