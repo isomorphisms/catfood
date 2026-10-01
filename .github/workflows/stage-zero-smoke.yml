@@ -15,10 +15,10 @@ jobs:
         shell: sh
         run: |
           for script in \
-            catfood bootstrap.sh check-manifest.sh update-tools.ysh \
+            catfood device-state.sh bootstrap.sh check-manifest.sh update-tools.ysh \
             provision.sh install-binaries.sh activate.sh build-tools.sh refresh.sh doctor.sh import-config.sh \
             android/check.sh android/install.sh android/install-local-clients.sh \
-            tests/check-manifest.sh tests/entrypoint.sh tests/targets.sh tests/android-delivery.sh \
+            tests/check-manifest.sh tests/entrypoint.sh tests/targets.sh tests/android-delivery.sh tests/device-state.sh \
             tests/android-local-clients.sh tests/runtime-binaries.sh
           do
             if [ -f "$script" ]; then
@@ -35,6 +35,9 @@ jobs:
       - name: Exercise cloud and generic Termux entrypoints
         shell: sh
         run: sh tests/entrypoint.sh
+      - name: Verify device inventory and Manager reporting
+        shell: sh
+        run: sh tests/device-state.sh
       - name: Verify named target profiles
         shell: sh
         run: sh tests/targets.sh
