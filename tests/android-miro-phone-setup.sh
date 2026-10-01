@@ -204,4 +204,18 @@ printf '%s\n' "$termux_dry" | grep -F 'would_add_runtime_path' | grep -F '.bashr
 printf '%s\n' "$termux_dry" | grep -F 'removable_storage=not_required' >/dev/null
 test ! -s "$state/termux-mutations"
 
+# Do not append another runtime PATH stanza when the shell already exposes
+# ~/opt/bin. The other profile still gets its own idempotent setup.
+printf '%s\n' 'export PATH="$HOME/opt/bin:$PATH"' > "$termux_home/.bashrc"
+termux_path_dry=$(HOME="$termux_home" PREFIX=/data/data/com.termux/files/usr \
+  PATH="$termux_bin:$fake_bin:$PATH" CATFOOD_TEST_STATE="$state" \
+  CATFOOD_SHIZUKU_SKIP_CONTROLLED_SOURCE=1 \
+  sh "$root/android/miro-phone-setup.sh" --scope termux --dry-run --level attention)
+if printf '%s\n' "$termux_path_dry" | grep -F 'would_add_runtime_path' | grep -F '.bashrc' >/dev/null; then
+    printf '%s\n' 'existing ~/opt/bin PATH entry was scheduled for duplication' >&2
+    exit 1
+fi
+printf '%s\n' "$termux_path_dry" | grep -F 'would_add_runtime_path' | grep -F '.profile' >/dev/null
+test ! -s "$state/termux-mutations"
+
 printf '%s\n' 'MIRO setup passes Android idempotence and Termux no-mutation dry-run tests'
