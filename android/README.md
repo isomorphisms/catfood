@@ -58,6 +58,25 @@ named `catfood-debian`. The Termux pass installs only the small runtime/user
 package set, feeds the existing ARMv7 Cat Food phone target when applicable,
 purges stray development packages, and removes reproducible build caches.
 
+The Termux pass also provisions Shizuku's `rish` pair. It prefers the
+matching assets from the installed Shizuku manager APK, so a blank phone
+does not require a manual terminal-file export when that APK is readable.
+If direct APK extraction is unavailable, it falls back to Shizuku's internal
+shared-storage export at `/storage/emulated/0/Shizuku` (normally
+`~/storage/shared/Shizuku` in Termux). Removable SD storage is deliberately
+not consulted. The pair is installed in `~/opt`, upstream `PKG` is rewritten
+to `com.termux`, `rish_shizuku.dex` is made read-only for Android 14, and a
+stable `~/opt/bin/rish` command is installed. The pass then probes for shell
+UID 2000. On a stock unrooted phone, pairing and starting Shizuku remains the
+one Android bootstrap prerequisite; if the service is stopped, the files stay
+installed and runtime status is reported as pending.
+
+The Shizuku part can also be rerun by itself:
+
+```sh
+sh android/provision-shizuku-rish.sh --apply
+```
+
 Android package-manager and secure-setting mutation needs Android shell/root
 authority, not the ordinary Termux app UID. For a stock phone, run the same
 policy through ADB from a checkout:

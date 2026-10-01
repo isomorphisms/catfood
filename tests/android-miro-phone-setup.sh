@@ -198,9 +198,10 @@ chmod 0755 "$termux_bin"/*
 termux_dry=$(HOME="$termux_home" PREFIX=/data/data/com.termux/files/usr \
   PATH="$termux_bin:$fake_bin:$PATH" CATFOOD_TEST_STATE="$state" \
   sh "$root/android/miro-phone-setup.sh" --scope termux --dry-run --level attention)
-printf '%s\n' "$termux_dry" | grep -F 'would_pkg_install' | grep -F 'git ca-certificates openssh tmux vim' >/dev/null
+printf '%s\n' "$termux_dry" | grep -F 'would_pkg_install' | grep -F 'git ca-certificates openssh tmux vim unzip' >/dev/null
 printf '%s\n' "$termux_dry" | grep -F 'would_clone_catfood' >/dev/null
 printf '%s\n' "$termux_dry" | grep -F 'would_add_runtime_path' | grep -F '.bashrc' >/dev/null
+printf '%s\n' "$termux_dry" | grep -F 'removable_storage=not_required' >/dev/null
 test ! -s "$state/termux-mutations"
 
 printf '%s\n' 'MIRO setup passes Android idempotence and Termux no-mutation dry-run tests'

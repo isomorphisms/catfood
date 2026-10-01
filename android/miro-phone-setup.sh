@@ -315,7 +315,6 @@ repository_matches_catfood() {
 }
 
 find_catfood_control() {
-    script_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." 2>/dev/null && pwd -P || true)
     for candidate in "$script_root" "$HOME/.cache/catfood" "$HOME/opt/catfood"; do
         [ -n "$candidate" ] || continue
         if repository_matches_catfood "$candidate"; then
@@ -459,7 +458,7 @@ run_termux_phase() {
     command -v dpkg-query >/dev/null 2>&1 || fail 'Termux dpkg-query command is unavailable'
 
     section 'Termux runtime setup'
-    base_packages='git ca-certificates openssh tmux vim'
+    base_packages='git ca-certificates openssh tmux vim unzip'
     if [ "$with_proot" -eq 1 ]; then
         base_packages="$base_packages proot-distro"
     fi
@@ -471,6 +470,18 @@ run_termux_phase() {
     fi
     ensure_catfood_control
     ensure_runtime_path
+
+    shizuku_provision="$script_root/android/provision-shizuku-rish.sh"
+    if [ ! -f "$shizuku_provision" ] && [ -n "${catfood_control:-}" ]; then
+        shizuku_provision=$catfood_control/android/provision-shizuku-rish.sh
+    fi
+    if [ -f "$shizuku_provision" ]; then
+        shizuku_mode=--dry-run
+        [ "$mode" = apply ] && shizuku_mode=--apply
+        CATFOOD_ROOT="$HOME/opt" sh "$shizuku_provision" "$shizuku_mode"
+    else
+        warn "Shizuku rish provisioner is missing from this Cat Food checkout: $shizuku_provision"
+    fi
 
     if [ -n "${catfood_control:-}" ]; then
         if [ "$abi" = armeabi-v7a ]; then
