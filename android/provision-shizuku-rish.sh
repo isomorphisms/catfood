@@ -120,7 +120,8 @@ extract_installed_assets() {
     "$unzip_command" -p "$apk" assets/rish > "$extracted/rish" 2>/dev/null || return 1
     "$unzip_command" -p "$apk" assets/rish_shizuku.dex > "$extracted/rish_shizuku.dex" 2>/dev/null || return 1
     [ -s "$extracted/rish" ] && [ -s "$extracted/rish_shizuku.dex" ] || return 1
-    printf '%s\n' "$extracted"
+    source_dir=$extracted
+    return 0
 }
 
 source_kind=
@@ -128,37 +129,42 @@ source_path=
 source_dir=
 choose_source() {
     if [ -n "${CATFOOD_SHIZUKU_SOURCE_DIR:-}" ]; then
-        if pair_state "$CATFOOD_SHIZUKU_SOURCE_DIR"; then
-            source_kind=explicit-export
-            source_path=$CATFOOD_SHIZUKU_SOURCE_DIR
-            source_dir=$CATFOOD_SHIZUKU_SOURCE_DIR
-            return 0
-        fi
-        status=$?
-        [ "$status" -ne 2 ] || fail "incomplete Shizuku rish pair in $CATFOOD_SHIZUKU_SOURCE_DIR"
-        fail "Shizuku rish pair not found in CATFOOD_SHIZUKU_SOURCE_DIR=$CATFOOD_SHIZUKU_SOURCE_DIR"
+        status=0
+        pair_state "$CATFOOD_SHIZUKU_SOURCE_DIR" || status=$?
+        case $status in
+            0)
+                source_kind=explicit-export
+                source_path=$CATFOOD_SHIZUKU_SOURCE_DIR
+                source_dir=$CATFOOD_SHIZUKU_SOURCE_DIR
+                return 0
+                ;;
+            2) fail "incomplete Shizuku rish pair in $CATFOOD_SHIZUKU_SOURCE_DIR" ;;
+            *) fail "Shizuku rish pair not found in CATFOOD_SHIZUKU_SOURCE_DIR=$CATFOOD_SHIZUKU_SOURCE_DIR" ;;
+        esac
     fi
 
     apk=$(installed_apk || true)
     if [ -n "$apk" ]; then
-        if extracted=$(extract_installed_assets "$apk"); then
+        if extract_installed_assets "$apk"; then
             source_kind=installed-apk
             source_path=$apk
-            source_dir=$extracted
             return 0
         fi
         warn "Shizuku is installed at $apk but its rish assets could not be extracted"
     fi
 
     for candidate in "$HOME/storage/shared/Shizuku" /storage/emulated/0/Shizuku; do
-        if pair_state "$candidate"; then
-            source_kind=shared-export
-            source_path=$candidate
-            source_dir=$candidate
-            return 0
-        fi
-        status=$?
-        [ "$status" -ne 2 ] || fail "incomplete Shizuku rish pair in $candidate"
+        status=0
+        pair_state "$candidate" || status=$?
+        case $status in
+            0)
+                source_kind=shared-export
+                source_path=$candidate
+                source_dir=$candidate
+                return 0
+                ;;
+            2) fail "incomplete Shizuku rish pair in $candidate" ;;
+        esac
     done
     return 1
 }

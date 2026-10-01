@@ -63,7 +63,7 @@ apk_install=$apk_home/opt
 apk_state=$temporary/apk-state
 apk_assets=$temporary/apk-assets
 fake_bin=$temporary/fake-bin
-mkdir -p "$apk_home" "$apk_assets" "$fake_bin"
+mkdir -p "$apk_home" "$apk_assets" "$fake_bin" "$apk_home/.cache"
 stock_rish > "$apk_assets/rish"
 printf '%s\n' dex-apk-v1 > "$apk_assets/rish_shizuku.dex"
 : > "$temporary/base.apk"
@@ -88,7 +88,7 @@ esac
 EOF_UNZIP
 chmod 0755 "$fake_bin/pm" "$fake_bin/unzip"
 
-HOME="$apk_home" CATFOOD_STATE_HOME="$apk_state" \
+HOME="$apk_home" TMPDIR="$apk_home/.cache" CATFOOD_STATE_HOME="$apk_state" \
     CATFOOD_PM="$fake_bin/pm" CATFOOD_UNZIP="$fake_bin/unzip" \
     CATFOOD_TEST_APK="$temporary/base.apk" CATFOOD_TEST_ASSETS="$apk_assets" \
     CATFOOD_SHIZUKU_SKIP_RUNTIME_PROBE=1 \
@@ -97,6 +97,7 @@ grep -F 'source_kind=installed-apk' "$temporary/apk.out" >/dev/null
 grep -F 'RISH_APPLICATION_ID="com.termux"' "$apk_install/rish" >/dev/null
 grep -Fqx 'dex-apk-v1' "$apk_install/rish_shizuku.dex"
 grep -F "$(printf 'source_kind\tinstalled-apk')" "$apk_state/shizuku/installed.tsv" >/dev/null
+test -z "$(find "$apk_home/.cache" -mindepth 1 -maxdepth 1 -name 'catfood-shizuku.*' -print 2>/dev/null || true)"
 
 # A missing source is a visible pending state, not a removable-SD diagnostic.
 empty_home=$temporary/empty-home
