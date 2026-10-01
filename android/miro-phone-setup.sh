@@ -350,11 +350,25 @@ ensure_catfood_control() {
     catfood_control=$destination
 }
 
+profile_has_runtime_path() {
+    profile=$1
+    [ -f "$profile" ] || return 1
+
+    if grep -F '$HOME/opt/bin' "$profile" 2>/dev/null \
+        | grep -v '^[[:space:]]*#' \
+        | grep -F 'PATH' >/dev/null 2>&1; then
+        return 0
+    fi
+    grep -F "$HOME/opt/bin" "$profile" 2>/dev/null \
+        | grep -v '^[[:space:]]*#' \
+        | grep -F 'PATH' >/dev/null 2>&1
+}
+
 ensure_runtime_path() {
     marker='# catfood phone runtime path'
     line='export PATH="$HOME/opt/bin:$PATH"'
     for profile in "$HOME/.profile" "$HOME/.bashrc"; do
-        if [ -f "$profile" ] && grep -F "$marker" "$profile" >/dev/null 2>&1; then
+        if profile_has_runtime_path "$profile"; then
             continue
         fi
         if [ "$mode" = dry_run ]; then
