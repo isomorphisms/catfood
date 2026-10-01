@@ -12,10 +12,11 @@ The device path is intentionally short:
 ## Shizuku state
 
 Before the phone/tablet feed changes Android runtime state, Cat Food preserves the
-existing Shizuku shell bundle when it finds one.  The normal MIRO A1 layout
-`~/opt/rish` plus sibling `rish_shizuku.dex` is checked first; an explicit
-`CATFOOD_SHIZUKU_RISH_DIR` takes precedence, and a PATH-discovered `rish`
-with a sibling DEX is also accepted.  Cat Food does not scan arbitrary storage.
+existing Shizuku shell bundle when it finds one. Discovery order is an explicit
+`CATFOOD_SHIZUKU_RISH_DIR`, then the normal MIRO A1 `~/opt/rish` plus sibling
+`rish_shizuku.dex`, then a PATH-discovered `rish` with a sibling DEX.
+`CATFOOD_ROOT` does not override that discovery order. Cat Food does not scan
+arbitrary storage.
 
 Snapshots live under
 `${CATFOOD_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/catfood}/shizuku`
