@@ -95,7 +95,7 @@ Build stamps are keyed to repository commits. `catfood-update` fetches repositor
 
 `tools.tsv` is both the authoritative current-workbench feed and the inventory from which Android coverage is checked. It contains the language/toolchain line, browser/publication tools, applications, and mathematical experiments. Grease is fed separately by `bootstrap.sh` because it supplies stage one, but it is still explicitly represented in Android delivery coverage.
 
-Repositories marked `recursive` have actual submodules and are initialized automatically. New workbench clones use shallow history, 12 commits by default; set `CATFOOD_DEPTH` to change that. Existing checkouts are fetched without rewriting their history.
+The submodule field is explicit policy: `none` means the repository has no declared submodules, `recursive` means declared submodules are initialized and verified automatically, and `skip` means `.gitmodules` is expected but Cat Food deliberately does not populate it (for example, ICK's large reference-only GCC source). New workbench clones use shallow history, 12 commits by default; set `CATFOOD_DEPTH` to change that. Existing checkouts are fetched without rewriting their history.
 
 `./check-manifest.sh --remote` validates workbench manifest structure and verifies that every named remote branch exists. `sh android/check.sh check` independently validates total Android inventory coverage and package metadata.
 

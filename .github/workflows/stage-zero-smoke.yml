@@ -17,9 +17,9 @@ jobs:
           for script in \
             catfood bootstrap.sh check-manifest.sh update-tools.ysh \
             provision.sh install-binaries.sh activate.sh build-tools.sh refresh.sh doctor.sh import-config.sh \
-            android/check.sh android/install.sh android/install-local-clients.sh \
+            android/check.sh android/install.sh android/install-local-clients.sh android/preserve-shizuku.sh \
             tests/check-manifest.sh tests/entrypoint.sh tests/targets.sh tests/android-delivery.sh \
-            tests/android-local-clients.sh tests/runtime-binaries.sh
+            tests/android-local-clients.sh tests/runtime-binaries.sh tests/shizuku-state.sh
           do
             if [ -f "$script" ]; then
               dash -n "$script"
@@ -47,13 +47,16 @@ jobs:
       - name: Verify Android local client feed
         shell: sh
         run: sh tests/android-local-clients.sh
+      - name: Verify Shizuku state preservation
+        shell: sh
+        run: sh tests/shizuku-state.sh
       - name: Exercise az through the stable command path
         shell: bash
         run: |
           set -euo pipefail
           workspace="$RUNNER_TEMP/catfood-az"
           manifest="$RUNNER_TEMP/catfood-az.tsv"
-          printf '%s\n' 'az https://github.com/isomorphisms/az.git main none' > "$manifest"
+          printf '%s\n' 'az https://github.com/Ashtray-Archer/az.git main none' > "$manifest"
 
           CATFOOD_ROOT="$workspace" CATFOOD_DEPTH=1 CATFOOD_MANIFEST="$manifest" \
             sh ./update-tools.ysh
@@ -69,14 +72,12 @@ jobs:
           #!/bin/sh
           for arg in "$@"; do
             case "$arg" in
-              https://mock/token)
-                printf '%s\n' '{"access_token":"test-token","expires_in":3600}'
-                exit 0
-                ;;
-              https://mock/catalog/v1/searchItems)
-                cat <<'JSON'
-          {"searchResult":{"items":[{"asin":"B098765432","detailPageURL":"https://www.amazon.com/dp/B098765432?tag=macguyver03-20&linkCode=osi","itemInfo":{"title":{"displayValue":"A Small Useful Book"}},"offersV2":{"listings":[{"isBuyBoxWinner":true,"price":{"money":{"amount":12.34,"currency":"USD"}}}]}}]}}
-          JSON
+              'https://www.amazon.com/s?k=small%20useful%20book')
+                cat <<'HTML'
+          <html><body>
+          <div data-asin="B098765432"></div>
+          </body></html>
+          HTML
                 exit 0
                 ;;
             esac
@@ -87,16 +88,11 @@ jobs:
           chmod +x "$fake_bin/curl"
 
           export PATH="$fake_bin:$PATH"
-          export AZ_AMAZON_CREDENTIAL_ID=test-id
-          export AZ_AMAZON_CREDENTIAL_SECRET=test-secret
-          export AZ_AMAZON_CREDENTIAL_VERSION=3.1
-          export AZ_AMAZON_TOKEN_ENDPOINT=https://mock/token
-          export AZ_CREATORS_API_BASE=https://mock
 
           output=$(az search small useful book)
           printf '%s\n' "$output"
-          grep -F $'B098765432\t12.34\tUSD' <<<"$output"
-          grep -F 'A Small Useful Book' <<<"$output"
+          grep -F 'B098765432' <<<"$output"
+          grep -F 'https://www.amazon.com/dp/B098765432?tag=macguyver03-20' <<<"$output"
   fresh-ubuntu-workbench:
     runs-on: ubuntu-latest
     env:

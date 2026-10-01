@@ -13,6 +13,7 @@ printf '%s\n' \
     'two https://github.com/example/two.git feature/branch recursive' \
     'three https://github.com/example/three.git Idriç none' \
     'four https://github.com/example/four.git how-long+how-wide none' \
+    'five https://github.com/example/five.git main skip' \
     > "$good"
 CATFOOD_MANIFEST=$good sh "$checker" >/dev/null
 

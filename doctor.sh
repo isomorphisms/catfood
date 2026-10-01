@@ -123,13 +123,16 @@ while read -r name repository branch submodules || [ -n "${name:-}" ]; do
             fi
         fi
 
-        if [ "$has_submodules" -eq 1 ] && [ "$submodules" != recursive ]; then
+        if [ "$has_submodules" -eq 1 ] && [ "$submodules" = none ]; then
             printf '%-22s has untracked submodule policy\n' "$name" >&2
             failures=1
         elif [ "$has_submodules" -eq 0 ] && [ "$submodules" = recursive ]; then
             printf '%-22s marked recursive without .gitmodules\n' "$name" >&2
             failures=1
-        elif [ "$has_submodules" -eq 1 ]; then
+        elif [ "$has_submodules" -eq 0 ] && [ "$submodules" = skip ]; then
+            printf '%-22s marked skip without .gitmodules\n' "$name" >&2
+            failures=1
+        elif [ "$has_submodules" -eq 1 ] && [ "$submodules" = recursive ]; then
             submodule_status=$(git -C "$checkout" submodule status --recursive 2>/dev/null || true)
             if printf '%s\n' "$submodule_status" | grep '^[+U-]' >/dev/null 2>&1; then
                 printf '%-22s submodules are not at recorded commits\n' "$name" >&2

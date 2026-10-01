@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-ef715a074764-container-x86_64
+repository	isomorphisms/catfood
+branch	shizuku-state
+pr	94
+trigger_commit	ef715a0747641e1653b60a5b45429c6bb34d382c
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	container-x86_64
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit ef715a0747641e1653b60a5b45429c6bb34d382c on container-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh container
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable manifest-policy repair
+superseded_by	-
+follow_policy	exact

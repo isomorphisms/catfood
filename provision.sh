@@ -61,6 +61,10 @@ fi
 # before package managers, compiler bootstraps, repository feeds, and host builds.
 case $target in
     phone|tablet)
+        # Preserve the exact local Shizuku shell bundle before changing any
+        # Android runtime state.  Missing Shizuku is fine; an incomplete pair
+        # is not.
+        CATFOOD_ROOT=$workspace sh "$root/android/preserve-shizuku.sh" save
         if [ -n "${CATFOOD_CONFIG_DIR:-}" ]; then
             CATFOOD_CONFIG_DIR=$CATFOOD_CONFIG_DIR sh "$root/import-config.sh"
         fi

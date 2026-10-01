@@ -27,7 +27,9 @@ jobs:
           dash -n install-binaries.sh
           dash -n android/check.sh
           dash -n android/install.sh
+          dash -n android/preserve-shizuku.sh
           dash -n tests/android-delivery.sh
+          dash -n tests/shizuku-state.sh
           dash -n tests/runtime-binaries.sh
           dash -n tests/entrypoint.sh
       - name: Exercise Android delivery contracts
@@ -36,6 +38,9 @@ jobs:
       - name: Exercise pinned runtime binary contracts
         shell: sh
         run: sh tests/runtime-binaries.sh
+      - name: Exercise Shizuku state preservation
+        shell: sh
+        run: sh tests/shizuku-state.sh
       - name: Exercise cloud and generic Termux entrypoints
         shell: sh
         run: sh tests/entrypoint.sh
@@ -64,14 +69,12 @@ jobs:
           #!/bin/sh
           for arg in "$@"; do
             case "$arg" in
-              https://mock/token)
-                printf '%s\n' '{"access_token":"test-token","expires_in":3600}'
-                exit 0
-                ;;
-              https://mock/catalog/v1/searchItems)
-                cat <<'JSON'
-          {"searchResult":{"items":[{"asin":"B098765432","detailPageURL":"https://www.amazon.com/dp/B098765432?tag=macguyver03-20&linkCode=osi","itemInfo":{"title":{"displayValue":"A Small Useful Book"}},"offersV2":{"listings":[{"isBuyBoxWinner":true,"price":{"money":{"amount":12.34,"currency":"USD"}}}]}}]}}
-          JSON
+              'https://www.amazon.com/s?k=small%20useful%20book')
+                cat <<'HTML'
+          <html><body>
+          <div data-asin="B098765432"></div>
+          </body></html>
+          HTML
                 exit 0
                 ;;
             esac
@@ -82,13 +85,8 @@ jobs:
           chmod +x "$fake_bin/curl"
 
           export PATH="$fake_bin:$PATH"
-          export AZ_AMAZON_CREDENTIAL_ID=test-id
-          export AZ_AMAZON_CREDENTIAL_SECRET=test-secret
-          export AZ_AMAZON_CREDENTIAL_VERSION=3.1
-          export AZ_AMAZON_TOKEN_ENDPOINT=https://mock/token
-          export AZ_CREATORS_API_BASE=https://mock
 
           output=$(az search small useful book)
           printf '%s\n' "$output"
-          grep -F $'B098765432\t12.34\tUSD' <<<"$output"
-          grep -F 'A Small Useful Book' <<<"$output"
+          grep -F 'B098765432' <<<"$output"
+          grep -F 'https://www.amazon.com/dp/B098765432?tag=macguyver03-20' <<<"$output"

@@ -9,6 +9,33 @@ The device path is intentionally short:
 3. `check.sh` rejects inventory drift and invalid package/disposition relationships. `check.sh ready phone|tablet` is the manifest-level readiness gate; current gaps make it fail.
 4. `install.sh` installs explicitly declared commodity Termux dependencies, downloads and verifies published Cat Food packages, installs their runtime files, and reports unresolved inventory. It never clones sources, bootstraps a compiler/toolchain, or repairs a missing package by building locally.
 
+## Shizuku state
+
+Before the phone/tablet feed changes Android runtime state, Cat Food preserves the
+existing Shizuku shell bundle when it finds one. Discovery order is an explicit
+`CATFOOD_SHIZUKU_RISH_DIR`, then the normal MIRO A1 `~/opt/rish` plus sibling
+`rish_shizuku.dex`, then a PATH-discovered `rish` with a sibling DEX.
+`CATFOOD_ROOT` does not override that discovery order. Cat Food does not scan
+arbitrary storage.
+
+Snapshots live under
+`${CATFOOD_STATE_HOME:-${XDG_STATE_HOME:-$HOME/.local/state}/catfood}/shizuku`
+by default.  They are immutable, hash-named copies with a receipt recording the
+source path and SHA-256 values. Re-feeding an unchanged pair reuses its snapshot;
+a changed pair creates another one.
+
+The copy is specifically the exported rish bundle, not a claim to have backed
+up all Shizuku app data.  The manager package is recorded as
+`moe.shizuku.privileged.api`. Restore both files together with:
+
+```sh
+sh android/preserve-shizuku.sh restore
+```
+
+Restore makes `rish_shizuku.dex` non-writable, as required by Android 14
+`app_process`. Set `CATFOOD_SHIZUKU_RESTORE_DIR` or pass a directory as the
+second argument to restore elsewhere.
+
 `runtime`, `host`, `reference`, and `review` are distinct inventory roles. `review` means the role is not settled yet; it is explicit debt and blocks readiness. Runtime entries must be `package:<id>`, `packages:<id>,<id>`, or `gap:<reason>` independently for phone and tablet. Host/reference entries are `n/a`; this is classification, not evidence that an intended application was successfully delivered.
 
 ## Termux packages
