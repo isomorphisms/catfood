@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-2a1c459f7087-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	android/miro-phone-first-run
+pr	80
+trigger_commit	2a1c459f70872328911e993a24b356a6fd9081ec
+leader_platform	github-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit 2a1c459f70872328911e993a24b356a6fd9081ec on github-x86_64-artifact; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	superseded
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device
+superseded_by	catfood-32f776faa17a-github-x86_64-artifact
+follow_policy	exact

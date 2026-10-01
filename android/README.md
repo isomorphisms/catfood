@@ -46,3 +46,59 @@ A package receipt records exact package identity and one result/evidence pair fo
 The installer can prove a matching package digest and its own completed installation. A fresh successful download also proves that exact package URL was published at install time. It cannot prove the producer build, application launch, runtime behavior, emulator execution, or physical-device execution, so those remain `NOT_VERIFIED` until their own actions produce evidence. A package installed on one Android target does not accept the other target.
 
 Known gaps remain visible. Installing all currently published packages is not a whole-distribution readiness claim while `check.sh ready <target>` still fails.
+
+
+## MIRO phone first-run setup
+
+`android/miro-phone-setup.sh` is the repeatable cleanup/setup pass for MIRO
+phones. It defaults to a dry run and has three removal levels:
+`safe`, `attention`, and `aggressive`. Package policy is exact-ID only;
+unrecognized third-party packages are reported for review and are never guessed
+at or removed.
+
+From the Cat Food checkout in Termux:
+
+```sh
+sh android/miro-phone-setup.sh --dry-run --scope termux --level attention
+sh android/miro-phone-setup.sh --apply --scope termux --level attention
+```
+
+Add `--with-proot` when the phone should also carry a Debian Bookworm proot
+named `catfood-debian`. The Termux pass installs only the small runtime/user
+package set, feeds the existing ARMv7 Cat Food phone target when applicable,
+purges stray development packages, and removes reproducible build caches.
+
+The Termux pass also provisions Shizuku's `rish` pair. Its default source
+is now the exact bundle owned and built by Crawl Space from the pinned Shizuku
+source, not whichever Shizuku APK happens to be installed on the phone. Cat
+Food pins the exact Crawl Space commit and the SHA-256 values of both `rish`
+and `rish_shizuku.dex`; a hash mismatch fails closed. Device-local APK/shared
+export fallback is disabled by default and requires the explicit
+`CATFOOD_SHIZUKU_ALLOW_DEVICE_SOURCE=1` override. Removable SD storage is
+never consulted.
+
+The pair is installed in `~/opt`, upstream `PKG` is rewritten to
+`com.termux`, `rish_shizuku.dex` is made read-only for Android 14, and a
+stable `~/opt/bin/rish` command is installed. The pass then probes for shell
+UID 2000. Pairing and starting the Shizuku manager remains the one Android
+bootstrap prerequisite; if the service is stopped, the controlled files stay
+installed and runtime status is reported as pending.
+
+The Shizuku part can also be rerun by itself:
+
+```sh
+sh android/provision-shizuku-rish.sh --apply
+```
+
+Android package-manager and secure-setting mutation needs Android shell/root
+authority, not the ordinary Termux app UID. For a stock phone, run the same
+policy through ADB from a checkout:
+
+```sh
+adb shell 'sh -s -- --dry-run --scope android --level attention' < android/miro-phone-setup.sh
+adb shell 'sh -s -- --apply --scope android --level attention' < android/miro-phone-setup.sh
+```
+
+The AArch64 MIRO C67 may use the common Termux/proot setup, but this script does
+not mislabel it as Cat Food's AArch64 tablet target. Until Cat Food has a
+separate AArch64 phone runtime target, that product feed is reported as skipped.
