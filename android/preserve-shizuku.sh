@@ -40,11 +40,12 @@ pair_state() {
 
 find_source_dir() {
     if [ -n "${CATFOOD_SHIZUKU_RISH_DIR:-}" ]; then
-        pair_state "$CATFOOD_SHIZUKU_RISH_DIR"
-        status=$?
-        [ "$status" -eq 0 ] || return "$status"
-        printf '%s\n' "$CATFOOD_SHIZUKU_RISH_DIR"
-        return 0
+        if pair_state "$CATFOOD_SHIZUKU_RISH_DIR"; then
+            printf '%s\n' "$CATFOOD_SHIZUKU_RISH_DIR"
+            return 0
+        else
+            return $?
+        fi
     fi
 
     if pair_state "$workspace"; then
