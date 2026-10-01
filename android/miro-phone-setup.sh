@@ -1,6 +1,8 @@
 #!/bin/sh
 set -eu
 
+script_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." 2>/dev/null && pwd -P || true)
+
 red='\033[1;31m'
 green='\033[1;32m'
 cyan='\033[1;36m'
