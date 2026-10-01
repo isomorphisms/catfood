@@ -17,9 +17,9 @@ jobs:
           for script in \
             catfood bootstrap.sh check-manifest.sh update-tools.ysh \
             provision.sh install-binaries.sh activate.sh build-tools.sh refresh.sh doctor.sh import-config.sh \
-            android/check.sh android/install.sh android/install-local-clients.sh \
+            android/check.sh android/install.sh android/install-local-clients.sh android/preserve-shizuku.sh \
             tests/check-manifest.sh tests/entrypoint.sh tests/targets.sh tests/android-delivery.sh \
-            tests/android-local-clients.sh tests/runtime-binaries.sh
+            tests/android-local-clients.sh tests/runtime-binaries.sh tests/shizuku-state.sh
           do
             if [ -f "$script" ]; then
               dash -n "$script"
@@ -47,6 +47,9 @@ jobs:
       - name: Verify Android local client feed
         shell: sh
         run: sh tests/android-local-clients.sh
+      - name: Verify Shizuku state preservation
+        shell: sh
+        run: sh tests/shizuku-state.sh
       - name: Exercise az through the stable command path
         shell: bash
         run: |
