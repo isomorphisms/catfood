@@ -21,8 +21,8 @@ storage. The default is a dry run.
 
 Source order:
   1. CATFOOD_SHIZUKU_SOURCE_DIR, when explicitly set
-  2. assets from the installed Shizuku manager APK, when readable
-  3. Shizuku's shared-storage export under internal /storage/emulated/0
+  2. the exact Crawl Space-controlled Shizuku rish bundle pinned below
+  3. device-local APK/shared export only when CATFOOD_SHIZUKU_ALLOW_DEVICE_SOURCE=1
 
 Destination defaults to ~/opt with a ~/opt/bin/rish wrapper.
 EOF_USAGE
@@ -46,6 +46,12 @@ state_home=${CATFOOD_STATE_HOME:-${XDG_STATE_HOME:-"$HOME/.local/state"}/catfood
 state_dir=$state_home/shizuku
 manager_package=${CATFOOD_SHIZUKU_PACKAGE:-moe.shizuku.privileged.api}
 application_id=${CATFOOD_SHIZUKU_APPLICATION_ID:-com.termux}
+
+# Crawl Space is the source owner for the controlled Shizuku/rish bundle.
+controlled_ref=${CATFOOD_CRAWLSPACE_SHIZUKU_REF:-c874eef3b3322294e78dc5d69df9aa88616cced3}
+controlled_rish_sha=${CATFOOD_CRAWLSPACE_SHIZUKU_RISH_SHA256:-3b01b0cc72cfad779bff56efc29e6ad30aaa9b3969aa349cdf2aa5f876bf2066}
+controlled_dex_sha=${CATFOOD_CRAWLSPACE_SHIZUKU_DEX_SHA256:-4ce491f33b1c667ee9bc3ca86aa71c31439ab9cfcebde721d635e2a745434792}
+controlled_base=${CATFOOD_CRAWLSPACE_SHIZUKU_BASE_URL:-https://raw.githubusercontent.com/isomorphisms/crawlspace/$controlled_ref/runtime/shizuku-rish}
 
 case $application_id in
     ''|*[!A-Za-z0-9._-]*) fail "invalid Shizuku terminal application id: $application_id" ;;
@@ -127,6 +133,33 @@ extract_installed_assets() {
 source_kind=
 source_path=
 source_dir=
+
+download_controlled_source() {
+    curl_command=${CATFOOD_CURL:-}
+    if [ -z "$curl_command" ]; then
+        curl_command=$(command -v curl 2>/dev/null || true)
+    fi
+    [ -n "$curl_command" ] || return 1
+
+    make_temporary
+    controlled=$temporary/crawlspace-controlled
+    mkdir -p "$controlled"
+
+    "$curl_command" -fsSL "$controlled_base/rish" > "$controlled/rish" || return 1
+    "$curl_command" -fsSL "$controlled_base/rish_shizuku.dex" > "$controlled/rish_shizuku.dex" || return 1
+    [ -s "$controlled/rish" ] && [ -s "$controlled/rish_shizuku.dex" ] || return 1
+
+    actual_rish=$(sha256_file "$controlled/rish")
+    actual_dex=$(sha256_file "$controlled/rish_shizuku.dex")
+    [ "$actual_rish" = "$controlled_rish_sha" ] || fail "Crawl Space controlled rish hash mismatch at $controlled_ref"
+    [ "$actual_dex" = "$controlled_dex_sha" ] || fail "Crawl Space controlled rish_shizuku.dex hash mismatch at $controlled_ref"
+
+    source_kind=crawlspace-controlled
+    source_path=isomorphisms/crawlspace@$controlled_ref
+    source_dir=$controlled
+    return 0
+}
+
 choose_source() {
     if [ -n "${CATFOOD_SHIZUKU_SOURCE_DIR:-}" ]; then
         status=0
@@ -142,6 +175,15 @@ choose_source() {
             *) fail "Shizuku rish pair not found in CATFOOD_SHIZUKU_SOURCE_DIR=$CATFOOD_SHIZUKU_SOURCE_DIR" ;;
         esac
     fi
+
+    if [ "${CATFOOD_SHIZUKU_SKIP_CONTROLLED_SOURCE:-0}" != 1 ]; then
+        if download_controlled_source; then
+            return 0
+        fi
+        warn "Crawl Space controlled Shizuku bundle $controlled_ref is not reachable"
+    fi
+
+    [ "${CATFOOD_SHIZUKU_ALLOW_DEVICE_SOURCE:-0}" = 1 ] || return 1
 
     apk=$(installed_apk || true)
     if [ -n "$apk" ]; then
@@ -241,7 +283,7 @@ printf 'bin_dir=%s\n' "$bin_dir"
 printf 'removable_storage=not_required\n'
 
 if ! choose_source; then
-    warn 'No usable Shizuku rish source is visible yet. Cat Food checked the installed Shizuku APK and internal shared-storage export; removable SD storage is not involved.'
+    warn 'No controlled Shizuku rish source is available. Cat Food does not silently substitute the installed APK or shared export; set CATFOOD_SHIZUKU_ALLOW_DEVICE_SOURCE=1 only when that fallback is intentional. Removable SD storage is not involved.'
     printf 'shizuku_rish\tpending\tsource=unavailable\n'
     exit 0
 fi

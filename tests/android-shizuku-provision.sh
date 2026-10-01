@@ -25,6 +25,7 @@ printf '%s\n' dex-export-v1 > "$export_dir/rish_shizuku.dex"
 
 # Dry run discovers internal shared storage but does not change the install tree.
 dry=$(HOME="$home" CATFOOD_STATE_HOME="$state_dir" \
+    CATFOOD_SHIZUKU_SKIP_CONTROLLED_SOURCE=1 CATFOOD_SHIZUKU_ALLOW_DEVICE_SOURCE=1 \
     CATFOOD_SHIZUKU_SKIP_RUNTIME_PROBE=1 \
     sh "$root/android/provision-shizuku-rish.sh" --dry-run)
 printf '%s\n' "$dry" | grep -F 'source_kind=shared-export' >/dev/null
@@ -35,6 +36,7 @@ test ! -e "$install_dir/rish"
 # Apply copies the pair into private Termux storage, rewrites PKG for Termux,
 # makes the DEX read-only, installs a stable PATH wrapper, and writes a receipt.
 HOME="$home" CATFOOD_STATE_HOME="$state_dir" \
+    CATFOOD_SHIZUKU_SKIP_CONTROLLED_SOURCE=1 CATFOOD_SHIZUKU_ALLOW_DEVICE_SOURCE=1 \
     CATFOOD_SHIZUKU_SKIP_RUNTIME_PROBE=1 \
     sh "$root/android/provision-shizuku-rish.sh" --apply >/dev/null
 
@@ -50,6 +52,7 @@ grep -F "$(printf 'source_kind\tshared-export')" "$state_dir/shizuku/installed.t
 
 a=$(sha256sum "$install_dir/rish" "$install_dir/rish_shizuku.dex")
 HOME="$home" CATFOOD_STATE_HOME="$state_dir" \
+    CATFOOD_SHIZUKU_SKIP_CONTROLLED_SOURCE=1 CATFOOD_SHIZUKU_ALLOW_DEVICE_SOURCE=1 \
     CATFOOD_SHIZUKU_SKIP_RUNTIME_PROBE=1 \
     sh "$root/android/provision-shizuku-rish.sh" --apply >/dev/null
 b=$(sha256sum "$install_dir/rish" "$install_dir/rish_shizuku.dex")
@@ -89,6 +92,7 @@ EOF_UNZIP
 chmod 0755 "$fake_bin/pm" "$fake_bin/unzip"
 
 HOME="$apk_home" TMPDIR="$apk_home/.cache" CATFOOD_STATE_HOME="$apk_state" \
+    CATFOOD_SHIZUKU_SKIP_CONTROLLED_SOURCE=1 CATFOOD_SHIZUKU_ALLOW_DEVICE_SOURCE=1 \
     CATFOOD_PM="$fake_bin/pm" CATFOOD_UNZIP="$fake_bin/unzip" \
     CATFOOD_TEST_APK="$temporary/base.apk" CATFOOD_TEST_ASSETS="$apk_assets" \
     CATFOOD_SHIZUKU_SKIP_RUNTIME_PROBE=1 \
@@ -102,10 +106,47 @@ test -z "$(find "$apk_home/.cache" -mindepth 1 -maxdepth 1 -name 'catfood-shizuk
 # A missing source is a visible pending state, not a removable-SD diagnostic.
 empty_home=$temporary/empty-home
 mkdir -p "$empty_home"
-missing=$(HOME="$empty_home" CATFOOD_PM=/bin/false CATFOOD_UNZIP=/bin/false \
+missing=$(HOME="$empty_home" CATFOOD_SHIZUKU_SKIP_CONTROLLED_SOURCE=1 CATFOOD_SHIZUKU_ALLOW_DEVICE_SOURCE=1 CATFOOD_PM=/bin/false CATFOOD_UNZIP=/bin/false \
     sh "$root/android/provision-shizuku-rish.sh" --apply 2>&1)
 printf '%s\n' "$missing" | grep -F "$(printf 'shizuku_rish\tpending\tsource=unavailable')" >/dev/null
 printf '%s\n' "$missing" | grep -F 'removable SD storage is not involved' >/dev/null
+
+# Default provisioning prefers the exact Crawl Space-controlled bundle and
+# verifies its hashes before copying anything into Termux-private storage.
+controlled_home=$temporary/controlled-home
+controlled_state=$temporary/controlled-state
+controlled_assets=$temporary/controlled-assets
+controlled_bin=$temporary/controlled-bin
+mkdir -p "$controlled_home/.cache" "$controlled_assets" "$controlled_bin"
+stock_rish > "$controlled_assets/rish"
+printf '%s\n' dex-controlled-v1 > "$controlled_assets/rish_shizuku.dex"
+controlled_rish_sha=$(sha256sum "$controlled_assets/rish" | awk '{print $1}')
+controlled_dex_sha=$(sha256sum "$controlled_assets/rish_shizuku.dex" | awk '{print $1}')
+cat > "$controlled_bin/curl" <<'EOF_CURL'
+#!/bin/sh
+for arg in "$@"; do url=$arg; done
+case $url in
+    */rish) cat "${CATFOOD_TEST_CONTROLLED_ASSETS:?}/rish" ;;
+    */rish_shizuku.dex) cat "${CATFOOD_TEST_CONTROLLED_ASSETS:?}/rish_shizuku.dex" ;;
+    *) exit 22 ;;
+esac
+EOF_CURL
+chmod 0755 "$controlled_bin/curl"
+
+HOME="$controlled_home" TMPDIR="$controlled_home/.cache" CATFOOD_STATE_HOME="$controlled_state" \
+    CATFOOD_CURL="$controlled_bin/curl" \
+    CATFOOD_TEST_CONTROLLED_ASSETS="$controlled_assets" \
+    CATFOOD_CRAWLSPACE_SHIZUKU_REF=test-controlled-ref \
+    CATFOOD_CRAWLSPACE_SHIZUKU_BASE_URL=https://controlled.invalid/shizuku-rish \
+    CATFOOD_CRAWLSPACE_SHIZUKU_RISH_SHA256="$controlled_rish_sha" \
+    CATFOOD_CRAWLSPACE_SHIZUKU_DEX_SHA256="$controlled_dex_sha" \
+    CATFOOD_SHIZUKU_SKIP_RUNTIME_PROBE=1 \
+    sh "$root/android/provision-shizuku-rish.sh" --apply > "$temporary/controlled.out"
+grep -F 'source_kind=crawlspace-controlled' "$temporary/controlled.out" >/dev/null
+grep -F 'source=isomorphisms/crawlspace@test-controlled-ref' "$temporary/controlled.out" >/dev/null
+grep -F 'RISH_APPLICATION_ID="com.termux"' "$controlled_home/opt/rish" >/dev/null
+grep -Fqx 'dex-controlled-v1' "$controlled_home/opt/rish_shizuku.dex"
+grep -F "$(printf 'source_kind\tcrawlspace-controlled')" "$controlled_state/shizuku/installed.tsv" >/dev/null
 
 # A half-export is treated as corrupt state rather than silently mixed with
 # another source.

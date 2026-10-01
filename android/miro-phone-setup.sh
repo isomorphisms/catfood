@@ -460,7 +460,7 @@ run_termux_phase() {
     command -v dpkg-query >/dev/null 2>&1 || fail 'Termux dpkg-query command is unavailable'
 
     section 'Termux runtime setup'
-    base_packages='git ca-certificates openssh tmux vim unzip'
+    base_packages='git ca-certificates openssh tmux vim unzip curl'
     if [ "$with_proot" -eq 1 ]; then
         base_packages="$base_packages proot-distro"
     fi
