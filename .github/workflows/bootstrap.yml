@@ -27,7 +27,9 @@ jobs:
           dash -n install-binaries.sh
           dash -n android/check.sh
           dash -n android/install.sh
+          dash -n android/preserve-shizuku.sh
           dash -n tests/android-delivery.sh
+          dash -n tests/shizuku-state.sh
           dash -n tests/runtime-binaries.sh
           dash -n tests/entrypoint.sh
       - name: Exercise Android delivery contracts
@@ -36,6 +38,9 @@ jobs:
       - name: Exercise pinned runtime binary contracts
         shell: sh
         run: sh tests/runtime-binaries.sh
+      - name: Exercise Shizuku state preservation
+        shell: sh
+        run: sh tests/shizuku-state.sh
       - name: Exercise cloud and generic Termux entrypoints
         shell: sh
         run: sh tests/entrypoint.sh
