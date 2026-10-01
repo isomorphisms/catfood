@@ -1,9 +1,9 @@
 schema	aici-follower-job-v1
-job_id	catfood-2a1c459f7087-tablet
+job_id	catfood-32f776faa17a-tablet
 repository	isomorphisms/catfood
 branch	android/miro-phone-first-run
 pr	80
-trigger_commit	2a1c459f70872328911e993a24b356a6fd9081ec
+trigger_commit	32f776faa17ab7e95b867aa0a33ece38b47c7cda
 leader_platform	github-x86_64
 leader_arch	x86_64
 leader_evidence	-
@@ -12,14 +12,14 @@ artifact_sha256	-
 follower_platform	tablet
 follower_arch	aarch64
 required	yes
-action	follower target for Cat Food commit 2a1c459f70872328911e993a24b356a6fd9081ec on tablet; fetch that exact commit, run the named acceptance action, and record a receipt.
+action	follower target for Cat Food commit 32f776faa17ab7e95b867aa0a33ece38b47c7cda on tablet; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	physical-device
 acceptance_action	./catfood && sh android/check.sh gaps tablet
-state	superseded
+state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	android-artifact-and-device
-superseded_by	catfood-32f776faa17a-tablet
+superseded_by	-
 follow_policy	exact
