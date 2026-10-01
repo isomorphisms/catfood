@@ -10,7 +10,7 @@ irk https://github.com/dilapidated-shed/irk.git main none
 ithon https://github.com/dilapidated-shed/ithon.git main none
 ike https://github.com/dilapidated-shed/ike.git main none
 icky https://github.com/dilapidated-shed/icky.git main none
-ick https://github.com/dilapidated-shed/ick.git main none
+ick https://github.com/dilapidated-shed/ick.git main recursive
 Idric https://github.com/isomorphisms/Idric.git Idriç none
 Idric-Net https://github.com/isomorphisms/Idric-Net.git net none
 idric-cli https://github.com/isomorphisms/idric-cli.git cli none
@@ -33,7 +33,7 @@ chawan https://github.com/isomorphisms/chawan.git master recursive
 gopeed https://github.com/isomorphisms/gopeed.git main none
 manimi https://github.com/isomorphismes/manimi.git master none
 wegert https://github.com/isomorphismes/wegert.git main recursive
-yt-shorts https://github.com/isomorphisms/yt-shorts.git main none
+yt-shorts https://github.com/isomorphismes/yt-shorts.git main recursive
 ai-ci https://github.com/isomorphisms/ai-ci.git main none
 computer-science https://github.com/walnut-burgundy/computer-science.git how-long+how-wide recursive
 utilities-android-phone-user https://github.com/isomorphisms/utilities-android-phone-user.git main none
