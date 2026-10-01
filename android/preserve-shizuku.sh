@@ -48,8 +48,9 @@ find_source_dir() {
         fi
     fi
 
-    if pair_state "$workspace"; then
-        printf '%s\n' "$workspace"
+    established_rish_dir=$HOME/opt
+    if pair_state "$established_rish_dir"; then
+        printf '%s\n' "$established_rish_dir"
         return 0
     else
         status=$?
@@ -64,16 +65,6 @@ find_source_dir() {
         esac
         if pair_state "$rish_dir"; then
             CDPATH='' cd -- "$rish_dir" && pwd -P
-            return 0
-        else
-            status=$?
-            [ "$status" -ne 2 ] || return 2
-        fi
-    fi
-
-    if [ "$workspace" != "$HOME" ]; then
-        if pair_state "$HOME"; then
-            printf '%s\n' "$HOME"
             return 0
         else
             status=$?
