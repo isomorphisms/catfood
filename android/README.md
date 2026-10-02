@@ -39,6 +39,14 @@ an explicit gap rather than a device prerequisite or a silent fallback.
 
 Cat Food may expose a control-plane helper from its own checked-out version after that helper's interpreter has been delivered. The current example is `gopeed` with aliases `gdl` and `go_down_load`, installed only after YSH is available. This does not turn the separately installed Gopeed Android app into a Cat Food package and does not satisfy the `gopeed` runtime gap in `delivery.tsv`.
 
+## Device profiles
+
+Device-specific facts do not redefine Cat Food's ABI targets. They document how
+a physical product maps onto those targets after an actual runtime receipt.
+
+- [MIRO C67 target note](devices/miro-c67.md) — Helio G36/Cortex-A53/GE8320
+  model facts are known; physical Android ABI mapping remains unverified.
+
 ## Evidence boundaries
 
 A package receipt records exact package identity and one result/evidence pair for each of `build`, `package`, `publication`, `installation`, `launch`, `runtime`, `emulator`, and `physical_device`. Results use the shared `PASS`, `FAIL`, `SKIP`, and `NOT_VERIFIED` vocabulary. Every stage is mandatory, `NOT_VERIFIED` carries no invented evidence, and a later stage cannot pass merely because an earlier stage passed. Validate a receipt with `sh android/check.sh receipt RECEIPT`.
