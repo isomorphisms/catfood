@@ -34,6 +34,7 @@ authorization_scope=local-bearer-token
 capability=crawlspace.discovery.v1
 capability=crawlspace.run.absolute-path.v1
 capability=crawlspace.runtime-identity.v1
+capability=crawlspace.run-bounded.v1
 EOF_DISCOVERY
         else
             printf '%s\n' 'status=unavailable' 'reason=daemon-absent'
@@ -111,7 +112,7 @@ CATFOOD_ROOT="$workspace" \
 CATFOOD_ADB="$fake_bin/adb" \
 CATFOOD_TEST_ADB_LOG="$adb_log" \
 CATFOOD_TEST_DAEMON_STATE="$daemon_state" \
-CATFOOD_TEST_EXPECTED_BUILD_ID="94f475dcad4f1661c5a638e9d24fe8fb22b3a279" \
+CATFOOD_TEST_EXPECTED_BUILD_ID="469a367555c4487c31e63395f1b83709a356849e" \
 CATFOOD_TEST_FORBIDDEN_LOG="$forbidden_log" \
     sh "$root/android/bootstrap-crawlspace.sh" >/dev/null
 
@@ -128,7 +129,7 @@ CATFOOD_ROOT="$workspace" \
 CATFOOD_ADB="$fake_bin/adb" \
 CATFOOD_TEST_ADB_LOG="$adb_log" \
 CATFOOD_TEST_DAEMON_STATE="$daemon_state" \
-CATFOOD_TEST_EXPECTED_BUILD_ID="94f475dcad4f1661c5a638e9d24fe8fb22b3a279" \
+CATFOOD_TEST_EXPECTED_BUILD_ID="469a367555c4487c31e63395f1b83709a356849e" \
 CATFOOD_TEST_FORBIDDEN_LOG="$forbidden_log" \
     sh "$root/android/bootstrap-crawlspace.sh" >/dev/null
 test ! -s "$adb_log"
@@ -172,5 +173,11 @@ mkdir -p "$tablet_workspace/bin"
 CATFOOD_ROOT="$tablet_workspace" CATFOOD_TARGET=tablet \
     sh "$root/android/install-crawlspace-bootstrap.sh" >/dev/null
 test ! -e "$tablet_workspace/bin/crawlspace-bootstrap"
+
+grep -F '469a367555c4487c31e63395f1b83709a356849e' "$root/android/packages.tsv" | grep -F 'crawlspace-phone' >/dev/null
+grep -F '41980c4b3dd718de7c80b3cb768defb3d671710558a5738eda2224dccf04f228' "$root/android/packages.tsv" >/dev/null
+grep -F '37490a8a8487c094ba709654050cc061373d2d4584ec4598ef6ae2bc46a1f46b' "$root/android/packages.tsv" >/dev/null
+grep -F 'crawlspace-longview-check-phone' "$root/android/packages.tsv" | grep -F '801c755ffbe14cacdb67ae6a8aa3fb6aede66967755fb3dd573c4785e81a80c8' >/dev/null
+grep -F 'packages:crawlspace-phone,crawlspace-longview-check-phone' "$root/android/delivery.tsv" >/dev/null
 
 printf '%s\n' 'Cat Food Crawl Space runtime-only delivery and bootstrap contract passes'

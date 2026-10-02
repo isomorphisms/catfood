@@ -9,7 +9,7 @@ client=${CATFOOD_CRAWLSPACE:-"$workspace/bin/crawlspace"}
 adb_command=${CATFOOD_ADB:-adb}
 remote=${CATFOOD_CRAWLSPACE_REMOTE:-/data/local/tmp/crawlspace}
 port=${CRAWLSPACE_PORT:-49317}
-expected_build_id=${CATFOOD_CRAWLSPACE_BUILD_ID:-94f475dcad4f1661c5a638e9d24fe8fb22b3a279}
+expected_build_id=${CATFOOD_CRAWLSPACE_BUILD_ID:-469a367555c4487c31e63395f1b83709a356849e}
 optional=0
 
 case ${1:-} in
@@ -97,6 +97,7 @@ crawlspace_ready() {
     line_present "$discovery" 'status=ready' || return 1
     line_present "$discovery" 'daemon_uid=2000' || return 1
     line_present "$discovery" 'capability=crawlspace.runtime-identity.v1' || return 1
+    line_present "$discovery" 'capability=crawlspace.run-bounded.v1' || return 1
 
     identity=$("$client" identify 2>/dev/null) || return 1
     line_present "$identity" 'status=ready' || return 1
