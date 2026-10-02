@@ -70,6 +70,8 @@ case $target in
         if [ -z "${CATFOOD_ANDROID_PACKAGES:-}" ] && \
            [ -z "${CATFOOD_ANDROID_DELIVERY:-}" ] && \
            [ -z "${CATFOOD_TOOLS:-}" ]; then
+            CATFOOD_ROOT=$workspace CATFOOD_TARGET=$target \
+                sh "$root/android/install-crawlspace-bootstrap.sh"
             CATFOOD_ROOT=$workspace sh "$root/android/install-local-clients.sh"
             CATFOOD_ROOT=$workspace sh "$root/android/install-csvkit.sh"
         fi
