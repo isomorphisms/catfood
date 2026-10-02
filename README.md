@@ -27,6 +27,8 @@ Phone and tablet use the same repository-side delivery architecture under [`andr
 
 `android/packages.tsv` contains only published packages. Rows carry exact source and packaging commits, target ABI, URL, SHA-256, command entrypoints, and dependency declarations. A missing deliverable is not represented by a fake or `PENDING` package row; it remains a gap in `android/delivery.tsv`.
 
+Release packages must contain stripped native runtime payloads. Strip releasable ELF executables and shared objects of debug and non-runtime symbol data before APK/archive assembly; keep unstripped binaries or symbol files only as separate debugging artifacts when needed. Release evidence should record the native payload size before and after stripping and the final package size so an accidentally unstripped artifact cannot silently become the shipped package.
+
 The device path is download → verify → install. It does not clone project repositories, install a compiler toolchain, bootstrap a compiler, or fall back to a local source build when a package is absent. The tablet's additional storage does not change this boundary.
 
 For programs delivered through ART, the generic `dex-jni` package mode installs direct DEX plus the declared JNI/NDK library and invokes `/system/bin/app_process`. The package receipt must match the target, ABI, source commit, and packaging commit. That mode describes packaging and runtime representation, not a separate build-toolchain exemption.
