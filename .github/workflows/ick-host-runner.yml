@@ -72,8 +72,8 @@ jobs:
               --disable-libgomp \
               --disable-libquadmath \
               --disable-libvtv
-            make -j4 all-gcc all-target-libgcc
-            make install-gcc install-target-libgcc
+            make -j4 all-gcc all-target-libgcc all-target-libatomic
+            make install-gcc install-target-libgcc install-target-libatomic
           )
 
           ick="$stage_dir/bin/gcc"
@@ -102,9 +102,24 @@ jobs:
           esac
           test -f "$ick_libgcc"
 
+          ick_libgcc_asneeded=$("$ick" -print-file-name=libgcc_s_asneeded.so)
+          ick_libatomic_asneeded=$("$ick" -print-file-name=libatomic_asneeded.so)
+          for runtime in "$ick_libgcc_asneeded" "$ick_libatomic_asneeded"; do
+            case "$runtime" in
+              "$stage_dir"/*) ;;
+              *)
+                printf 'ICK runtime escaped the staged installation: %s\n' "$runtime" >&2
+                exit 1
+                ;;
+            esac
+            test -f "$runtime"
+          done
+
           printf 'ICK=%s\n' "$ick" >> "$GITHUB_ENV"
           printf 'ICK_STAGE=%s\n' "$stage_dir" >> "$GITHUB_ENV"
           printf 'ICK_LIBGCC=%s\n' "$ick_libgcc" >> "$GITHUB_ENV"
+          printf 'ICK_LIBGCC_ASNEEDED=%s\n' "$ick_libgcc_asneeded" >> "$GITHUB_ENV"
+          printf 'ICK_LIBATOMIC_ASNEEDED=%s\n' "$ick_libatomic_asneeded" >> "$GITHUB_ENV"
 
       - name: Compile and run Cat Food hosted probe with ICK
         shell: sh
@@ -133,6 +148,8 @@ jobs:
 
           probe_sha=$(sha256sum "$output" | awk '{print $1}')
           ick_libgcc_sha=$(sha256sum "$ICK_LIBGCC" | awk '{print $1}')
+          ick_libgcc_asneeded_sha=$(sha256sum "$ICK_LIBGCC_ASNEEDED" | awk '{print $1}')
+          ick_libatomic_asneeded_sha=$(sha256sum "$ICK_LIBATOMIC_ASNEEDED" | awk '{print $1}')
           catfood_commit=$(git rev-parse HEAD)
           cc1=$("$ICK" -print-prog-name=cc1)
 
@@ -146,7 +163,12 @@ jobs:
             printf 'cc1\t%s\n' "$cc1"
             printf 'runtime_libgcc\tick:%s\n' "$ICK_LIBGCC"
             printf 'runtime_libgcc_sha256\t%s\n' "$ick_libgcc_sha"
+            printf 'runtime_libgcc_asneeded\tick:%s\n' "$ICK_LIBGCC_ASNEEDED"
+            printf 'runtime_libgcc_asneeded_sha256\t%s\n' "$ick_libgcc_asneeded_sha"
+            printf 'runtime_libatomic_asneeded\tick:%s\n' "$ICK_LIBATOMIC_ASNEEDED"
+            printf 'runtime_libatomic_asneeded_sha256\t%s\n' "$ick_libatomic_asneeded_sha"
             printf 'ick_own_libgcc\tPASS\n'
+            printf 'ick_own_libatomic\tPASS\n'
             printf 'probe_sha256\t%s\n' "$probe_sha"
             printf 'compile\tPASS\n'
             printf 'runtime\tPASS\n'
