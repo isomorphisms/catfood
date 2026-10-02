@@ -27,12 +27,18 @@ jobs:
           dash -n install-binaries.sh
           dash -n android/check.sh
           dash -n android/install.sh
+          dash -n android/bootstrap-crawlspace.sh
+          dash -n android/install-crawlspace-bootstrap.sh
           dash -n tests/android-delivery.sh
+          dash -n tests/android-crawlspace.sh
           dash -n tests/runtime-binaries.sh
           dash -n tests/entrypoint.sh
       - name: Exercise Android delivery contracts
         shell: sh
         run: sh tests/android-delivery.sh
+      - name: Exercise Crawl Space Android runtime contract
+        shell: sh
+        run: sh tests/android-crawlspace.sh
       - name: Exercise pinned runtime binary contracts
         shell: sh
         run: sh tests/runtime-binaries.sh

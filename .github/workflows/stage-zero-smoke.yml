@@ -17,9 +17,9 @@ jobs:
           for script in \
             catfood bootstrap.sh check-manifest.sh update-tools.ysh \
             provision.sh install-binaries.sh activate.sh build-tools.sh refresh.sh doctor.sh import-config.sh \
-            android/check.sh android/install.sh android/install-local-clients.sh \
+            android/check.sh android/install.sh android/install-local-clients.sh android/bootstrap-crawlspace.sh android/install-crawlspace-bootstrap.sh \
             tests/check-manifest.sh tests/entrypoint.sh tests/targets.sh tests/android-delivery.sh \
-            tests/android-local-clients.sh tests/runtime-binaries.sh
+            tests/android-local-clients.sh tests/android-crawlspace.sh tests/runtime-binaries.sh
           do
             if [ -f "$script" ]; then
               dash -n "$script"
@@ -41,6 +41,9 @@ jobs:
       - name: Verify whole-inventory Android delivery contracts
         shell: sh
         run: sh tests/android-delivery.sh
+      - name: Verify Crawl Space Android runtime contract
+        shell: sh
+        run: sh tests/android-crawlspace.sh
       - name: Verify pinned runtime binary contracts
         shell: sh
         run: sh tests/runtime-binaries.sh
