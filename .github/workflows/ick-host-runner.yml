@@ -17,7 +17,7 @@ permissions:
   contents: read
 
 env:
-  ICK_REVISION: 9f5c10a7c97ce297568190a48aaac77f450e838e
+  ICK_REVISION: ea034a574097e81d1027660b39c3e1c185d11b80
 
 jobs:
   hosted-linux-x86-64:
@@ -72,8 +72,8 @@ jobs:
               --disable-libgomp \
               --disable-libquadmath \
               --disable-libvtv
-            make -j4 all-gcc
-            make install-gcc
+            make -j4 all-gcc all-target-libgcc
+            make install-gcc install-target-libgcc
           )
 
           ick="$stage_dir/bin/gcc"
@@ -92,14 +92,19 @@ jobs:
               ;;
           esac
 
-          host_libgcc=$(/usr/bin/gcc -print-libgcc-file-name)
-          test -f "$host_libgcc"
-          host_libgcc_dir=$(dirname "$host_libgcc")
+          ick_libgcc=$("$ick" -print-libgcc-file-name)
+          case "$ick_libgcc" in
+            "$stage_dir"/*) ;;
+            *)
+              printf 'ICK libgcc escaped the staged installation: %s\n' "$ick_libgcc" >&2
+              exit 1
+              ;;
+          esac
+          test -f "$ick_libgcc"
 
           printf 'ICK=%s\n' "$ick" >> "$GITHUB_ENV"
           printf 'ICK_STAGE=%s\n' "$stage_dir" >> "$GITHUB_ENV"
-          printf 'HOST_LIBGCC=%s\n' "$host_libgcc" >> "$GITHUB_ENV"
-          printf 'HOST_LIBGCC_DIR=%s\n' "$host_libgcc_dir" >> "$GITHUB_ENV"
+          printf 'ICK_LIBGCC=%s\n' "$ick_libgcc" >> "$GITHUB_ENV"
 
       - name: Compile and run Cat Food hosted probe with ICK
         shell: sh
@@ -108,8 +113,7 @@ jobs:
           output="$RUNNER_TEMP/catfood-ick-host-probe"
 
           cc1=$("$ICK" -print-prog-name=cc1)
-          if ! LIBRARY_PATH="$HOST_LIBGCC_DIR${LIBRARY_PATH:+:$LIBRARY_PATH}" \
-            "$ICK" -v -std=c17 -Wall -Wextra -Werror -pedantic -O2 \
+          if ! "$ICK" -v -std=c17 -Wall -Wextra -Werror -pedantic -O2 \
             ci/ick-host-probe.c -o "$output" \
             2> "$RUNNER_TEMP/ick-compile.trace"; then
             cat "$RUNNER_TEMP/ick-compile.trace" >&2
@@ -128,7 +132,7 @@ jobs:
             "$RUNNER_TEMP/probe.out"
 
           probe_sha=$(sha256sum "$output" | awk '{print $1}')
-          host_libgcc_sha=$(sha256sum "$HOST_LIBGCC" | awk '{print $1}')
+          ick_libgcc_sha=$(sha256sum "$ICK_LIBGCC" | awk '{print $1}')
           catfood_commit=$(git rev-parse HEAD)
           cc1=$("$ICK" -print-prog-name=cc1)
 
@@ -140,9 +144,9 @@ jobs:
             printf 'toolchain\tick\n'
             printf 'compiler\t%s\n' "$ICK"
             printf 'cc1\t%s\n' "$cc1"
-            printf 'runtime_libgcc\thost-runner:%s\n' "$HOST_LIBGCC"
-            printf 'runtime_libgcc_sha256\t%s\n' "$host_libgcc_sha"
-            printf 'ick_own_libgcc\tFAIL:issue-38-complex-ICE\n'
+            printf 'runtime_libgcc\tick:%s\n' "$ICK_LIBGCC"
+            printf 'runtime_libgcc_sha256\t%s\n' "$ick_libgcc_sha"
+            printf 'ick_own_libgcc\tPASS\n'
             printf 'probe_sha256\t%s\n' "$probe_sha"
             printf 'compile\tPASS\n'
             printf 'runtime\tPASS\n'
