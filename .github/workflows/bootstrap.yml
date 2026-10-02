@@ -74,9 +74,17 @@ jobs:
                 printf '%s\n' '{"access_token":"test-token","expires_in":3600}'
                 exit 0
                 ;;
-              https://mock/catalog/v1/searchItems)
+              'https://www.amazon.com/s?k=small%20useful%20book')
+                cat <<'HTML'
+          <html><body>
+          <div data-asin="B098765432" data-component-type="s-search-result"></div>
+          </body></html>
+          HTML
+                exit 0
+                ;;
+              https://mock/catalog/v1/getItems)
                 cat <<'JSON'
-          {"searchResult":{"items":[{"asin":"B098765432","detailPageURL":"https://www.amazon.com/dp/B098765432?tag=macguyver03-20&linkCode=osi","itemInfo":{"title":{"displayValue":"A Small Useful Book"}},"offersV2":{"listings":[{"isBuyBoxWinner":true,"price":{"money":{"amount":12.34,"currency":"USD"}}}]}}]}}
+          {"itemsResult":{"items":[{"asin":"B098765432","detailPageURL":"https://www.amazon.com/dp/B098765432?tag=macguyver03-20","offersV2":{"listings":[{"price":{"money":{"amount":12.34,"currency":"USD"}}}]}}]}}
           JSON
                 exit 0
                 ;;
@@ -94,7 +102,10 @@ jobs:
           export AZ_AMAZON_TOKEN_ENDPOINT=https://mock/token
           export AZ_CREATORS_API_BASE=https://mock
 
-          output=$(az search small useful book)
-          printf '%s\n' "$output"
-          grep -F $'B098765432\t12.34\tUSD' <<<"$output"
-          grep -F 'A Small Useful Book' <<<"$output"
+          search_output=$(az search small useful book)
+          printf '%s\n' "$search_output"
+          printf '%s\n' "$search_output" | awk -F '\t' '$1 == "B098765432" && $2 == "" && $3 == "" && $4 == "https://www.amazon.com/dp/B098765432?tag=macguyver03-20" { found=1 } END { exit !found }'
+
+          price_output=$(az price B098765432)
+          printf '%s\n' "$price_output"
+          printf '%s\n' "$price_output" | awk -F '\t' '$2 == "B098765432" && $3 == "12.34" && $4 == "USD" && $5 == "https://www.amazon.com/dp/B098765432?tag=macguyver03-20" { found=1 } END { exit !found }'
