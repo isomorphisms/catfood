@@ -108,10 +108,13 @@ jobs:
           output="$RUNNER_TEMP/catfood-ick-host-probe"
 
           cc1=$("$ICK" -print-prog-name=cc1)
-          LIBRARY_PATH="$HOST_LIBGCC_DIR${LIBRARY_PATH:+:$LIBRARY_PATH}" \
+          if ! LIBRARY_PATH="$HOST_LIBGCC_DIR${LIBRARY_PATH:+:$LIBRARY_PATH}" \
             "$ICK" -v -std=c17 -Wall -Wextra -Werror -pedantic -O2 \
             ci/ick-host-probe.c -o "$output" \
-            2> "$RUNNER_TEMP/ick-compile.trace"
+            2> "$RUNNER_TEMP/ick-compile.trace"; then
+            cat "$RUNNER_TEMP/ick-compile.trace" >&2
+            exit 1
+          fi
 
           grep -F "$cc1" "$RUNNER_TEMP/ick-compile.trace"
 
