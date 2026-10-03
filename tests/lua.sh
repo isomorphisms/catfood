@@ -16,7 +16,7 @@ make_fake_runtime() {
 #!/bin/sh
 case ${1:-} in
     -v)
-        printf '%s\\n' 'Lua @VERSION@' >&2
+        printf '%s\n' 'Lua @VERSION@' >&2
         ;;
     -e)
         printf '%s' 'catfood-lua=42'
@@ -62,7 +62,7 @@ directory=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 cat > "$directory/lua5.5" <<'EOF_LUA'
 #!/bin/sh
 case ${1:-} in
-    -v) printf '%s\\n' 'Lua 5.5.1' >&2 ;;
+    -v) printf '%s\n' 'Lua 5.5.1' >&2 ;;
     -e) printf '%s' 'catfood-lua=42' ;;
     *) exit 0 ;;
 esac
