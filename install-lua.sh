@@ -82,22 +82,19 @@ printf '%s\n' 'local answer = 6 * 7; assert(answer == 42)' > "$smoke"
 rm -f "$smoke"
 trap - EXIT HUP INT TERM
 
-safe_link() {
-    source=$1
-    destination=$2
-    if [ -e "$destination" ] || [ -L "$destination" ]; then
-        if [ -L "$destination" ]; then
-            rm -f "$destination"
-        else
-            printf '%s exists and is not a Cat Food symlink; leaving it alone\n' "$destination" >&2
-            exit 4
-        fi
+check_link_destination() {
+    destination=$1
+    if [ -e "$destination" ] && [ ! -L "$destination" ]; then
+        printf '%s exists and is not a Cat Food symlink; leaving it alone\n' "$destination" >&2
+        exit 4
     fi
-    ln -s "$source" "$destination"
 }
 
-safe_link "$lua_command" "$bin/lua"
-safe_link "$luac_command" "$bin/luac"
+check_link_destination "$bin/lua"
+check_link_destination "$bin/luac"
+rm -f "$bin/lua" "$bin/luac"
+ln -s "$lua_command" "$bin/lua"
+ln -s "$luac_command" "$bin/luac"
 
 version=$("$lua_command" -v 2>&1 | sed -n '1p')
 receipt=$receipts/lua.tsv
