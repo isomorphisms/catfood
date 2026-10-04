@@ -15,10 +15,10 @@ required	yes
 action	leader target for Cat Food commit 851a2d221abfb97feb700b26c032e164540fedfc on github-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh github
-state	pending
-last_attempt_commit	-
+state	accepted
+last_attempt_commit	851a2d221abfb97feb700b26c032e164540fedfc
 blocker	-
-evidence	-
+evidence	catfood-851a2d221abf-github-x86_64.tsv
 depends_on	-
 reason	github-only
 superseded_by	-
