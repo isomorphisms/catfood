@@ -18,8 +18,9 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: isomorphisms/ai-ci
-          ref: c24fe6babf61c7e3faf326fed88094f906bc7643
+          ref: 237b3be5e10d15c51b9862b548c5c845e37f239d
           path: _ai-ci
+          persist-credentials: false
       - name: Verify Catfood linkage contracts
         shell: sh
         run: |

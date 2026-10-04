@@ -2,6 +2,7 @@
 set -eu
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+. "$root/ci/repositories.sh"
 
 usage() {
     cat <<'EOF'
@@ -61,7 +62,7 @@ show_inventory_help() {
         cat <<'EOF'
 # grease
 
-Repository: https://github.com/isomorphisms/grease.git
+Repository: https://github.com/dilapidated-shed/grease.git
 Branch: main
 Canonical workbench checkout: $CATFOOD_ROOT/grease
 Local presence: use ./catfood where grease; do not assume the checkout exists.
@@ -159,7 +160,7 @@ repository_matches() (
     origin=$(clean_git -C "$physical" config --local --no-includes --get-all remote.origin.url 2>/dev/null) || return 1
     [ -n "$origin" ] || return 1
 
-    [ "$(normalize_repository_url "$origin")" = "$(normalize_repository_url "$expected")" ]
+    same_repository_url "$origin" "$expected"
 )
 
 lookup_workspace() {
@@ -209,7 +210,7 @@ lookup_tool() {
             ;;
         grease)
             lookup_name=grease
-            lookup_repository=https://github.com/isomorphisms/grease.git
+            lookup_repository=https://github.com/dilapidated-shed/grease.git
             return 0
             ;;
     esac

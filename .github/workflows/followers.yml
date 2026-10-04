@@ -24,6 +24,8 @@ jobs:
       - name: Compile the follower verifier
         shell: sh
         run: |
+          printf 'CATFOOD_ROOT=%s/cat-food\nCATFOOD_PREFIX=%s/prefix\nCATFOOD_CACHE=%s/cache\n' \
+            "$RUNNER_TEMP" "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
           cc -std=c17 -Wall -Wextra -Werror -pedantic -O2 \
             -o "$RUNNER_TEMP/aici-followers" _ai-ci/src/aici_followers.c
       - name: Prove inference and receipt transitions
@@ -34,6 +36,13 @@ jobs:
         env:
           AICI_FOLLOWERS: ${{ runner.temp }}/aici-followers
         run: |
+          # Old unfinished PRs may no longer have a branch. Preserve their exact
+          # history before classifying target impact; failed fetches stay red.
+          sh followers/manage.sh pending > "$RUNNER_TEMP/pending-followers.tsv"
+          while IFS="$(printf '\t')" read -r job repository commit rest; do
+            test "$job" != job_id || continue
+            git cat-file -e "$commit^{commit}" 2>/dev/null || git fetch --no-tags origin "$commit"
+          done < "$RUNNER_TEMP/pending-followers.tsv"
           source_trigger=$(sh followers/manage.sh latest)
           trigger=$(sh followers/manage.sh resolve "$source_trigger")
           if [ "$source_trigger" != "$trigger" ]; then
@@ -41,30 +50,218 @@ jobs:
               "$source_trigger" "$trigger"
           fi
           sh followers/manage.sh reconcile "$trigger"
-          sh followers/manage.sh pending "$trigger"
+          # Include older exact obligations retained because their targets were unaffected.
+          sh followers/manage.sh pending
           sh followers/stale.sh
-      - name: Run GitHub x86 acceptance against the exact trigger
-        id: github_follower
+      - name: Provision one exact-source workbench for current-head acceptance
         shell: sh
-        env:
-          AICI_FOLLOWERS: ${{ runner.temp }}/aici-followers
         run: |
           source_trigger=$(sh followers/manage.sh latest)
           trigger=$(sh followers/manage.sh resolve "$source_trigger")
+          # Current tests may change independently, but delivered implementation
+          # must be identical to the exact source named by the follower receipt.
+          test "$(sh followers/manage.sh resolve "$(git rev-parse HEAD)")" = "$trigger"
+          short=$(printf '%s' "$trigger" | cut -c1-12)
+          source_root="$RUNNER_TEMP/catfood-trigger-$short"
+          git worktree add --detach "$source_root" "$trigger"
+          printf 'CATFOOD_SOURCE_ROOT=%s\nCATFOOD_TRIGGER=%s\n' "$source_root" "$trigger" >> "$GITHUB_ENV"
+          if ! sudo env \
+            CATFOOD_TARGET=container \
+            CATFOOD_ROOT="$CATFOOD_ROOT" CATFOOD_PREFIX="$CATFOOD_PREFIX" \
+            CATFOOD_CACHE="$CATFOOD_CACHE" CATFOOD_DEPTH=1 CATFOOD_NO_PROFILE=1 \
+            "$source_root/catfood"
+          then
+            sudo env \
+              HOME=/root \
+              PATH="$CATFOOD_PREFIX/bin:$CATFOOD_ROOT/bin:$PATH" \
+              CATFOOD_ROOT="$CATFOOD_ROOT" \
+              sh -c '
+                printf "%s\\n" "Abe public-link diagnostic after provisioning failure:" >&2
+                "$CATFOOD_ROOT/bin/abe" link "https://www.abebooks.com/servlet/BookDetailsPL?bi=1"
+                status=$?
+                printf "abe exit status: %s\\n" "$status" >&2
+                "$CATFOOD_ROOT/bin/jq" --version >&2 || :
+                exit 1
+              '
+            exit 1
+          fi
+          foreign_owner=$(find "$CATFOOD_ROOT" "$CATFOOD_PREFIX" "$CATFOOD_CACHE" \
+            ! -user root -print -quit)
+          test -z "$foreign_owner"
+      - name: Exercise transferred checkouts with the provisioned stage-one shell
+        shell: sh
+        env:
+          CATFOOD_TEST_STAGE_ONE: ${{ runner.temp }}/cat-food/bin/grease
+        run: sh tests/repository-identities.sh
+      - name: Exercise keyless az through the installed Grease command path
+        # The shell field cannot use runner context. The fixed runner shell
+        # only launches Grease; Grease still executes the acceptance program.
+        shell: bash
+        run: |
+          "$RUNNER_TEMP/cat-food/bin/grease" <<'GREASE'
+          set -eu
+          runner_temp=$[ENV.RUNNER_TEMP]
+          inherited_path=$[ENV.PATH]
+          workspace="$runner_temp/cat-food"
+          test -x "$workspace/bin/az"
+          test -x "$workspace/bin/abe"
+          fake_bin="$runner_temp/catfood-az-fixtures"
+          mkdir -p "$fake_bin"
+          cat > "$fake_bin/curl" <<'EOF'
+          #!/bin/sh
+          for arg in "$@"; do
+            if [ "$arg" = 'https://www.amazon.com/s?k=small%20useful%20book' ]; then
+              printf '%s\n' '<div data-asin="B098765432"></div><div data-asin="B098765432"></div>'
+              exit 0
+            fi
+          done
+          printf 'unexpected az transport: %s\n' "$*" >&2
+          exit 22
+          EOF
+          cat > "$fake_bin/bash" <<'EOF'
+          #!/bin/sh
+          echo 'az must use Grease, not a Bash fallback' >&2
+          exit 97
+          EOF
+          chmod +x "$fake_bin/curl" "$fake_bin/bash"
+          setglobal ENV.PATH = "$fake_bin:$workspace/bin:$inherited_path"
+          setglobal ENV.AZ_SECRET_FILE = "$fake_bin/no-secret"
+          setglobal ENV.AZ_AMAZON_CREDENTIAL_ID = ''
+          setglobal ENV.AZ_AMAZON_CREDENTIAL_SECRET = ''
+          setglobal ENV.AZ_AMAZON_CREDENTIAL_VERSION = ''
+          abe help >/dev/null
+          output=$(az search small useful book)
+          expected=$(printf 'asin\tamount\tcurrency\tbuy_url\ttitle\nB098765432\t\t\thttps://www.amazon.com/dp/B098765432?tag=macguyver03-20\t\n')
+          test "$output" = "$expected"
+          GREASE
+      - name: Exercise stable price commands and az search
+        shell: bash
+        env:
+          CATFOOD_ROOT: ${{ runner.temp }}/cat-food
+          CATFOOD_DEPTH: 1
+        run: |
+          set -euo pipefail
+          test -x "$CATFOOD_ROOT/bin/az"
+          test -x "$CATFOOD_ROOT/bin/abe"
+
+          export PATH="$CATFOOD_ROOT/bin:$PATH"
+          abe help >/dev/null
+
+          fake_bin="$RUNNER_TEMP/catfood-fake-bin"
+          mkdir -p "$fake_bin"
+          cat > "$fake_bin/curl" <<'EOF'
+          #!/bin/sh
+          for arg in "$@"; do
+            case "$arg" in
+              https://mock/token)
+                printf '%s\n' '{"access_token":"test-token","expires_in":3600}'
+                exit 0
+                ;;
+              'https://www.amazon.com/s?k=small%20useful%20book')
+                printf '%s\n' '<div data-asin="B098765432">A Small Useful Book</div>'
+                exit 0
+                ;;
+              https://mock/catalog/v1/getItems)
+                cat <<'JSON'
+          {"itemsResult":{"items":[{"asin":"B098765432","detailPageURL":"https://www.amazon.com/dp/B098765432?tag=macguyver03-20","offersV2":{"listings":[{"price":{"money":{"amount":12.34,"currency":"USD"}}}]}}]}}
+          JSON
+                exit 0
+                ;;
+            esac
+          done
+          printf 'fake curl: unexpected arguments: %s\n' "$*" >&2
+          exit 22
+          EOF
+          chmod +x "$fake_bin/curl"
+
+          export PATH="$fake_bin:$PATH"
+          export AZ_CONFIG_DIR="$RUNNER_TEMP/az-smoke-config"
+          export AZ_STATE_DIR="$RUNNER_TEMP/az-smoke-state"
+          export AZ_CACHE_DIR="$RUNNER_TEMP/az-smoke-cache"
+
+          # Search is keyless and deliberately does not invent prices or titles.
+          output=$(az search small useful book)
+          printf '%s\n' "$output"
+          expected=$'B098765432\t\t\thttps://www.amazon.com/dp/B098765432?tag=macguyver03-20\t'
+          grep -Fx "$expected" <<<"$output"
+
+          export AZ_AMAZON_CREDENTIAL_ID=test-id
+          export AZ_AMAZON_CREDENTIAL_SECRET=test-secret
+          export AZ_AMAZON_CREDENTIAL_VERSION=3.1
+          export AZ_AMAZON_TOKEN_ENDPOINT=https://mock/token
+          export AZ_CREATORS_API_BASE=https://mock
+
+          # Price still exercises the credentialed Creators GetItems path.
+          output=$(az price B098765432)
+          printf '%s\n' "$output"
+          grep -F $'B098765432\t12.34\tUSD' <<<"$output"
+      - name: Verify commands
+        env:
+          CATFOOD_ROOT: ${{ runner.temp }}/cat-food
+          CATFOOD_PREFIX: ${{ runner.temp }}/prefix
+          CATFOOD_CACHE: ${{ runner.temp }}/cache
+        shell: sh
+        run: |
+          PATH="$CATFOOD_PREFIX/bin:$CATFOOD_ROOT/bin:$PATH"
+          export PATH
+          sudo env \
+            HOME=/root \
+            PATH="$PATH" \
+            GITHUB_WORKSPACE="$GITHUB_WORKSPACE" \
+            CATFOOD_ROOT="$CATFOOD_ROOT" \
+            CATFOOD_PREFIX="$CATFOOD_PREFIX" \
+            CATFOOD_CACHE="$CATFOOD_CACHE" \
+            sh -ec '
+              "$CATFOOD_ROOT/bin/ysh" -c "echo"
+              "$CATFOOD_ROOT/bin/osh" -c "echo"
+              "$CATFOOD_ROOT/bin/jq" --version | grep -F "1.8.2"
+              "$CATFOOD_ROOT/bin/mlr" --version | grep -F "6.21.0"
+              "$CATFOOD_ROOT/bin/ysh" -n "$GITHUB_WORKSPACE/fdroid-deploy.ysh" >/dev/null
+              "$CATFOOD_ROOT/bin/ysh" -n "$GITHUB_WORKSPACE/fdroid-check-deployed.ysh" >/dev/null
+              "$CATFOOD_ROOT/bin/fdroid-deploy" --help >/dev/null
+              "$CATFOOD_ROOT/bin/fdroid-check-deployed" --help >/dev/null
+              if output=$(GITLAB_TOKEN=catfood-test-token \
+                "$CATFOOD_ROOT/bin/fdroid-deploy" /definitely/missing.yml 2>&1); then
+                echo "fdroid-deploy accepted missing metadata" >&2
+                exit 1
+              fi
+              printf "%s\n" "$output" | grep -F "metadata file not found"
+              "$CATFOOD_ROOT/bin/az" link B000000000 >/dev/null
+              "$CATFOOD_ROOT/bin/abe" link "https://www.abebooks.com/servlet/BookDetailsPL?bi=1" >/dev/null
+              "$CATFOOD_ROOT/bin/catfood-doctor"
+            '
+      - name: Verify runtime provenance and exact-trigger follower assertions
+        shell: sh
+        run: |
+          sudo env \
+            CATFOOD_ROOT="$CATFOOD_ROOT" CATFOOD_PREFIX="$CATFOOD_PREFIX" \
+            PATH="$CATFOOD_PREFIX/bin:$CATFOOD_ROOT/bin:$PATH" \
+            sh followers/accept-x86.sh github "$CATFOOD_SOURCE_ROOT"
+          evidence="$RUNNER_TEMP/workbench-evidence"
+          mkdir -p "$evidence"
+          sudo cp -R "$CATFOOD_ROOT/.build/stamps" "$evidence/build-stamps"
+          sudo env CATFOOD_ROOT="$CATFOOD_ROOT" "$CATFOOD_SOURCE_ROOT/catfood" where > "$evidence/checkouts.tsv"
+          printf 'tool\trole\tcommit\n' > "$evidence/revisions.tsv"
+          while IFS="$(printf '\t')" read -r tool role path; do
+            revision=$(sudo git -C "$path" rev-parse HEAD)
+            printf '%s\t%s\t%s\n' "$tool" "$role" "$revision" >> "$evidence/revisions.tsv"
+            sudo git -C "$path" submodule status --recursive >> "$evidence/submodules.txt"
+          done < "$evidence/checkouts.tsv"
+          printf 'source_trigger\t%s\ntest_head\t%s\n' "$CATFOOD_TRIGGER" "$(git rev-parse HEAD)" > "$evidence/source.tsv"
+      - name: Record the exact GitHub follower when one is required
+        id: github_follower
+        shell: sh
+        run: |
+          trigger="$CATFOOD_TRIGGER"
           short=$(printf '%s' "$trigger" | cut -c1-12)
           job_id="catfood-$short-github-x86_64"
           job="followers/jobs/$job_id.tsv"
           if [ ! -f "$job" ]; then
             printf 'required=no\n' >> "$GITHUB_OUTPUT"
-            printf 'no GitHub x86 runtime follower is required for %s\n' "$trigger"
+            printf 'current-head runtime passed; no receipt job exists for %s\n' "$trigger"
             exit 0
           fi
           printf 'required=yes\n' >> "$GITHUB_OUTPUT"
-
-          source_root="$RUNNER_TEMP/catfood-trigger-$short"
-          git worktree add --detach "$source_root" "$trigger"
-          sh followers/accept-x86.sh github "$source_root"
-
           artifact=$(awk -F '\t' '$1 == "artifact" {print $2}' "$job")
           artifact_sha256=$(awk -F '\t' '$1 == "artifact_sha256" {print $2}' "$job")
           receipt="$RUNNER_TEMP/$job_id.tsv"
@@ -80,7 +277,7 @@ jobs:
           attempt_commit	$trigger
           os_runtime	$(uname -srmo)
           build_command	-
-          test_command	sh followers/accept-x86.sh github <worktree-at-$trigger>
+          test_command	provision exact worktree; verify current-head source equivalence and runtime assertions; run installed catfood-doctor and sh followers/accept-x86.sh github <worktree-at-$trigger>
           artifact	$artifact
           artifact_sha256	$artifact_sha256
           evidence_url	${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}
@@ -96,4 +293,10 @@ jobs:
         with:
           name: github-x86_64-follower-receipt
           path: ${{ steps.github_follower.outputs.receipt }}
+          if-no-files-found: error
+      - name: Publish resolved dependency provenance
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: workbench-provenance
+          path: ${{ runner.temp }}/workbench-evidence
           if-no-files-found: error

@@ -1,6 +1,8 @@
 path	layer	runner	reason
 catfood	stage-zero	sh	Fresh hosts and Android runtime targets have no Grease yet
 bootstrap.sh	stage-zero	sh	Fetches Grease before Grease can run on source workbenches
+ci/repositories.sh	stage-zero	sh	Shared repository identity checks before Grease is available
+tests/repository-identities.sh	test	sh	Offline stage-zero checkout identity and update fixtures
 check-manifest.sh	stage-zero	sh	Validates the workbench feed before workspace mutation
 provision.sh	stage-zero	sh	Dispatches runtime-only Android delivery before host provisioning
 install-binaries.sh	stage-zero	sh	Installs verified prebuilt jq and Miller binaries before consumers need them

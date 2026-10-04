@@ -16,7 +16,9 @@ for job in "$root"/followers/jobs/*.tsv; do
     case $state in pending|blocked|unsupported) ;; *) continue ;; esac
     trigger=$(value "$job" trigger_commit)
     [ "$trigger" != "$latest" ] || continue
-    if git -C "$root" merge-base --is-ancestor "$trigger" "$latest" 2>/dev/null; then
+    target=$(value "$job" follower_platform)
+    stale=$(sh "$root/followers/manage.sh" stale-target "$trigger" "$latest" "$target")
+    if [ "$stale" = yes ]; then
         printf 'stale follower\t%s\t%s\t%s\tlatest=%s\n' \
             "$(value "$job" job_id)" "$trigger" "$state" "$latest"
         found=1

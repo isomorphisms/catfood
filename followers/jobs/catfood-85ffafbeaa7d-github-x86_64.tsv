@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-85ffafbeaa7d-github-x86_64
+repository	isomorphisms/catfood
+branch	cleanup/transferred-repositories
+pr	81
+trigger_commit	85ffafbeaa7d34f300dde405ef5fea81c0258993
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit 85ffafbeaa7d34f300dde405ef5fea81c0258993 on github-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh github
+state	superseded
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	catfood-06ab8c9b645f-github-x86_64
+follow_policy	exact

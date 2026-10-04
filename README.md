@@ -6,6 +6,8 @@ It is deliberately small. Cloud, container, and generic Termux targets are workb
 
 ## Run Cat Food
 
+Start with `./catfood --help` or `./catfood where` to inspect the commands and verified local checkouts. Running with no subcommand provisions the selected target:
+
 ```sh
 ./catfood
 ```
@@ -108,6 +110,17 @@ Repositories marked `recursive` have actual submodules and are initialized autom
 `./check-manifest.sh --remote` validates workbench manifest structure and verifies that every named remote branch exists. `sh android/check.sh check` independently validates total Android inventory coverage and package metadata.
 
 Local checkout presence is a separate fact from inventory membership. `./catfood where [TOOL]` emits verified tab-separated `TOOL<TAB>ROLE<TAB>PATH` rows. It considers the running Cat Food control checkout, verified checkouts under the selected Cat Food workbench root, and additional machine-local paths explicitly recorded with `./catfood register TOOL ROLE PATH`. Registration and lookup both verify Git `origin` against Cat Food's repository inventory; stale paths or paths whose origin changes are not reported. Multiple locations for one repository are valid, with roles `workbench`, `acceptance`, `test`, `cache`, `control`, or `other`. The machine-local registry defaults to `${XDG_STATE_HOME:-$HOME/.local/state}/catfood/checkouts.tsv` and may be overridden with `CATFOOD_CHECKOUTS`. Cat Food does not scan arbitrary storage or infer repositories from directory names. On phone and tablet, source repositories are normally absent by design; registration and lookup never clone them or change the runtime-consumer boundary.
+
+### Repository transfers
+
+New clones use the current repository addresses in `tools.tsv`. The finite,
+reviewed [repository alias list](repository-aliases.tsv) records former addresses,
+current addresses, and GitHub repository IDs observed during the transfer check.
+Lookup, registration, bootstrap, and updates share this identity check. Existing
+origins and local history are preserved; an unrelated owner with the same
+repository name is refused. This is a checked-in transfer record, not a live
+GitHub ownership lookup. The offline [regression test](tests/repository-identities.sh)
+exercises real Git fetches through both old and current addresses.
 
 ## Private provider config
 

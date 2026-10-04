@@ -6,6 +6,14 @@ verifier=$1
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
+if (
+    unset CATFOOD_ROOT CATFOOD_PREFIX
+    sh "$root/followers/accept-x86.sh" container
+) > "$tmp/no-workbench.log" 2>&1; then
+    echo 'unprovisioned host was accepted as runtime follower evidence' >&2
+    exit 1
+fi
+grep -F 'requires CATFOOD_ROOT and CATFOOD_PREFIX' "$tmp/no-workbench.log" >/dev/null
 fixture=$tmp/repo
 mkdir -p "$fixture/followers/jobs" "$fixture/followers/receipts" \
     "$fixture/tests" "$fixture/android" "$fixture/.github/workflows"
@@ -17,14 +25,55 @@ cat > "$fixture/catfood" <<'EOF_CATFOOD'
 #!/bin/sh
 if [ "${1:-}" = --target ]; then
     printf '%s\n' "${CATFOOD_TARGET:-cloud}"
+elif [ "${1:-}" = where ]; then
+    printf 'grease\tworkbench\t%s/grease\n' "$CATFOOD_ROOT"
 fi
 EOF_CATFOOD
 chmod +x "$fixture/catfood"
-for name in entrypoint targets android-delivery; do
+for name in entrypoint targets android-delivery ib-handoff; do
     printf '%s\n' '#!/bin/sh' 'exit 0' > "$fixture/tests/$name.sh"
 done
 printf '%s\n' '# base provision' > "$fixture/provision.sh"
 printf '%s\n' '# android base' > "$fixture/android/install-example.sh"
+
+# Isolate the provenance verifier: these fake commands are fixtures, never
+# runtime evidence. A good stamp must pass; missing/mismatched provenance must
+# fail before the consumer's doctor could lend it false confidence.
+workbench=$tmp/workbench
+mkdir -p "$workbench/bin" "$workbench/.build/stamps" "$workbench/grease/source"
+printf '%s\n' '#!/bin/sh' 'exit 0' > "$workbench/bin/catfood-doctor"
+chmod +x "$workbench/bin/catfood-doctor"
+printf '%s\n' '#!/bin/sh' 'echo canonical-grease' > "$workbench/bin/grease"
+chmod +x "$workbench/bin/grease"
+git -C "$workbench/grease/source" init -q
+git -C "$workbench/grease/source" -c user.name=test -c user.email=test@example.invalid commit --allow-empty -qm source
+source_pin=$(git -C "$workbench/grease/source" rev-parse HEAD)
+git -C "$workbench/grease" init -q
+git -C "$workbench/grease" update-index --add --cacheinfo "160000,$source_pin,source"
+git -C "$workbench/grease" -c user.name=test -c user.email=test@example.invalid commit -qm gitlink
+grease_head=$(git -C "$workbench/grease" rev-parse HEAD)
+printf '%s %s\n' "$grease_head" "$source_pin" > "$workbench/.build/stamps/grease"
+CATFOOD_ROOT="$workbench" CATFOOD_PREFIX="$tmp/prefix" \
+    sh "$root/followers/accept-x86.sh" github "$fixture" > "$tmp/provenance-good.log"
+for hostile in missing-stamp wrong-source wrong-runtime missing-source; do
+    printf '%s %s\n' "$grease_head" "$source_pin" > "$workbench/.build/stamps/grease"
+    printf '%s\n' '#!/bin/sh' 'echo canonical-grease' > "$workbench/bin/grease"
+    case $hostile in
+        missing-stamp) rm "$workbench/.build/stamps/grease" ;;
+        wrong-source) printf '%s %s\n' "$grease_head" "$grease_head" > "$workbench/.build/stamps/grease" ;;
+        wrong-runtime)
+            printf '%s\n' '#!/bin/sh' 'exec bash "$@"' > "$workbench/bin/grease"
+            ;;
+        missing-source)
+            rm -rf "$workbench/grease/source"
+            ;;
+    esac
+    if CATFOOD_ROOT="$workbench" CATFOOD_PREFIX="$tmp/prefix" \
+        sh "$root/followers/accept-x86.sh" github "$fixture" > "$tmp/provenance-$hostile.log" 2>&1; then
+        printf 'runtime provenance accepted %s\n' "$hostile" >&2
+        exit 1
+    fi
+done
 
 (
     cd "$fixture"
@@ -49,6 +98,12 @@ printf '%s\n' '# android base' > "$fixture/android/install-example.sh"
     count=$(find followers/jobs -name '*.tsv' -type f | wc -l | tr -d ' ')
     [ "$count" -eq 5 ]
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh reconcile "$trigger" >/dev/null
+    # The read-only renderer must retain the canonical verifier's columns.
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh pending > "$tmp/verified-pending"
+    AICI_FOLLOWERS= sh followers/manage.sh pending > "$tmp/read-only-pending"
+    sort "$tmp/verified-pending" > "$tmp/verified-sorted"
+    sort "$tmp/read-only-pending" > "$tmp/read-only-sorted"
+    cmp "$tmp/verified-sorted" "$tmp/read-only-sorted"
 
     id=catfood-$(printf '%s' "$trigger" | cut -c1-12)-github-x86_64
     cat > "$tmp/github-receipt.tsv" <<EOF_RECEIPT
@@ -89,6 +144,49 @@ EOF_RECEIPT
 
     git add followers
     git commit -qm follower-ledger
+    printf '%s\n' '# CI-only repair' > .github/workflows/check.yml
+    git add .github/workflows/check.yml
+    git commit -qm ci-only
+    ci_trigger=$(git rev-parse HEAD)
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
+        prepare "$ci_trigger" phone armv7 - phone/example 2 >/dev/null
+    [ "$(find followers/jobs -name '*.tsv' -type f | wc -l | tr -d ' ')" -eq 6 ]
+    sh followers/manage.sh supersede-ancestors "$ci_trigger" >/dev/null
+    sh followers/stale.sh >/dev/null
+    [ "$(sh followers/manage.sh stale-target "$trigger" "$ci_trigger" phone)" = no ]
+    awk -F '\t' '$1=="state" {exit $2!="pending"}' "$tablet"
+    # Retained debt remains bound to its original exact source in the merge view.
+    sh followers/manage.sh blockers "$ci_trigger" | awk -F '\t' \
+        -v old="$trigger" 'NR>1 && $3==old && $4==old && $6=="pending" {found=1} END {exit !found}'
+    if sh followers/manage.sh affected deadbeef >/dev/null 2>&1; then
+        echo 'missing source history became empty successful inference' >&2
+        exit 1
+    fi
+    if sh followers/manage.sh stale-target deadbeef "$ci_trigger" phone >/dev/null 2>&1; then
+        echo 'missing ancestor history was treated as unaffected' >&2
+        exit 1
+    fi
+    git clone -q --depth 1 "file://$fixture" "$tmp/shallow"
+    if sh "$tmp/shallow/followers/manage.sh" stale-target "$trigger" "$ci_trigger" phone > "$tmp/shallow.log" 2>&1; then
+        echo 'shallow history was treated as proof of unchanged target' >&2
+        exit 1
+    fi
+    grep -F 'full history is required' "$tmp/shallow.log" >/dev/null
+    cp followers/impact-rules.tsv "$tmp/policy"
+    sed '/^default/d' "$tmp/policy" > followers/impact-rules.tsv
+    if sh followers/manage.sh affected "$trigger" >/dev/null 2>&1; then
+        echo 'unmatched source path became empty successful inference' >&2
+        exit 1
+    fi
+    [ "$(sh followers/manage.sh stale-target "$trigger" "$ci_trigger" phone)" = yes ]
+    git add followers/impact-rules.tsv
+    git commit -qm changed-policy
+    policy_trigger=$(git rev-parse HEAD)
+    cp "$tmp/policy" followers/impact-rules.tsv
+    # Reading old policy from the working tree must not hide CURRENT's policy change.
+    [ "$(sh followers/manage.sh stale-target "$trigger" "$policy_trigger" phone)" = yes ]
+    git add followers
+    git commit -qm restore-policy-and-ci-ledger
     printf '%s\n' '# Android artifact change' >> android/install-example.sh
     git add android/install-example.sh
     git commit -qm android-artifact
@@ -116,10 +214,13 @@ EOF_RECEIPT
     printf '%s\n' "$blockers" | awk -F '\t' -v current="$android_trigger" \
         'NR>1 && $4==current && $2=="no" {found=1} END {exit !found}'
 
-    if sh followers/manage.sh supersede-ancestors "$android_trigger" >/dev/null 2>&1; then
-        echo 'narrow Android trigger erased older container/Hetzner obligations' >&2
-        exit 1
-    fi
+    sh followers/manage.sh supersede-ancestors "$android_trigger" >/dev/null
+    sh followers/stale.sh >/dev/null
+    # Android delivery changes require device successors; unrelated host debt stays exact.
+    [ "$(sh followers/manage.sh stale-target "$trigger" "$android_trigger" phone)" = yes ]
+    [ "$(sh followers/manage.sh stale-target "$trigger" "$android_trigger" hetzner-x86_64)" = no ]
+    old_host=followers/jobs/catfood-$(printf '%s' "$trigger" | cut -c1-12)-hetzner-x86_64.tsv
+    awk -F '\t' '$1=="state" {exit $2!="pending"}' "$old_host"
 
     printf '%s\n' '# combined portable successor' >> provision.sh
     printf '%s\n' '# combined Android successor' >> android/install-example.sh
@@ -154,7 +255,7 @@ if [ "${1:-}" = --target ]; then
 fi
 EOF_CATFOOD
     chmod +x "$destination/catfood"
-    for name in entrypoint targets android-delivery; do
+    for name in entrypoint targets android-delivery ib-handoff; do
         printf '%s\n' '#!/bin/sh' 'exit 0' > "$destination/tests/$name.sh"
     done
     printf '%s\n' '# base provision' > "$destination/provision.sh"

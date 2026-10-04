@@ -2,11 +2,12 @@
 set -eu
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+. "$root/ci/repositories.sh"
 workspace=${CATFOOD_ROOT:-/opt}
 history_depth=${CATFOOD_DEPTH:-12}
 manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
 grease=$workspace/grease
-grease_url=https://github.com/isomorphisms/grease.git
+grease_url=https://github.com/dilapidated-shed/grease.git
 grease_branch=main
 
 need() {
@@ -14,10 +15,6 @@ need() {
         printf 'cat food needs %s\n' "$1" >&2
         exit 127
     }
-}
-
-same_repository_url() {
-    [ "${1%.git}" = "${2%.git}" ]
 }
 
 update_grease() {
@@ -55,7 +52,7 @@ update_grease() {
 
 runnable_ysh() {
     candidate=$1
-    [ -x "$candidate" ] && "$candidate" -c ':' >/dev/null 2>&1
+    [ -x "$candidate" ] && "$candidate" -c 'echo' >/dev/null 2>&1
 }
 
 choose_shell() {

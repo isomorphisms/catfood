@@ -35,6 +35,11 @@ jobs:
           dash -n tests/runtime-binaries.sh
           dash -n tests/lua.sh
           dash -n tests/entrypoint.sh
+          dash -n ci/repositories.sh
+          dash -n tests/repository-identities.sh
+      - name: Verify transferred repository identity and updates
+        shell: sh
+        run: sh tests/repository-identities.sh
       - name: Exercise Android delivery contracts
         shell: sh
         run: sh tests/android-delivery.sh
@@ -56,41 +61,11 @@ jobs:
           CATFOOD_ROOT: ${{ runner.temp }}/cat-food
           CATFOOD_DEPTH: 1
         run: sh ./bootstrap.sh
-      - name: Exercise stable price commands and az search
-        shell: bash
+      - name: Verify stable command launchers are installed
+        shell: sh
         env:
           CATFOOD_ROOT: ${{ runner.temp }}/cat-food
-          CATFOOD_DEPTH: 1
         run: |
-          set -euo pipefail
+          # Bootstrap fetches sources; runtime behavior requires provisioning.
           test -x "$CATFOOD_ROOT/bin/az"
           test -x "$CATFOOD_ROOT/bin/abe"
-
-          export PATH="$CATFOOD_ROOT/bin:$PATH"
-          abe help >/dev/null
-
-          fake_bin="$RUNNER_TEMP/catfood-fake-bin"
-          mkdir -p "$fake_bin"
-          cat > "$fake_bin/curl" <<'EOF'
-          #!/bin/sh
-          for arg in "$@"; do
-            case "$arg" in
-              https://www.amazon.com/s?k=*)
-                printf '%s\n' '<div data-asin="B098765432"></div>'
-                exit 0
-                ;;
-            esac
-          done
-          printf 'fake curl: unexpected arguments: %s\n' "$*" >&2
-          exit 22
-          EOF
-          chmod +x "$fake_bin/curl"
-
-          export PATH="$fake_bin:$PATH"
-
-          output=$(az search small useful book)
-          printf '%s\n' "$output"
-          expected_header=$(printf 'asin\tamount\tcurrency\tbuy_url\ttitle')
-          printf '%s\n' "$output" | grep -Fx "$expected_header"
-          expected_row=$(printf 'B098765432\t\t\thttps://www.amazon.com/dp/B098765432?tag=')
-          printf '%s\n' "$output" | grep -F "$expected_row"

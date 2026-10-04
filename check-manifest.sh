@@ -2,6 +2,7 @@
 set -eu
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+. "$root/ci/repositories.sh"
 manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
 
 awk '
