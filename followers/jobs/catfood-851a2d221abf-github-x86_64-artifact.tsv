@@ -1,9 +1,9 @@
 schema	aici-follower-job-v1
-job_id	catfood-4d39339c6d16-github-x86_64-artifact
+job_id	catfood-851a2d221abf-github-x86_64-artifact
 repository	isomorphisms/catfood
 branch	android-shell-binaries
 pr	42
-trigger_commit	4d39339c6d1629b278ed41feabbff1a16f47a62b
+trigger_commit	851a2d221abfb97feb700b26c032e164540fedfc
 leader_platform	github-x86_64
 leader_arch	x86_64
 leader_evidence	-
@@ -12,14 +12,14 @@ artifact_sha256	-
 follower_platform	github-x86_64-artifact
 follower_arch	x86_64
 required	yes
-action	follower target for Cat Food commit 4d39339c6d1629b278ed41feabbff1a16f47a62b on github-x86_64-artifact; fetch that exact commit, run the named acceptance action, and record a receipt.
+action	follower target for Cat Food commit 851a2d221abfb97feb700b26c032e164540fedfc on github-x86_64-artifact; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	artifact
 acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
-state	superseded
+state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
-reason	follower-supersession
-superseded_by	catfood-851a2d221abf-github-x86_64-artifact
+reason	android-artifact-and-device
+superseded_by	-
 follow_policy	exact
