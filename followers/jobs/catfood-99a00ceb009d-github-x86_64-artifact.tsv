@@ -1,9 +1,9 @@
 schema	aici-follower-job-v1
-job_id	catfood-ff29d5790b63-github-x86_64-artifact
+job_id	catfood-99a00ceb009d-github-x86_64-artifact
 repository	isomorphisms/catfood
-branch	feature/lua-interpreter
-pr	104
-trigger_commit	ff29d5790b631d5d63a2108ea1dba2bb9a0f6661
+branch	fix/current-az-smoke-contract
+pr	103
+trigger_commit	99a00ceb009d39323de8ea1fc8948efd5c0cf240
 leader_platform	github-x86_64
 leader_arch	x86_64
 leader_evidence	-
@@ -12,14 +12,14 @@ artifact_sha256	-
 follower_platform	github-x86_64-artifact
 follower_arch	x86_64
 required	yes
-action	follower target for Cat Food commit ff29d5790b631d5d63a2108ea1dba2bb9a0f6661 on github-x86_64-artifact; fetch that exact commit, run the named acceptance action, and record a receipt.
+action	follower target for Cat Food commit 99a00ceb009d39323de8ea1fc8948efd5c0cf240 on github-x86_64-artifact; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	artifact
 acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
-state	superseded
+state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
-reason	follower-supersession
-superseded_by	catfood-99a00ceb009d-github-x86_64-artifact
+reason	android-artifact-contract
+superseded_by	-
 follow_policy	exact
