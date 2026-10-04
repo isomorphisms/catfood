@@ -5,7 +5,7 @@
 
 # Core languages, compilers, and machine-facing tools
 oils https://github.com/isomorphisms/oils.git grease/main none
-ish https://github.com/isomorphisms/grease.git ish none
+ish https://github.com/dilapidated-shed/grease.git ish recursive
 ir https://github.com/isomorphisms/ir.git ir none
 irk https://github.com/dilapidated-shed/irk.git main none
 ithon https://github.com/dilapidated-shed/ithon.git main none
