@@ -1,0 +1,17 @@
+name: IB checkout handoff regression
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  handoff:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Record exact source and run actual Cat Food entrypoint fixtures
+        run: |
+          git rev-parse HEAD
+          git hash-object catfood
+          sh tests/ib-handoff.sh
