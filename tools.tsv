@@ -10,7 +10,7 @@ irk https://github.com/dilapidated-shed/irk.git main none
 ithon https://github.com/dilapidated-shed/ithon.git main none
 ike https://github.com/dilapidated-shed/ike.git main none
 icky https://github.com/dilapidated-shed/icky.git main none
-ick https://github.com/dilapidated-shed/ick.git main none
+ick https://github.com/dilapidated-shed/ick.git main recursive
 Idric https://github.com/isomorphisms/Idric.git Idriç none
 Idric-Net https://github.com/isomorphisms/Idric-Net.git net none
 idric-cli https://github.com/isomorphisms/idric-cli.git cli none
