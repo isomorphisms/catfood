@@ -5,7 +5,20 @@ root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 . "$root/ci/repositories.sh"
 stage_one=${CATFOOD_TEST_STAGE_ONE:-sh}
 work=$(mktemp -d)
-trap 'rm -rf "$work"' EXIT HUP INT TERM
+cleanup() {
+    status=$?
+    if [ "$status" -ne 0 ]; then
+        for log in "$work"/*.log; do
+            if [ -f "$log" ]; then
+                printf '\n%s\n' "$log" >&2
+                cat "$log" >&2
+            fi
+        done
+    fi
+    rm -rf "$work"
+    exit "$status"
+}
+trap cleanup EXIT HUP INT TERM
 
 same_repository_url https://github.com/isomorphisms/ib.git https://github.com/dilapidated-shed/ib.git
 same_repository_url git@github.com:isomorphisms/ib.git ssh://git@github.com/dilapidated-shed/ib.git

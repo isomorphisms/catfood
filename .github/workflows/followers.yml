@@ -91,7 +91,7 @@ jobs:
       - name: Exercise transferred checkouts with the provisioned stage-one shell
         shell: sh
         env:
-          CATFOOD_TEST_STAGE_ONE: ${{ runner.temp }}/prefix/bin/ysh
+          CATFOOD_TEST_STAGE_ONE: ${{ runner.temp }}/cat-food/bin/grease
         run: sh tests/repository-identities.sh
       - name: Exercise keyless az through the installed Grease command path
         # The shell field cannot use runner context. The fixed runner shell
