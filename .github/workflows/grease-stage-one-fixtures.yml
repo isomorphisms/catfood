@@ -1,0 +1,64 @@
+name: Grease stage-one transfer fixtures
+
+on:
+  push:
+    branches: [cleanup/transferred-repositories]
+    paths:
+      - bootstrap.sh
+      - build-tools.sh
+      - update-tools.ysh
+      - ci/repositories.sh
+      - repository-aliases.tsv
+      - tests/repository-identities.sh
+      - .github/workflows/grease-stage-one-fixtures.yml
+  pull_request:
+    paths:
+      - bootstrap.sh
+      - build-tools.sh
+      - update-tools.ysh
+      - ci/repositories.sh
+      - repository-aliases.tsv
+      - tests/repository-identities.sh
+      - .github/workflows/grease-stage-one-fixtures.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: grease-stage-one-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  transferred-checkouts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      CATFOOD_ROOT: ${{ runner.temp }}/grease-stage-one
+      CATFOOD_JOBS: 2
+      CATFOOD_TEST_STAGE_ONE: ${{ runner.temp }}/grease-stage-one/.build/grease/bin/grease
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 0
+      - name: Acquire the maintained Grease bootstrap boundary
+        shell: sh
+        run: |
+          mkdir -p "$CATFOOD_ROOT"
+          git clone --depth 1 --recurse-submodules --shallow-submodules \
+            https://github.com/dilapidated-shed/grease.git "$CATFOOD_ROOT/grease"
+          git -C "$CATFOOD_ROOT/grease" rev-parse HEAD
+          git -C "$CATFOOD_ROOT/grease/source" rev-parse HEAD
+      - name: Build only the existing Grease stage-one recipe
+        shell: sh
+        # The other maintained checkouts are absent, so their existing
+        # guarded builders return without substituting or building a fleet.
+        run: sh build-tools.sh
+      - name: Establish the maintained Grease runtime identity
+        shell: sh
+        run: |
+          observed=$("$CATFOOD_TEST_STAGE_ONE" -c 'false ∨ echo canonical-grease')
+          test "$observed" = canonical-grease
+      - name: Exercise positive transfers and hostile origins with Grease
+        shell: sh
+        run: sh tests/repository-identities.sh

@@ -52,7 +52,7 @@ update_grease() {
 
 runnable_ysh() {
     candidate=$1
-    [ -x "$candidate" ] && "$candidate" -c ':' >/dev/null 2>&1
+    [ -x "$candidate" ] && "$candidate" -c 'echo' >/dev/null 2>&1
 }
 
 choose_shell() {
