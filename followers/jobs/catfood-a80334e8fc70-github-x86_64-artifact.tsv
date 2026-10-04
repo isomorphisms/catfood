@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-a80334e8fc70-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	repair/workflow-az-fixture
+pr	106
+trigger_commit	a80334e8fc70e78bc970c80ac7543af8ed8982f1
+leader_platform	github-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	carried-forward follower target for Cat Food commit a80334e8fc70e78bc970c80ac7543af8ed8982f1 on github-x86_64-artifact; run the unchanged exact artifact identity, hash, metadata, extraction and install contract.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	carry-forward same-target same-kind unresolved artifact obligation from f9993a975aec3f7fb0ebb8d26935e5169446398c
+superseded_by	-
+follow_policy	exact
