@@ -1,0 +1,17 @@
+schema	aici-follower-receipt-v1
+job_id	catfood-f9993a975aec-container-x86_64
+repository	isomorphisms/catfood
+trigger_commit	f9993a975aec3f7fb0ebb8d26935e5169446398c
+follower_platform	container-x86_64
+follower_arch	x86_64
+acceptance_kind	runtime
+result	pass
+attempt_commit	f9993a975aec3f7fb0ebb8d26935e5169446398c
+os_runtime	Ubuntu 24.04.3; Linux 6.18.44 x86_64; dash
+build_command	-
+test_command	TMPDIR=/dev/shm sh followers/accept-x86.sh container .
+artifact	-
+artifact_sha256	-
+evidence_url	-
+recorded_at	2026-10-04T16:55:39Z
+note	Exact-trigger non-control source executed in a detached worktree with only follower-control edits. Entrypoint, targets, 14 IB handoff cases, Android delivery fixtures and container selector passed. No full provisioned workbench, GitHub, Hetzner, publication, emulator or physical Android claim.
