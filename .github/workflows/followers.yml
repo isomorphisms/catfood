@@ -124,11 +124,11 @@ jobs:
           exit 97
           EOF
           chmod +x "$fake_bin/curl" "$fake_bin/bash"
-          export PATH="$fake_bin:$workspace/bin:$inherited_path"
-          export AZ_SECRET_FILE="$fake_bin/no-secret"
-          export AZ_AMAZON_CREDENTIAL_ID=
-          export AZ_AMAZON_CREDENTIAL_SECRET=
-          export AZ_AMAZON_CREDENTIAL_VERSION=
+          setglobal ENV.PATH = "$fake_bin:$workspace/bin:$inherited_path"
+          setglobal ENV.AZ_SECRET_FILE = "$fake_bin/no-secret"
+          setglobal ENV.AZ_AMAZON_CREDENTIAL_ID = ''
+          setglobal ENV.AZ_AMAZON_CREDENTIAL_SECRET = ''
+          setglobal ENV.AZ_AMAZON_CREDENTIAL_VERSION = ''
           abe help >/dev/null
           output=$(az search small useful book)
           expected=$(printf 'asin\tamount\tcurrency\tbuy_url\ttitle\nB098765432\t\t\thttps://www.amazon.com/dp/B098765432?tag=macguyver03-20\t\n')
