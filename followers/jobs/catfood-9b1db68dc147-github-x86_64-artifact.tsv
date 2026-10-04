@@ -15,11 +15,11 @@ required	yes
 action	Carry forward unresolved artifact acceptance from catfood-ff29d5790b63-github-x86_64-artifact to the current exact source; establish the actual published artifact and execute its required acceptance before recording a receipt.
 acceptance_kind	artifact
 acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	carry-forward-existing-artifact-obligation; no artifact identity or receipt is claimed
-superseded_by	-
+superseded_by	catfood-f9993a975aec-github-x86_64-artifact
 follow_policy	exact

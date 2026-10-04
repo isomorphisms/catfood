@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-f9993a975aec-hetzner-x86_64
+repository	isomorphisms/catfood
+branch	repair/workflow-az-fixture
+pr	106
+trigger_commit	f9993a975aec3f7fb0ebb8d26935e5169446398c
+leader_platform	github-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	hetzner-x86_64
+follower_arch	x86_64
+required	yes
+action	carried-forward follower target for Cat Food commit f9993a975aec3f7fb0ebb8d26935e5169446398c on hetzner-x86_64; fetch that exact commit, run the unchanged named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh cloud
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	carry-forward same-target same-kind unresolved obligation from 9b1db68dc1474e7c014d85600093170042f0c775
+superseded_by	-
+follow_policy	exact
