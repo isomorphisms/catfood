@@ -34,7 +34,7 @@ jobs:
     timeout-minutes: 20
     env:
       CATFOOD_ROOT: ${{ runner.temp }}/grease-stage-one
-      CATFOOD_JOBS: 2
+      CATFOOD_JOBS: '2'
       CATFOOD_TEST_STAGE_ONE: ${{ runner.temp }}/grease-stage-one/.build/grease/bin/grease
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
