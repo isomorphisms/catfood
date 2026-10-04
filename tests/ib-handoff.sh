@@ -61,4 +61,31 @@ passed 'actual Cat Food help exposes the bounded Kitchen handoff'
 report=$root/docs/observations/miro-a1-ib-baseline-2026-10-04.tsv
 awk -F '\t' '$1 == "evidence_kind" && $2 == "user-pasted-terminal-transcript" { a=1 } $1 == "baseline" && $2 == "PASS_REPORTED" { b=1 } $1 == "e2_acceptance" && $2 == "BLOCKED" { c=1 } $1 == "new_kitchen_runner_on_phone" && $2 == "NOT_RUN" { d=1 } END { exit !(a && b && c && d) }' "$report"
 passed 'reported baseline cannot masquerade as repair or new phone acceptance'
+git -C "$repo" remote set-url origin https://github.com/unrelated/ib.git
+if GIT_DIR="$work/second-checkout/.git" run register ib acceptance "$repo" > "$work/output" 2> "$work/error"; then
+    printf 'mutant escaped: inherited GIT_DIR authenticated the wrong checkout\n' >&2; exit 1
+fi
+passed 'inherited Git directory cannot authenticate a wrong-origin checkout'
+if GIT_CONFIG_COUNT=1 GIT_CONFIG_KEY_0=url.https://github.com/isomorphisms/ib.git.insteadOf GIT_CONFIG_VALUE_0=https://github.com/unrelated/ib.git run register ib acceptance "$repo" > "$work/output" 2> "$work/error"; then
+    printf 'mutant escaped: environment configuration replaced the origin\n' >&2; exit 1
+fi
+passed 'environment config cannot rewrite repository identity'
+git -C "$repo" remote set-url origin https://github.com/isomorphisms/ib.git
+mkdir -p "$work/partial/.git"
+if GIT_DIR="$repo/.git" run register ib acceptance "$work/partial" > "$work/output" 2> "$work/error"; then
+    printf 'mutant escaped: partial directory borrowed another repository\n' >&2; exit 1
+fi
+test -d "$work/partial/.git"
+passed 'partial checkout cannot borrow another Git directory and survives refusal'
+printf 'fixture\n' > "$repo/committed"
+git -C "$repo" add committed
+git -C "$repo" -c user.name=Fixture -c user.email=fixture@example.invalid commit -qm fixture
+git -C "$repo" worktree add -q --detach "$work/linked checkout" HEAD
+run register ib test "$work/linked checkout" > /dev/null
+run where ib > "$work/output"
+grep -F "$work/linked checkout" "$work/output" > /dev/null
+passed 'linked worktree is verified and registered without changing its parent'
+git -C "$repo" remote set-url origin https://github.com/isomorphisms/IB.git
+run register ib acceptance "$repo" > /dev/null
+passed 'GitHub repository-name case does not invalidate the same repository'
 printf 'catfood IB handoff cases: %s passed\n' "$count"
