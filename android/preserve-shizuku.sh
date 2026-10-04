@@ -48,6 +48,15 @@ find_source_dir() {
         fi
     fi
 
+    established_rish_dir=$HOME/opt/Shizuku
+    if pair_state "$established_rish_dir"; then
+        printf '%s\n' "$established_rish_dir"
+        return 0
+    else
+        status=$?
+        [ "$status" -ne 2 ] || return 2
+    fi
+
     established_rish_dir=$HOME/opt
     if pair_state "$established_rish_dir"; then
         printf '%s\n' "$established_rish_dir"
@@ -73,6 +82,18 @@ find_source_dir() {
     fi
 
     return 1
+}
+
+verify_snapshot() {
+    directory=$1
+    [ -f "$directory/receipt.tsv" ] || return 1
+    expected_rish=$(awk -F '\t' '$1 == "rish_sha256" { value=$2; count++ } END { if (count != 1) exit 1; print value }' "$directory/receipt.tsv") || return 1
+    expected_dex=$(awk -F '\t' '$1 == "dex_sha256" { value=$2; count++ } END { if (count != 1) exit 1; print value }' "$directory/receipt.tsv") || return 1
+    [ "$(sha256_file "$directory/rish")" = "$expected_rish" ] &&
+    [ "$(sha256_file "$directory/rish_shizuku.dex")" = "$expected_dex" ] || {
+        printf 'Cat Food Shizuku snapshot checksum mismatch: %s\n' "$directory" >&2
+        return 1
+    }
 }
 
 save_bundle() {
@@ -118,9 +139,17 @@ save_bundle() {
             printf 'dex_sha256\t%s\n' "$dex_sha"
         } > "$staging/receipt.tsv"
 
+        verify_snapshot "$staging"
         mv "$staging" "$snapshot"
         trap - EXIT HUP INT TERM
     fi
+
+    verify_snapshot "$snapshot"
+    [ "$(sha256_file "$snapshot/rish")" = "$rish_sha" ] &&
+    [ "$(sha256_file "$snapshot/rish_shizuku.dex")" = "$dex_sha" ] || {
+        printf 'Cat Food Shizuku snapshot does not match source: %s\n' "$snapshot" >&2
+        return 1
+    }
 
     printf '%s\n' "$snapshot_id" > "$state_dir/current.tmp.$$"
     mv "$state_dir/current.tmp.$$" "$state_dir/current"
@@ -146,11 +175,18 @@ restore_bundle() {
         printf 'Cat Food Shizuku snapshot is incomplete: %s\n' "$snapshot" >&2
         return 1
     }
+    verify_snapshot "$snapshot"
 
     umask 077
     mkdir -p "$destination"
     cp "$snapshot/rish" "$destination/.rish.catfood.$$"
     cp "$snapshot/rish_shizuku.dex" "$destination/.rish_shizuku.dex.catfood.$$"
+    [ "$(sha256_file "$destination/.rish.catfood.$$")" = "$expected_rish" ] &&
+    [ "$(sha256_file "$destination/.rish_shizuku.dex.catfood.$$")" = "$expected_dex" ] || {
+        rm -f "$destination/.rish.catfood.$$" "$destination/.rish_shizuku.dex.catfood.$$"
+        printf '%s\n' 'Cat Food Shizuku restore copy checksum mismatch' >&2
+        return 1
+    }
     chmod 0500 "$destination/.rish.catfood.$$"
     chmod 0400 "$destination/.rish_shizuku.dex.catfood.$$"
     mv "$destination/.rish.catfood.$$" "$destination/rish"

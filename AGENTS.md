@@ -77,6 +77,8 @@ Before changing phone/tablet delivery, read [`android/README.md`](android/README
 - Every `tools.tsv` row plus the separate Grease bootstrap entry must have exactly one Android delivery classification.
 - Do not omit a difficult intended runtime to make the distribution look green. Leave it as `gap:<reason>` or unresolved `review` work.
 - Phone and tablet are runtime consumers. Their normal path must not clone the source fleet, bootstrap compilers, install build toolchains, or fall back to source builds.
+- Treat a missing command on a phone or tablet as a delivery defect, not as permission to compile on the device.
+- Crawl Space is a declared first-party Android runtime. Cat Food pins its exact Android binary and verifies `crawlspace identify` reports the expected build ID before considering a live daemon current. A stale daemon may be replaced through the existing one-time ADB bootstrap, but repeated runtime operations do not route through ADB.
 - Android producer builds follow the shared AICI ICK-or-NDK rule. `dex-jni`
   describes a package/runtime shape, not a third build toolchain. Maintained
   compile/link stages use qualified ICK when its exact required surface is
@@ -91,6 +93,7 @@ Before changing phone/tablet delivery, read [`android/README.md`](android/README
   record the exact gap on the stage that needs NDK instead of claiming broader
   ICK maturity or silently switching compilers.
 - Bind packages to exact source/package commits, ABI, URL, SHA-256, runtime dependencies, and package dependencies.
+- Strip native ELF executables and shared objects before an APK/archive is considered shippable. Unstripped/debug outputs may exist only as separate debugging artifacts, not as the package Cat Food publishes or delivers. Record pre-strip native size, post-strip native size, and final package size, then rerun the relevant ABI/install/launch checks against the stripped artifact.
 - Keep publication, digest verification, installation, launch, behavior, emulator evidence, and physical-device evidence separate.
 - `gopeed`, `gdl`, and `go_down_load` on phone/tablet are Cat Food control-plane helpers installed after YSH is delivered; their presence does not claim that Cat Food delivered or accepted the Gopeed Android app. Ordinary unprivileged Termux must use Gopeed's TCP loopback API for cross-app control; do not assume an app-private Unix socket is reachable and do not rewrite Gopeed's private settings on the user's behalf.
 - When a phone/tablet command block is meant to produce output the human will paste back, use ANSI-colored section/action/PASS/FAIL markers when supported so the requested result is easy to find. Keep receipt fields and other machine-readable evidence plain, and never make color the only signal.

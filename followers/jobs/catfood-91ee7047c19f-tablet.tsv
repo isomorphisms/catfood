@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-91ee7047c19f-tablet
+repository	isomorphisms/catfood
+branch	feature/lua-interpreter
+pr	104
+trigger_commit	91ee7047c19f27af1f0d8f41d59e12d3e017433a
+leader_platform	github-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	tablet
+follower_arch	aarch64
+required	yes
+action	follower target for Cat Food commit 91ee7047c19f27af1f0d8f41d59e12d3e017433a on tablet; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	physical-device
+acceptance_action	./catfood && sh android/check.sh gaps tablet
+state	superseded
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	catfood-ff29d5790b63-tablet
+follow_policy	exact

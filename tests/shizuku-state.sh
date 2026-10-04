@@ -35,6 +35,25 @@ second_count=$(find "$state/shizuku/snapshots" -mindepth 1 -maxdepth 1 -type d |
 test "$first_count" -eq 1
 test "$second_count" -eq 1
 
+# The observed MIRO A1 layout keeps the exported pair in shared storage and
+# exposes it through ~/opt/Shizuku.  It must outrank an older direct ~/opt pair.
+shared_export=$home/storage/shared/Shizuku
+mkdir -p "$shared_export"
+printf '%s\n' '#!/system/bin/sh' 'printf exported-rish\\n' > "$shared_export/rish"
+printf '%s\n' 'exported-dex' > "$shared_export/rish_shizuku.dex"
+chmod 0755 "$shared_export/rish"
+chmod 0400 "$shared_export/rish_shizuku.dex"
+ln -s ../storage/shared/Shizuku "$workspace/Shizuku"
+export_state=$temporary/export-state
+HOME="$home" CATFOOD_ROOT="$workspace" CATFOOD_STATE_HOME="$export_state" \
+    sh "$root/android/preserve-shizuku.sh" save >/dev/null
+export_id=$(cat "$export_state/shizuku/current")
+export_snapshot=$export_state/shizuku/snapshots/$export_id
+printf 'source_dir\t%s\n' "$workspace/Shizuku" | grep -F -f - "$export_snapshot/receipt.tsv" >/dev/null
+cmp "$shared_export/rish" "$export_snapshot/rish"
+cmp "$shared_export/rish_shizuku.dex" "$export_snapshot/rish_shizuku.dex"
+rm "$workspace/Shizuku"
+
 printf '%s\n' '#!/system/bin/sh' 'printf rish-v2\\n' > "$workspace/rish"
 HOME="$home" CATFOOD_ROOT="$workspace" CATFOOD_STATE_HOME="$state" \
     sh "$root/android/preserve-shizuku.sh" save >/dev/null
@@ -97,6 +116,25 @@ HOME="$home" CATFOOD_ROOT="$workspace" CATFOOD_STATE_HOME="$state" \
 cmp "$workspace/rish" "$restore/rish"
 cmp "$workspace/rish_shizuku.dex" "$restore/rish_shizuku.dex"
 test "$(stat -c '%a' "$restore/rish_shizuku.dex")" = 400
+
+# A damaged saved pair must neither replace the restore destination nor be
+# silently reused when saving the same source again.
+current_id=$(cat "$state/shizuku/current")
+current_snapshot=$state/shizuku/snapshots/$current_id
+chmod 0600 "$current_snapshot/rish_shizuku.dex"
+printf '%s\n' 'damaged-dex' > "$current_snapshot/rish_shizuku.dex"
+if HOME="$home" CATFOOD_ROOT="$workspace" CATFOOD_STATE_HOME="$state" \
+    sh "$root/android/preserve-shizuku.sh" restore "$restore" >/dev/null 2>&1; then
+    printf '%s\n' 'damaged snapshot unexpectedly restored' >&2
+    exit 1
+fi
+cmp "$workspace/rish_shizuku.dex" "$restore/rish_shizuku.dex"
+if HOME="$home" CATFOOD_ROOT="$workspace" CATFOOD_STATE_HOME="$state" \
+    sh "$root/android/preserve-shizuku.sh" save >/dev/null 2>&1; then
+    printf '%s\n' 'damaged snapshot unexpectedly reused' >&2
+    exit 1
+fi
+test "$(cat "$state/shizuku/current")" = "$current_id"
 
 empty=$temporary/empty
 empty_home=$temporary/empty-home

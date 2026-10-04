@@ -43,11 +43,11 @@ check_stable() {
     fi
 }
 
-for command_name in git curl jq R Rscript grease edric idris2 fieldmouse icu ib-smoke ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
+for command_name in git curl jq lua luac R Rscript grease edric idris2 fieldmouse icu ib-smoke ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
     check_command "$command_name"
 done
 
-for stable_name in R Rscript grease edric idris2 fieldmouse icu ib-smoke ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
+for stable_name in lua luac R Rscript grease edric idris2 fieldmouse icu ib-smoke ithon osh ysh az abe fdroid-deploy fdroid-check-deployed catfood-update catfood-doctor catfood-import-config; do
     check_stable "$stable_name"
 done
 
@@ -57,6 +57,17 @@ if [ -x "$workspace/bin/osh" ] && ! "$workspace/bin/osh" -c 'echo' >/dev/null 2>
 fi
 if [ -x "$workspace/bin/ysh" ] && ! "$workspace/bin/ysh" -c 'echo' >/dev/null 2>&1; then
     printf '%-22s stable command not runnable\n' ysh >&2
+    failures=1
+fi
+if [ -x "$workspace/bin/lua" ]; then
+    output=$("$workspace/bin/lua" -e 'local x=6*7; io.write("catfood-lua=" .. x)' 2>/dev/null || true)
+    if [ "$output" != catfood-lua=42 ]; then
+        printf '%-22s interpreter smoke failed\n' lua >&2
+        failures=1
+    fi
+fi
+if [ -x "$workspace/bin/luac" ] && ! "$workspace/bin/luac" -v >/dev/null 2>&1; then
+    printf '%-22s compiler command not runnable\n' luac >&2
     failures=1
 fi
 if [ -x "$workspace/bin/grease" ]; then
