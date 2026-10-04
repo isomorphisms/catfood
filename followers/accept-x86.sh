@@ -15,6 +15,7 @@ esac
 # claim physical Android or persistent-Hetzner acceptance.
 sh "$root/tests/entrypoint.sh"
 sh "$root/tests/targets.sh"
+sh "$root/tests/ib-handoff.sh"
 sh "$root/tests/android-delivery.sh"
 if [ -f "$root/tests/github-normalization.sh" ]; then
     sh "$root/tests/github-normalization.sh"

@@ -37,6 +37,16 @@ executable location, shared storage, or removable storage:
   external SD card as `~/storage/external-1` (historically resolving to
   `/storage/4A21-0000/Android/data/com.termux/files`), but removable media must
   still be verified before use. Do not project either fact onto the tablet.
+- **Phone Shizuku terminal export, verified 2026-09-29 on MIRO A1:** Shizuku's
+  exported terminal files are in shared storage at `~/storage/shared/Shizuku`
+  (Android path `/storage/emulated/0/Shizuku`), containing `rish` and
+  `rish_shizuku.dex`. A convenience link exists at `~/opt/Shizuku ->
+  ../storage/shared/Shizuku/`. This is observed device state, not a Cat Food
+  delivery claim. On Android 14+, `app_process` cannot load a writable DEX, so
+  consumers that actually execute `rish_shizuku.dex` must copy it into
+  Termux-private storage and make it non-writable rather than assuming the
+  shared-storage copy is executable/loadable. Do not project this path or link
+  onto the tablet or another phone without fresh verification.
 - **Tablet observation, verified 2026-09-18:** physical `TAB_P10`,
   `sun65iw1p1`, `aarch64`; `~/storage/downloads` resolves to
   `/storage/emulated/0/Download`; `~/storage/external-1` is absent; no
@@ -67,9 +77,23 @@ Before changing phone/tablet delivery, read [`android/README.md`](android/README
 - Every `tools.tsv` row plus the separate Grease bootstrap entry must have exactly one Android delivery classification.
 - Do not omit a difficult intended runtime to make the distribution look green. Leave it as `gap:<reason>` or unresolved `review` work.
 - Phone and tablet are runtime consumers. Their normal path must not clone the source fleet, bootstrap compilers, install build toolchains, or fall back to source builds.
-- Direct DEX/ART plus explicitly intended JNI/NDK code is the current Android path where needed. Do not substitute Java/Kotlin/Gradle/d8 or RefC/generated-C lowering.
-- Unfinished ARM/Thumb or other experimental native backends are not prerequisites for unrelated Android delivery.
+- Treat a missing command on a phone or tablet as a delivery defect, not as permission to compile on the device.
+- Crawl Space is a declared first-party Android runtime. Cat Food pins its exact Android binary and verifies `crawlspace identify` reports the expected build ID before considering a live daemon current. A stale daemon may be replaced through the existing one-time ADB bootstrap, but repeated runtime operations do not route through ADB.
+- Android producer builds follow the shared AICI ICK-or-NDK rule. `dex-jni`
+  describes a package/runtime shape, not a third build toolchain. Maintained
+  compile/link stages use qualified ICK when its exact required surface is
+  proven; a stage uses Android NDK only with the exact ICK revision, a specific
+  ICK capability gap, and durable evidence. A hybrid ICK-object/NDK-link build
+  records those as separate stages rather than hiding either toolchain.
+- Direct DEX/ART remains a runtime representation and may remain in an existing
+  package or reviewed common trampoline; it is not permission to generate new
+  application code through Java/Kotlin/Gradle/d8 or another undeclared build
+  path. Do not substitute RefC/generated-C lowering.
+- An unfinished ICK capability is not an unrelated Android delivery prerequisite:
+  record the exact gap on the stage that needs NDK instead of claiming broader
+  ICK maturity or silently switching compilers.
 - Bind packages to exact source/package commits, ABI, URL, SHA-256, runtime dependencies, and package dependencies.
+- Strip native ELF executables and shared objects before an APK/archive is considered shippable. Unstripped/debug outputs may exist only as separate debugging artifacts, not as the package Cat Food publishes or delivers. Record pre-strip native size, post-strip native size, and final package size, then rerun the relevant ABI/install/launch checks against the stripped artifact.
 - Keep publication, digest verification, installation, launch, behavior, emulator evidence, and physical-device evidence separate.
 - `gopeed`, `gdl`, and `go_down_load` on phone/tablet are Cat Food control-plane helpers installed after YSH is delivered; their presence does not claim that Cat Food delivered or accepted the Gopeed Android app. Ordinary unprivileged Termux must use Gopeed's TCP loopback API for cross-app control; do not assume an app-private Unix socket is reachable and do not rewrite Gopeed's private settings on the user's behalf.
 - When a phone/tablet command block is meant to produce output the human will paste back, use ANSI-colored section/action/PASS/FAIL markers when supported so the requested result is easy to find. Keep receipt fields and other machine-readable evidence plain, and never make color the only signal.

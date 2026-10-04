@@ -15,6 +15,7 @@ Idric https://github.com/isomorphisms/Idric.git Idriç none
 Idric-Net https://github.com/isomorphisms/Idric-Net.git net none
 idric-cli https://github.com/isomorphisms/idric-cli.git cli none
 issh https://github.com/isomorphisms/issh.git master none
+crawlspace https://github.com/isomorphisms/crawlspace.git main none
 fieldmouse https://github.com/dilapidated-shed/fieldmouse.git edric-rewrite none
 idris-arm-backend https://github.com/isomorphisms/idris-arm-backend.git main none
 idris-shader-backend https://github.com/isomorphisms/idris-shader-backend.git main none
@@ -39,7 +40,7 @@ computer-science https://github.com/walnut-burgundy/computer-science.git how-lon
 utilities-android-phone-user https://github.com/isomorphisms/utilities-android-phone-user.git main none
 
 # Current applications, games, and mathematical experiments
-algebraic-variety-explorer-mobile https://github.com/isomorphisms/algebraic-variety-explorer-mobile.git main none
+algebraic-variety-explorer-mobile https://github.com/isomorphismes/algebraic-variety-explorer-mobile.git surfer none
 learn-toki-pona https://github.com/isomorphisms/learn-toki-pona.git main none
 game https://github.com/isomorphisms/game.git main none
 hegel https://github.com/isomorphisms/hegel.git main none

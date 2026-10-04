@@ -61,6 +61,7 @@ verify_sha256() {
 
 termux_package_command() {
     case $1 in
+        android-tools) printf '%s\n' adb ;;
         gawk) printf '%s\n' awk ;;
         libiconv) printf '%s\n' iconv ;;
         *) printf '%s\n' "$1" ;;
