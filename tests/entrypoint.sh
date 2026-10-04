@@ -23,6 +23,22 @@ EOF
 done
 chmod 0755 "$fake_bin/pkg" "$fake_bin/apt-get" "$fake_bin/sudo"
 
+cat > "$fake_bin/lua5.5" <<'EOF'
+#!/bin/sh
+case ${1:-} in
+    -v) printf '%s\n' 'Lua 5.5.1' >&2 ;;
+    -e) printf '%s' 'catfood-lua=42' ;;
+    *) exit 0 ;;
+esac
+EOF
+cat > "$fake_bin/luac5.5" <<'EOF'
+#!/bin/sh
+[ "${1:-}" = -p ] && [ -f "${2:-}" ] && exit 0
+[ "${1:-}" = -v ] && { printf '%s\n' 'Lua 5.5.1' >&2; exit 0; }
+exit 2
+EOF
+chmod 0755 "$fake_bin/lua5.5" "$fake_bin/luac5.5"
+
 manifest=$temporary/tools.tsv
 printf '%s\n' \
     'catfood-fixture https://github.com/isomorphisms/catfood.git main none' \
@@ -69,9 +85,11 @@ CATFOOD_NO_PROFILE=1 \
 test -d "$termux_home/opt/grease/.git"
 test -d "$termux_home/opt/catfood-fixture/.git"
 tab=$(printf '\t')
-grep -F "pkg${tab}install -y bash ca-certificates coreutils curl gawk git grep libiconv sed tar" "$log" >/dev/null
+grep -F "pkg${tab}install -y bash ca-certificates coreutils curl gawk git grep libiconv lua55 sed tar" "$log" >/dev/null
 test "$("$termux_home/opt/bin/jq" --version)" = "jq-9.8.7"
 test "$("$termux_home/opt/bin/mlr" --version)" = "mlr 9.8.7"
+test "$("$termux_home/opt/bin/lua" -e 'ignored')" = "catfood-lua=42"
+test -x "$termux_home/opt/bin/luac"
 if grep -F 'forbidden' "$log" >/dev/null; then
     printf '%s\n' 'Termux entrypoint attempted a root/cloud package command' >&2
     exit 1

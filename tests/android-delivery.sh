@@ -79,6 +79,20 @@ set -eu
 printf '%s\n' "$*" >> "$CATFOOD_PKG_LOG"
 EOF_PKG
 
+cat > "$fake_bin/lua5.5" <<'EOF_LUA'
+#!/bin/sh
+case ${1:-} in
+    -v) printf '%s\n' 'Lua 5.5.1' >&2 ;;
+    -e) printf '%s' 'catfood-lua=42' ;;
+    *) exit 0 ;;
+esac
+EOF_LUA
+cat > "$fake_bin/luac5.5" <<'EOF_LUAC'
+#!/bin/sh
+[ "${1:-}" = -p ] && [ -f "${2:-}" ] && exit 0
+exit 2
+EOF_LUAC
+
 cat > "$fake_bin/idris-arm-backend" <<'EOF_BACKEND'
 #!/bin/sh
 printf '%s\n' called >> "$CATFOOD_BACKEND_LOG"
@@ -91,7 +105,7 @@ printf 'CLASSPATH=%s\n' "${CLASSPATH:-}" >> "$CATFOOD_APP_LOG"
 printf 'ARGS=%s\n' "$*" >> "$CATFOOD_APP_LOG"
 exit 0
 EOF_APP_PROCESS
-chmod 0755 "$fake_bin/curl" "$fake_bin/pkg" "$fake_bin/idris-arm-backend" "$fake_bin/app_process"
+chmod 0755 "$fake_bin/curl" "$fake_bin/pkg" "$fake_bin/lua5.5" "$fake_bin/luac5.5" "$fake_bin/idris-arm-backend" "$fake_bin/app_process"
 
 # Establish a known-bad experimental backend, then prove package delivery does
 # not invoke or depend on it.
