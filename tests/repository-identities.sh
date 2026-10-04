@@ -28,8 +28,12 @@ git -C "$workspace/ib" remote set-url origin https://github.com/isomorphisms/ib.
 git -C "$workspace/grease" remote set-url origin https://github.com/isomorphisms/grease.git
 
 # Redirect fetch transport only. Identity checks still read the actual origins.
+printf '%s\n' "$CATFOOD_TEST_GIT" > "$work/bin/real-git-path"
+printf '%s\n' "$CATFOOD_TEST_SEED" > "$work/bin/seed-path"
 cat > "$work/bin/git" <<'EOF'
 #!/bin/sh
+CATFOOD_TEST_GIT=$(cat "${0%/*}/real-git-path")
+CATFOOD_TEST_SEED=$(cat "${0%/*}/seed-path")
 if [ "${1:-}" = -C ] && [ "${3:-}" = fetch ]; then
     exec "$CATFOOD_TEST_GIT" \
         -c "url.file://$CATFOOD_TEST_SEED.insteadOf=https://github.com/isomorphisms/ib.git" \

@@ -30,7 +30,7 @@ elif [ "${1:-}" = where ]; then
 fi
 EOF_CATFOOD
 chmod +x "$fixture/catfood"
-for name in entrypoint targets android-delivery; do
+for name in entrypoint targets android-delivery ib-handoff; do
     printf '%s\n' '#!/bin/sh' 'exit 0' > "$fixture/tests/$name.sh"
 done
 printf '%s\n' '# base provision' > "$fixture/provision.sh"
@@ -255,7 +255,7 @@ if [ "${1:-}" = --target ]; then
 fi
 EOF_CATFOOD
     chmod +x "$destination/catfood"
-    for name in entrypoint targets android-delivery; do
+    for name in entrypoint targets android-delivery ib-handoff; do
         printf '%s\n' '#!/bin/sh' 'exit 0' > "$destination/tests/$name.sh"
     done
     printf '%s\n' '# base provision' > "$destination/provision.sh"
