@@ -6,7 +6,7 @@ pr	-
 trigger_commit	6c733c1636e0bf843741904805f0726edd77d4ca
 leader_platform	github-x86_64
 leader_arch	x86_64
-leader_evidence	-
+leader_evidence	exact successor source 99a00ceb009d39323de8ea1fc8948efd5c0cf240 preserves the corrected smoke contract
 artifact	-
 artifact_sha256	-
 follower_platform	github-x86_64
@@ -15,11 +15,11 @@ required	yes
 action	leader target for Cat Food commit 6c733c1636e0bf843741904805f0726edd77d4ca on github-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh github
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	github-only
-superseded_by	-
+superseded_by	catfood-99a00ceb009d-github-x86_64
 follow_policy	exact
