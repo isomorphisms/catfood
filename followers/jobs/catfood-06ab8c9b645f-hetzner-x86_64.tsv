@@ -21,5 +21,5 @@ blocker	-
 evidence	-
 depends_on	-
 reason	shared-portable
-superseded_by	catfood-8ae36846fa77-hetzner-x86_64
+superseded_by	catfood-22ff3eeaab58-hetzner-x86_64
 follow_policy	exact

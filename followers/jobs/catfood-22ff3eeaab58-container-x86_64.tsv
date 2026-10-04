@@ -1,9 +1,9 @@
 schema	aici-follower-job-v1
-job_id	catfood-8ae36846fa77-container-x86_64
+job_id	catfood-22ff3eeaab58-container-x86_64
 repository	isomorphisms/catfood
 branch	cleanup/transferred-repositories
 pr	81
-trigger_commit	8ae36846fa776592e400e0f9ffaa4e9ba3ba8ce7
+trigger_commit	22ff3eeaab5810a3d654ab5af5feb12d825eaf0a
 leader_platform	github-x86_64
 leader_arch	x86_64
 leader_evidence	-
@@ -12,11 +12,11 @@ artifact_sha256	-
 follower_platform	container-x86_64
 follower_arch	x86_64
 required	yes
-action	follower target for Cat Food commit 8ae36846fa776592e400e0f9ffaa4e9ba3ba8ce7 on container-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+action	follower target for Cat Food commit 22ff3eeaab5810a3d654ab5af5feb12d825eaf0a on container-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh container
 state	blocked
-last_attempt_commit	8ae36846fa776592e400e0f9ffaa4e9ba3ba8ce7
+last_attempt_commit	-
 blocker	Actual source acceptance requires a provisioned CATFOOD_ROOT and CATFOOD_PREFIX; the unprovisioned container attempt stopped at that prerequisite. No maintained tools were compiled locally and no acceptance is claimed.
 evidence	-
 depends_on	-

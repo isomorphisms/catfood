@@ -21,5 +21,5 @@ blocker	-
 evidence	-
 depends_on	-
 reason	carry-forward-android-artifact-and-device
-superseded_by	catfood-8ae36846fa77-github-x86_64-artifact
+superseded_by	catfood-22ff3eeaab58-github-x86_64-artifact
 follow_policy	exact
