@@ -1,0 +1,17 @@
+schema	aici-follower-receipt-v1
+job_id	catfood-c0c9bdb49dac-github-x86_64
+repository	isomorphisms/catfood
+trigger_commit	c0c9bdb49dac23777c5270d6b7c3c83654236e21
+follower_platform	github-x86_64
+follower_arch	x86_64
+acceptance_kind	runtime
+result	pass
+attempt_commit	c0c9bdb49dac23777c5270d6b7c3c83654236e21
+os_runtime	Linux 6.17.0-1022-azure x86_64 GNU/Linux
+build_command	-
+test_command	sh followers/accept-x86.sh github <worktree-at-c0c9bdb49dac23777c5270d6b7c3c83654236e21>
+artifact	-
+artifact_sha256	-
+evidence_url	https://github.com/isomorphisms/catfood/actions/runs/37217311235
+recorded_at	2026-10-04T16:35:29Z
+note	GitHub-hosted x86-64 runtime follower; does not claim local/container, Hetzner, or physical Android acceptance.
