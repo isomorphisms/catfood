@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-e2c5ccb16bbd-generic-phone
+repository	isomorphisms/catfood
+branch	android/reddit-dex-jni-package
+pr	69
+trigger_commit	e2c5ccb16bbd37dd3ec3b791fd40006119e58b55
+leader_platform	github-x86_64-artifact
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	phone
+follower_arch	armv7
+required	yes
+action	Carry forward exact generic physical-device obligation from 0bad7b6e5566f0edc062e32c9a10f3bca17cf597; retain its original acceptance action and generic artifact identity at current source e2c5ccb16bbd37dd3ec3b791fd40006119e58b55.
+acceptance_kind	physical-device
+acceptance_action	./catfood && sh android/check.sh gaps phone
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	R2 preserves unresolved generic obligation independently from product-specific artifact acceptance
+superseded_by	-
+follow_policy	exact
