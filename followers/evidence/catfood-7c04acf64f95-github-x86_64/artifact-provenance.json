@@ -1,0 +1,12 @@
+{
+  "schema": "catfood-github-runtime-provenance-v1",
+  "run": 37235649461,
+  "job": 111534087503,
+  "head": "99979adc7a4f37cd7b4b41291f6a7056c428ee87",
+  "trigger": "7c04acf64f9520f0d15af51aff649f012f7a7cfb",
+  "receipt_artifact": 11315572801,
+  "receipt_zip_sha256": "561c33690e718e316d10082e5879c051621ab52a597052d073a41889635ca613",
+  "provenance_artifact": 11315617652,
+  "provenance_zip_sha256": "7bf9d41c1dbcbc9ddb8bb0e2a9ff5500065b6cfad335f5ec5fe605d037e2b524",
+  "note": "Original qualified-run evidence. GitHub x86-64 runtime only; no local/container, Hetzner, immutable Android artifact or physical Android acceptance."
+}
