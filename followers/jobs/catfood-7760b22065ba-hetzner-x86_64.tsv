@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-7760b22065ba-hetzner-x86_64
+repository	isomorphisms/catfood
+branch	termux-home-opt-bootstrap
+pr	20
+trigger_commit	7760b22065ba0a9d30d0824b545ea1c0f0f7d202
+leader_platform	github-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	hetzner-x86_64
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit 7760b22065ba0a9d30d0824b545ea1c0f0f7d202 on hetzner-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh cloud
+state	blocked
+last_attempt_commit	-
+blocker	Legacy source predates the supported binary-delivery controller; resolve its rejected on-device compiler bootstrap before any device or host acceptance. No attempt or acceptance is claimed.
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	-
+follow_policy	exact
