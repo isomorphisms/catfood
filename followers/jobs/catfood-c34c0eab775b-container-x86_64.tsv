@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-c34c0eab775b-container-x86_64
+repository	isomorphisms/catfood
+branch	android/crawlspace-longview-runtime
+pr	99
+trigger_commit	c34c0eab775bfcd3f92e99e4592312bdb6100847
+leader_platform	github-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	container-x86_64
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit c34c0eab775bfcd3f92e99e4592312bdb6100847 on container-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh container
+state	superseded
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	catfood-ebc3ba1f91be-container-x86_64
+follow_policy	exact

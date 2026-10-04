@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-233a9a88d838-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	miro-c67-profile
+pr	102
+trigger_commit	233a9a88d838973d63965a8693b6cd47624714b5
+leader_platform	github-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	carried-forward follower target for Cat Food commit 233a9a88d838973d63965a8693b6cd47624714b5 on github-x86_64-artifact; run the unchanged exact artifact identity, hash, metadata, extraction and install contract.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	carry-forward same-target same-kind unresolved artifact obligation from f9993a975aec3f7fb0ebb8d26935e5169446398c
+superseded_by	-
+follow_policy	exact

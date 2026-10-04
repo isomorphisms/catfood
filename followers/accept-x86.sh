@@ -44,6 +44,7 @@ actual=$("$CATFOOD_ROOT/bin/grease" -c 'false ∨ echo canonical-grease')
 # These additional contract checks do not claim physical Android acceptance.
 sh "$root/tests/entrypoint.sh"
 sh "$root/tests/targets.sh"
+sh "$root/tests/ib-handoff.sh"
 sh "$root/tests/android-delivery.sh"
 if [ -f "$root/tests/github-normalization.sh" ]; then
     sh "$root/tests/github-normalization.sh"

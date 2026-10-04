@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-9b1db68dc147-container-x86_64
+repository	isomorphisms/catfood
+branch	repair/ib-source-handoff
+pr	https://github.com/isomorphisms/catfood/pull/105
+trigger_commit	9b1db68dc1474e7c014d85600093170042f0c775
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	container-x86_64
+follower_arch	x86_64
+required	yes
+action	leader target for Cat Food commit 9b1db68dc1474e7c014d85600093170042f0c775 on container-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh container
+state	superseded
+last_attempt_commit	-
+blocker	Full current-source acceptance NOT_RUN: preceding local candidate failed acquiring Grease with No space left on device (ENOSPC); dedicated handoff fixtures are separate evidence.
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	catfood-f9993a975aec-container-x86_64
+follow_policy	exact

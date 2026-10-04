@@ -25,10 +25,15 @@ jobs:
           dash -n catfood
           dash -n provision.sh
           dash -n install-binaries.sh
+          dash -n install-lua.sh
           dash -n android/check.sh
           dash -n android/install.sh
+          dash -n android/bootstrap-crawlspace.sh
+          dash -n android/install-crawlspace-bootstrap.sh
           dash -n tests/android-delivery.sh
+          dash -n tests/android-crawlspace.sh
           dash -n tests/runtime-binaries.sh
+          dash -n tests/lua.sh
           dash -n tests/entrypoint.sh
           dash -n ci/repositories.sh
           dash -n tests/repository-identities.sh
@@ -38,9 +43,15 @@ jobs:
       - name: Exercise Android delivery contracts
         shell: sh
         run: sh tests/android-delivery.sh
+      - name: Exercise Crawl Space Android runtime contract
+        shell: sh
+        run: sh tests/android-crawlspace.sh
       - name: Exercise pinned runtime binary contracts
         shell: sh
         run: sh tests/runtime-binaries.sh
+      - name: Exercise Lua runtime contract
+        shell: sh
+        run: sh tests/lua.sh
       - name: Exercise cloud and generic Termux entrypoints
         shell: sh
         run: sh tests/entrypoint.sh

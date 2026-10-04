@@ -1,0 +1,20 @@
+field	value
+observation_date	2026-10-04
+evidence_kind	user-pasted-terminal-transcript
+execution_context	ordinary Termux; MIRO A1 from session context
+checkout_path	/data/data/com.termux/files/home/ib-e2-check
+checkout_role	acceptance
+catfood_registration	NOT_RECORDED
+source	f1f22778fb66f7219c13ba864c13b03be10cfea8
+implementation_blob	bdabc03428d7e7d9b7f098b3dc61321798d9dc74
+test_blob	b7147483cea50e095193e7e59609091efe2a3aa4
+syntax_checks	PASS_REPORTED
+baseline	PASS_REPORTED
+baseline_output	durable ordinary-file store tests: ok
+claimed_repair_source	5184f62fb9183f300cde615fa06ca0cfa561040c
+repair_source_observation	UNAVAILABLE_IN_FETCHED_CHECKOUT
+e2_acceptance	BLOCKED
+new_kitchen_runner_on_phone	NOT_RUN
+apk_install_launch	NOT_RUN
+device_build_fingerprint	NOT_CAPTURED
+scope	ordinary-file baseline only; no concurrent-publication or crash-durability claim

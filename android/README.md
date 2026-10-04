@@ -23,11 +23,29 @@ The normal `./catfood` path installs jq and Miller from the separate pinned plat
 
 `archive` and `file` install ordinary runtime artifacts. `file` is appropriate for an interpreted command whose exact source file is itself the runtime artifact. `dex-jni` is the direct Android path for code that runs under ART and needs native code: the archive contains the declared DEX entrypoint and JNI library plus `catfood-package.tsv`. The embedded receipt must match target, ABI, source commit, and packaging commit before installation. The stable command invokes `/system/bin/app_process` (or the test override) directly.
 
-Direct DEX generation and NDK/JNI compilation happen on build hosts. An experimental ARM/Thumb or other compiler backend may produce useful development evidence, but its generic health is not a Cat Food package dependency. If a host tool is genuinely needed to produce a package, that dependency belongs in the producer/build recipe; it does not become a device prerequisite or an unrelated backend acceptance gate.
+The `dex-jni` mode is a delivery/runtime shape, not a third build toolchain.
+Build-host compile/link stages follow the shared AICI ICK-or-NDK contract. Use
+qualified ICK for a stage when the exact required target/runtime surface is
+proven. Use Android NDK only when that stage records the exact ICK revision and
+a specific evidenced ICK capability gap. A hybrid ICK-object/NDK-link producer
+records two stages rather than relabeling the whole build.
 
-This does not authorize Java, Kotlin, Gradle, d8, RefC, or generated-C substitution. A future native backend can replace this delivery path only after that transition is explicitly chosen.
+An existing reviewed DEX payload or common trampoline may remain a package
+component, but this does not authorize new application-code generation through
+Java, Kotlin, Gradle, d8, RefC, generated-C lowering, or another undeclared
+compiler path. Experimental ICK work becomes relevant only when it supplies the
+capability that a maintained producer actually needs; missing capability remains
+an explicit gap rather than a device prerequisite or a silent fallback.
 
 Cat Food may expose a control-plane helper from its own checked-out version after that helper's interpreter has been delivered. The current example is `gopeed` with aliases `gdl` and `go_down_load`, installed only after YSH is available. This does not turn the separately installed Gopeed Android app into a Cat Food package and does not satisfy the `gopeed` runtime gap in `delivery.tsv`.
+
+## Device profiles
+
+Device-specific facts do not redefine Cat Food's ABI targets. They document how
+a physical product maps onto those targets after an actual runtime receipt.
+
+- [MIRO C67 target note](devices/miro-c67.md) — Helio G36/Cortex-A53/GE8320
+  model facts are known; physical Android ABI mapping remains unverified.
 
 ## Evidence boundaries
 

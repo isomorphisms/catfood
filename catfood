@@ -126,16 +126,42 @@ detect_target() {
     esac
 }
 
-repository_matches() {
+normalize_repository_url() {
+    repository=${1%.git}
+    case $repository in
+        git@github.com:*)
+            repository=https://github.com/${repository#git@github.com:}
+            ;;
+        ssh://git@github.com/*)
+            repository=https://github.com/${repository#ssh://git@github.com/}
+            ;;
+    esac
+    case $repository in
+        https://github.com/*) printf '%s\n' "$repository" | tr '[:upper:]' '[:lower:]' ;;
+        *) printf '%s\n' "$repository" ;;
+    esac
+}
+
+repository_matches() (
     checkout=$1
     expected=$2
 
     [ -e "$checkout/.git" ] || return 1
-    origin=$(git -C "$checkout" remote get-url origin 2>/dev/null || true)
+    # Stage-zero lookup must not borrow a caller's Git directory or config.
+    # Read the literal local origin, not a URL rewritten by global includes.
+    clean_git() {
+        env -i PATH="$PATH" HOME="$HOME" GIT_CONFIG_NOSYSTEM=1 \
+            GIT_CONFIG_GLOBAL=/dev/null GIT_CONFIG_SYSTEM=/dev/null \
+            GIT_NO_REPLACE_OBJECTS=1 git "$@"
+    }
+    physical=$(CDPATH='' cd -- "$checkout" && pwd -P) || return 1
+    actual=$(clean_git -C "$physical" rev-parse --show-toplevel 2>/dev/null) || return 1
+    [ "$actual" = "$physical" ] || return 1
+    origin=$(clean_git -C "$physical" config --local --no-includes --get-all remote.origin.url 2>/dev/null) || return 1
     [ -n "$origin" ] || return 1
 
     same_repository_url "$origin" "$expected"
-}
+)
 
 lookup_workspace() {
     if [ -n "${CATFOOD_ROOT:-}" ]; then
@@ -317,7 +343,7 @@ where_inventory() {
         }
         END {
             if (topic != "" && !found) {
-                printf "%s: no verified local checkout\n", topic > "/dev/stderr"
+                printf "%s: no verified checkout among declared candidates; other locations are unknown\n", topic > "/dev/stderr"
                 exit 1
             }
         }
