@@ -41,14 +41,20 @@ actual=$("$CATFOOD_ROOT/bin/grease" -c 'false ∨ echo canonical-grease')
 [ "$actual" = canonical-grease ] || { echo 'installed Grease identity probe failed' >&2; exit 1; }
 "$CATFOOD_ROOT/bin/catfood-doctor"
 
-# These additional contract checks do not claim physical Android acceptance.
-sh "$root/tests/entrypoint.sh"
-sh "$root/tests/targets.sh"
-sh "$root/tests/ib-handoff.sh"
-sh "$root/tests/android-delivery.sh"
-if [ -f "$root/tests/github-normalization.sh" ]; then
-    sh "$root/tests/github-normalization.sh"
-fi
+# These additional contract checks own their fixture workspaces. Inherited
+# provisioned-workbench paths must not redirect their mocked installations.
+# The actual interpreter, stamp and doctor checks above retain that workbench.
+(
+    unset CATFOOD_ROOT CATFOOD_PREFIX CATFOOD_CACHE CATFOOD_TARGET
+    unset CATFOOD_MANIFEST CATFOOD_CHECKOUTS
+    sh "$root/tests/entrypoint.sh"
+    sh "$root/tests/targets.sh"
+    sh "$root/tests/ib-handoff.sh"
+    sh "$root/tests/android-delivery.sh"
+    if [ -f "$root/tests/github-normalization.sh" ]; then
+        sh "$root/tests/github-normalization.sh"
+    fi
+)
 
 case $mode in
     github|container) CATFOOD_TARGET=container "$root/catfood" --target | grep '^container$' >/dev/null ;;
