@@ -1,0 +1,9 @@
+# command	source	version	platform	mode	url	sha256	entrypoint	probe_arg	probe_contains
+jq	jqlang/jq	1.8.2	linux-armv7	file	https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-linux-armhf	78458244fb546469b4042e9e07cf78714ef6848895eb9515df76b4eb0b1dc992	-	--version	1.8.2
+jq	jqlang/jq	1.8.2	linux-aarch64	file	https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-linux-arm64	8b85c817833814ddca00a144c33705546355afccf0cf39b188f3cdb48b852309	-	--version	1.8.2
+jq	jqlang/jq	1.8.2	linux-x86_64	file	https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-linux-amd64	b1c22172dd303f3be49e935aa56aa48a8b7a46e0bc838b4997d3bb451495870f	-	--version	1.8.2
+jq	jqlang/jq	1.8.2	linux-riscv64	file	https://github.com/jqlang/jq/releases/download/jq-1.8.2/jq-linux-riscv64	a96e5a78a7b2c5a0575bc2a10dda4b20d84efd8c02c8806539ee5f5e57603e8d	-	--version	1.8.2
+mlr	johnkerl/miller	6.21.0	linux-armv7	tar.gz	https://github.com/johnkerl/miller/releases/download/v6.21.0/miller-6.21.0-linux-armv7.tar.gz	e7188138b39e41170b4ddb2f3089bcb5e277c3c455a8f8cfc8e58d823a0ecc87	miller-6.21.0-linux-armv7/mlr	--version	6.21.0
+mlr	johnkerl/miller	6.21.0	linux-aarch64	tar.gz	https://github.com/johnkerl/miller/releases/download/v6.21.0/miller-6.21.0-linux-arm64.tar.gz	3f4bc15993da3039e5aad1f67a114817db5d933a1cde26b6c2edf867de467d27	miller-6.21.0-linux-arm64/mlr	--version	6.21.0
+mlr	johnkerl/miller	6.21.0	linux-x86_64	tar.gz	https://github.com/johnkerl/miller/releases/download/v6.21.0/miller-6.21.0-linux-amd64.tar.gz	22daf43f3afc7c497da0b9480a0d4ef0d39c9bf68b2460068dd0187ed44f7b80	miller-6.21.0-linux-amd64/mlr	--version	6.21.0
+mlr	johnkerl/miller	6.21.0	linux-riscv64	tar.gz	https://github.com/johnkerl/miller/releases/download/v6.21.0/miller-6.21.0-linux-riscv64.tar.gz	1a20ab651100a3e41e32a04eb7e59b4b2cf99a651de70987ce73d9e42d5eef2d	miller-6.21.0-linux-riscv64/mlr	--version	6.21.0

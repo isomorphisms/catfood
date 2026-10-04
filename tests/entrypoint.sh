@@ -23,10 +23,51 @@ EOF
 done
 chmod 0755 "$fake_bin/pkg" "$fake_bin/apt-get" "$fake_bin/sudo"
 
+cat > "$fake_bin/lua5.5" <<'EOF'
+#!/bin/sh
+case ${1:-} in
+    -v) printf '%s\n' 'Lua 5.5.1' >&2 ;;
+    -e) printf '%s' 'catfood-lua=42' ;;
+    *) exit 0 ;;
+esac
+EOF
+cat > "$fake_bin/luac5.5" <<'EOF'
+#!/bin/sh
+[ "${1:-}" = -p ] && [ -f "${2:-}" ] && exit 0
+[ "${1:-}" = -v ] && { printf '%s\n' 'Lua 5.5.1' >&2; exit 0; }
+exit 2
+EOF
+chmod 0755 "$fake_bin/lua5.5" "$fake_bin/luac5.5"
+
 manifest=$temporary/tools.tsv
 printf '%s\n' \
     'catfood-fixture https://github.com/isomorphisms/catfood.git main none' \
     > "$manifest"
+
+binary_assets=$temporary/runtime-binary-assets
+mkdir -p "$binary_assets/miller-9.8.7-linux-amd64"
+cat > "$binary_assets/jq" <<'EOF_JQ'
+#!/bin/sh
+[ "${1:-}" = --version ] && { printf '%s\n' 'jq-9.8.7'; exit 0; }
+exit 2
+EOF_JQ
+cat > "$binary_assets/miller-9.8.7-linux-amd64/mlr" <<'EOF_MLR'
+#!/bin/sh
+[ "${1:-}" = --version ] && { printf '%s\n' 'mlr 9.8.7'; exit 0; }
+exit 2
+EOF_MLR
+chmod 0755 "$binary_assets/jq" "$binary_assets/miller-9.8.7-linux-amd64/mlr"
+tar -czf "$binary_assets/miller.tar.gz" -C "$binary_assets" miller-9.8.7-linux-amd64
+jq_sha=$(sha256sum "$binary_assets/jq" | awk '{print $1}')
+mlr_sha=$(sha256sum "$binary_assets/miller.tar.gz" | awk '{print $1}')
+binary_manifest=$temporary/runtime-binaries.tsv
+{
+    printf '# command\tsource\tversion\tplatform\tmode\turl\tsha256\tentrypoint\tprobe_arg\tprobe_contains\n'
+    printf 'jq\tfixture/jq\t9.8.7\tlinux-x86_64\tfile\tfile://%s\t%s\t-\t--version\t9.8.7\n' "$binary_assets/jq" "$jq_sha"
+    printf 'mlr\tfixture/miller\t9.8.7\tlinux-x86_64\ttar.gz\tfile://%s\t%s\tmiller-9.8.7-linux-amd64/mlr\t--version\t9.8.7\n' "$binary_assets/miller.tar.gz" "$mlr_sha"
+} > "$binary_manifest"
+export CATFOOD_BINARY_MANIFEST=$binary_manifest
+export CATFOOD_BINARY_PLATFORM=linux-x86_64
 
 termux_home=$temporary/termux-home
 mkdir -p "$termux_home"
@@ -44,7 +85,11 @@ CATFOOD_NO_PROFILE=1 \
 test -d "$termux_home/opt/grease/.git"
 test -d "$termux_home/opt/catfood-fixture/.git"
 tab=$(printf '\t')
-grep -F "pkg${tab}install -y bash ca-certificates coreutils curl gawk git grep jq libiconv sed tar" "$log" >/dev/null
+grep -F "pkg${tab}install -y bash ca-certificates coreutils curl gawk git grep libiconv lua55 sed tar" "$log" >/dev/null
+test "$("$termux_home/opt/bin/jq" --version)" = "jq-9.8.7"
+test "$("$termux_home/opt/bin/mlr" --version)" = "mlr 9.8.7"
+test "$("$termux_home/opt/bin/lua" -e 'ignored')" = "catfood-lua=42"
+test -x "$termux_home/opt/bin/luac"
 if grep -F 'forbidden' "$log" >/dev/null; then
     printf '%s\n' 'Termux entrypoint attempted a root/cloud package command' >&2
     exit 1
@@ -104,4 +149,107 @@ sh "$root/catfood" help gopeed | grep -F '# Gopeed REST API' >/dev/null
 sh "$root/catfood" help ib | grep -F 'Repository: https://github.com/isomorphisms/ib.git' >/dev/null
 sh "$root/catfood" help grease | grep -F 'stage-one shell bootstrap' >/dev/null
 
-printf '%s\n' 'cat food cloud, generic Termux, and inventory help entrypoints pass'
+checkouts=$temporary/checkouts.tsv
+canonical=$termux_home/opt/catfood-fixture
+
+located=$(
+    HOME=$termux_home \
+    CATFOOD_ROOT=$termux_home/opt \
+    CATFOOD_MANIFEST=$manifest \
+    CATFOOD_CHECKOUTS=$checkouts \
+        sh "$root/catfood" where catfood-fixture
+)
+test "$located" = "catfood-fixture${tab}workbench${tab}$canonical"
+
+make_checkout() {
+    checkout_path=$1
+    checkout_origin=$2
+    mkdir -p "$checkout_path"
+    git -C "$checkout_path" init -q
+    git -C "$checkout_path" remote add origin "$checkout_origin"
+}
+
+acceptance=$temporary/ib-phone-smoke
+cache_checkout=$temporary/cache/catfood-fixture
+stale=$temporary/stale/catfood-fixture
+mismatched=$temporary/mismatched/catfood-fixture
+rejected=$temporary/rejected/catfood-fixture
+
+make_checkout "$acceptance" https://github.com/isomorphisms/catfood
+make_checkout "$cache_checkout" https://github.com/isomorphisms/catfood.git
+make_checkout "$stale" https://github.com/isomorphisms/catfood.git
+make_checkout "$mismatched" https://github.com/isomorphisms/catfood.git
+make_checkout "$rejected" https://github.com/isomorphisms/not-catfood.git
+
+register_checkout() {
+    role=$1
+    checkout_path=$2
+    HOME=$termux_home \
+    CATFOOD_ROOT=$termux_home/opt \
+    CATFOOD_MANIFEST=$manifest \
+    CATFOOD_CHECKOUTS=$checkouts \
+        sh "$root/catfood" register catfood-fixture "$role" "$checkout_path" >/dev/null
+}
+
+register_checkout acceptance "$acceptance"
+register_checkout cache "$cache_checkout"
+register_checkout test "$stale"
+register_checkout other "$mismatched"
+
+rm -rf "$stale"
+git -C "$mismatched" remote set-url origin https://github.com/isomorphisms/not-catfood.git
+
+if HOME=$termux_home \
+    CATFOOD_ROOT=$termux_home/opt \
+    CATFOOD_MANIFEST=$manifest \
+    CATFOOD_CHECKOUTS=$checkouts \
+    sh "$root/catfood" register catfood-fixture other "$rejected" >/dev/null 2>&1; then
+    printf '%s\n' 'checkout registration accepted a mismatched Git origin' >&2
+    exit 1
+fi
+
+locations=$temporary/locations.tsv
+HOME=$termux_home \
+CATFOOD_ROOT=$termux_home/opt \
+CATFOOD_MANIFEST=$manifest \
+CATFOOD_CHECKOUTS=$checkouts \
+    sh "$root/catfood" where catfood-fixture > "$locations"
+
+grep -Fx "catfood-fixture${tab}acceptance${tab}$acceptance" "$locations" >/dev/null
+grep -Fx "catfood-fixture${tab}cache${tab}$cache_checkout" "$locations" >/dev/null
+grep -Fx "catfood-fixture${tab}workbench${tab}$canonical" "$locations" >/dev/null
+test "$(wc -l < "$locations" | tr -d ' ')" -eq 3
+if grep -F "$stale" "$locations" >/dev/null || grep -F "$mismatched" "$locations" >/dev/null; then
+    printf '%s\n' 'checkout lookup reported stale or mismatched registered state' >&2
+    exit 1
+fi
+
+HOME=$termux_home \
+CATFOOD_ROOT=$termux_home/opt \
+CATFOOD_MANIFEST=$manifest \
+CATFOOD_CHECKOUTS=$checkouts \
+    sh "$root/catfood" where > "$locations"
+grep -Fx "catfood-fixture${tab}acceptance${tab}$acceptance" "$locations" >/dev/null
+grep -Fx "catfood-fixture${tab}cache${tab}$cache_checkout" "$locations" >/dev/null
+grep -Fx "catfood-fixture${tab}workbench${tab}$canonical" "$locations" >/dev/null
+
+if HOME=$termux_home \
+    CATFOOD_ROOT=$termux_home/opt \
+    CATFOOD_MANIFEST=$manifest \
+    CATFOOD_CHECKOUTS=$checkouts \
+    sh "$root/catfood" where missing-tool >/dev/null 2>&1; then
+    printf '%s\n' 'checkout lookup accepted an unknown tool' >&2
+    exit 1
+fi
+
+rm -rf "$canonical" "$acceptance" "$cache_checkout"
+if HOME=$termux_home \
+    CATFOOD_ROOT=$termux_home/opt \
+    CATFOOD_MANIFEST=$manifest \
+    CATFOOD_CHECKOUTS=$checkouts \
+    sh "$root/catfood" where catfood-fixture >/dev/null 2>&1; then
+    printf '%s\n' 'checkout lookup reported only stale or mismatched locations as current' >&2
+    exit 1
+fi
+
+printf '%s\n' 'cat food cloud, generic Termux, inventory help, and verified checkout location entrypoints pass'

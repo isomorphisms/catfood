@@ -8,6 +8,10 @@ trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 # The checked-in manifests must cover the whole current inventory, while
 # readiness remains false until every intended Android runtime has a package.
 sh "$root/android/check.sh" check >/dev/null
+if grep -F 'coreutils' "$root/android/packages.tsv" >/dev/null; then
+    printf '%s\n' 'Android package delivery must not require GNU coreutils for SHA-256' >&2
+    exit 1
+fi
 for target in phone tablet; do
     if sh "$root/android/check.sh" ready "$target" >/dev/null 2>&1; then
         printf 'checked-in %s inventory unexpectedly claimed whole-distribution readiness\n' "$target" >&2
@@ -57,13 +61,14 @@ url=
 while [ "$#" -gt 0 ]; do
     case $1 in
         -o) shift; output=$1 ;;
-        http://*|https://*) url=$1 ;;
+        http://*|https://*|file://*) url=$1 ;;
     esac
     shift
 done
 [ -n "$output" ] && [ -n "$url" ]
 case $url in
     https://example.invalid/app-phone.tar.gz) cp "$CATFOOD_TEST_RELEASE/app-phone.tar.gz" "$output" ;;
+    file://*) cp "${url#file://}" "$output" ;;
     *) printf 'unexpected fixture URL: %s\n' "$url" >&2; exit 22 ;;
 esac
 EOF_CURL
@@ -73,6 +78,20 @@ cat > "$fake_bin/pkg" <<'EOF_PKG'
 set -eu
 printf '%s\n' "$*" >> "$CATFOOD_PKG_LOG"
 EOF_PKG
+
+cat > "$fake_bin/lua5.5" <<'EOF_LUA'
+#!/bin/sh
+case ${1:-} in
+    -v) printf '%s\n' 'Lua 5.5.1' >&2 ;;
+    -e) printf '%s' 'catfood-lua=42' ;;
+    *) exit 0 ;;
+esac
+EOF_LUA
+cat > "$fake_bin/luac5.5" <<'EOF_LUAC'
+#!/bin/sh
+[ "${1:-}" = -p ] && [ -f "${2:-}" ] && exit 0
+exit 2
+EOF_LUAC
 
 cat > "$fake_bin/idris-arm-backend" <<'EOF_BACKEND'
 #!/bin/sh
@@ -86,7 +105,7 @@ printf 'CLASSPATH=%s\n' "${CLASSPATH:-}" >> "$CATFOOD_APP_LOG"
 printf 'ARGS=%s\n' "$*" >> "$CATFOOD_APP_LOG"
 exit 0
 EOF_APP_PROCESS
-chmod 0755 "$fake_bin/curl" "$fake_bin/pkg" "$fake_bin/idris-arm-backend" "$fake_bin/app_process"
+chmod 0755 "$fake_bin/curl" "$fake_bin/pkg" "$fake_bin/lua5.5" "$fake_bin/luac5.5" "$fake_bin/idris-arm-backend" "$fake_bin/app_process"
 
 # Establish a known-bad experimental backend, then prove package delivery does
 # not invoke or depend on it.
@@ -112,7 +131,7 @@ idris-arm-backend	host	n/a	n/a	known-bad-experimental-backend
 EOF_DELIVERY
 cat > "$fixture_packages" <<EOF_PACKAGES
 # package	target	abi	mode	source	source_ref	package_ref	url	sha256	command	entrypoint	main_class	jni_library	jni_property	install_requires	termux_packages	runtime_requires	package_requires
-app-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,jq	-	-
+app-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime	-	-
 EOF_PACKAGES
 
 CATFOOD_TOOLS="$fixture_tools" \
@@ -131,8 +150,8 @@ idris-arm-backend	host	n/a	n/a	known-bad-experimental-backend
 EOF_SUITE_DELIVERY
 cat > "$suite_packages" <<EOF_SUITE_PACKAGES
 # package	target	abi	mode	source	source_ref	package_ref	url	sha256	command	entrypoint	main_class	jni_library	jni_property	install_requires	termux_packages	runtime_requires	package_requires
-app-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,jq	-	-
-helper-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	helper	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,jq	-	-
+app-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime	-	-
+helper-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	helper	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime	-	-
 EOF_SUITE_PACKAGES
 CATFOOD_TOOLS="$fixture_tools" \
 CATFOOD_ANDROID_DELIVERY="$suite_delivery" \
@@ -166,7 +185,16 @@ assert_package_manifest_rejected 16 'curl;echo'
 # wrapper must preserve it literally instead of embedding it as shell source.
 workspace="$tmp/workspace with \$literal"
 cache=$tmp/cache
-mkdir -p "$workspace" "$cache"
+mkdir -p "$workspace/bin" "$workspace/grease/source/bin" "$workspace/Idric" "$cache"
+ln -s "$workspace/grease/source/bin/ysh" "$workspace/bin/grease"
+ln -s "$workspace/Idric/edric" "$workspace/bin/edric"
+cat > "$workspace/bin/az" <<'EOF_OLD_AZ'
+#!/bin/sh
+# catfood az wrapper
+exit 99
+EOF_OLD_AZ
+chmod 0755 "$workspace/bin/az"
+
 PATH="$fake_bin:$PATH" \
 CATFOOD_TEST_RELEASE="$fixture" \
 CATFOOD_BACKEND_LOG="$backend_log" \
@@ -182,6 +210,11 @@ CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
 CATFOOD_ANDROID_PACKAGES="$fixture_packages" \
     sh "$root/android/install.sh" >/dev/null
 
+test ! -e "$workspace/bin/grease"
+test ! -L "$workspace/bin/grease"
+test ! -e "$workspace/bin/edric"
+test ! -L "$workspace/bin/edric"
+test ! -e "$workspace/bin/az"
 test -x "$workspace/bin/app"
 test -f "$workspace/packages/app-phone/$package_ref/classes.dex"
 test -f "$workspace/packages/app-phone/$package_ref/lib/libapp.so"
@@ -288,7 +321,11 @@ assert_receipt_rejected duplicate-field 'duplicate field: runtime_result' "$tmp/
 rewrite_receipt package absent-phone "$tmp/unknown-package.tsv"
 assert_receipt_rejected unknown-package \
     'package is not declared in packages.tsv: absent-phone' "$tmp/unknown-package.tsv"
-grep -Fx 'install -y curl jq' "$pkg_log" >/dev/null
+grep -Fx 'install -y catfood-runtime' "$pkg_log" >/dev/null
+if grep -F 'install -y curl' "$pkg_log" >/dev/null; then
+    printf '%s\n' 'Android delivery reinstalled an already available curl command' >&2
+    exit 1
+fi
 test ! -s "$backend_log"
 CATFOOD_APP_LOG="$app_log" CATFOOD_APP_PROCESS="$fake_bin/app_process" \
     "$workspace/bin/app" fixture-argument
@@ -310,6 +347,32 @@ EOF_FORBIDDEN
 done
 : > "$backend_log"
 : > "$pkg_log"
+
+binary_fixture=$tmp/runtime-binary-fixture
+mkdir -p "$binary_fixture/miller-9.8.7-linux-armv7"
+cat > "$binary_fixture/jq" <<'EOF_JQ'
+#!/bin/sh
+[ "${1:-}" = --version ] && { printf '%s\n' 'jq-9.8.7'; exit 0; }
+exit 2
+EOF_JQ
+cat > "$binary_fixture/miller-9.8.7-linux-armv7/mlr" <<'EOF_MLR'
+#!/bin/sh
+[ "${1:-}" = --version ] && { printf '%s\n' 'mlr 9.8.7'; exit 0; }
+exit 2
+EOF_MLR
+chmod 0755 "$binary_fixture/jq" "$binary_fixture/miller-9.8.7-linux-armv7/mlr"
+tar -czf "$binary_fixture/miller.tar.gz" -C "$binary_fixture" miller-9.8.7-linux-armv7
+jq_binary_sha=$(sha256sum "$binary_fixture/jq" | awk '{print $1}')
+mlr_binary_sha=$(sha256sum "$binary_fixture/miller.tar.gz" | awk '{print $1}')
+binary_manifest=$tmp/runtime-binaries.tsv
+{
+    printf '# command\tsource\tversion\tplatform\tmode\turl\tsha256\tentrypoint\tprobe_arg\tprobe_contains\n'
+    printf 'jq\tfixture/jq\t9.8.7\tlinux-armv7\tfile\tfile://%s\t%s\t-\t--version\t9.8.7\n' \
+        "$binary_fixture/jq" "$jq_binary_sha"
+    printf 'mlr\tfixture/miller\t9.8.7\tlinux-armv7\ttar.gz\tfile://%s\t%s\tmiller-9.8.7-linux-armv7/mlr\t--version\t9.8.7\n' \
+        "$binary_fixture/miller.tar.gz" "$mlr_binary_sha"
+} > "$binary_manifest"
+
 provision_workspace=$tmp/provision-workspace
 PATH="$fake_bin:$PATH" \
 CATFOOD_TEST_RELEASE="$fixture" \
@@ -319,6 +382,8 @@ CATFOOD_PKG_LOG="$pkg_log" \
 CATFOOD_APP_PROCESS="$fake_bin/app_process" \
 CATFOOD_DEVICE_ABI=armeabi-v7a \
 CATFOOD_TARGET=phone \
+CATFOOD_BINARY_PLATFORM=linux-armv7 \
+CATFOOD_BINARY_MANIFEST="$binary_manifest" \
 CATFOOD_ROOT="$provision_workspace" \
 CATFOOD_CACHE="$tmp/provision-cache" \
 CATFOOD_TOOLS="$fixture_tools" \
@@ -326,7 +391,17 @@ CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
 CATFOOD_ANDROID_PACKAGES="$fixture_packages" \
     sh "$root/provision.sh" >/dev/null
 test -x "$provision_workspace/bin/app"
-grep -Fx 'install -y curl jq' "$pkg_log" >/dev/null
+test "$("$provision_workspace/bin/jq" --version)" = "jq-9.8.7"
+test "$("$provision_workspace/bin/mlr" --version)" = "mlr 9.8.7"
+grep -Fx 'install -y catfood-runtime' "$pkg_log" >/dev/null
+if grep -F 'install -y curl' "$pkg_log" >/dev/null; then
+    printf '%s\n' 'Android provisioner reinstalled an already available curl command' >&2
+    exit 1
+fi
+if grep -F 'install -y jq' "$pkg_log" >/dev/null; then
+    printf '%s\n' 'Android provisioner substituted the Termux jq package for the pinned binary' >&2
+    exit 1
+fi
 test ! -s "$backend_log"
 if find "$provision_workspace" -type d -name .git -print -quit | grep . >/dev/null; then
     printf '%s\n' 'Android provisioner created a source checkout' >&2

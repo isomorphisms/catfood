@@ -124,6 +124,29 @@ build_idric() {
     "$output" --version >/dev/null
 }
 
+build_idric_net() {
+    repo=$workspace/Idric-Net
+    idric=$workspace/Idric
+    compiler=$idric/build/exec/idris2
+    [ -d "$repo/.git" ] || return 0
+    [ -x "$compiler" ] || {
+        printf '%s\n' 'Idric-Net needs the built Idriç compiler' >&2
+        return 1
+    }
+
+    state="$(revision "$repo") $(revision "$idric")"
+    if needs_state_build idric-net "$state"; then
+        printf '%s\n' 'installing Idric-Net'
+        (
+            cd "$repo"
+            PATH="$idric/.tools/bin:$PATH" \
+            IDRIS2_PREFIX="$idric/bootstrap-build" \
+                "$compiler" --install idric-net.ipkg
+        )
+        mark_state_built idric-net "$state"
+    fi
+}
+
 build_fieldmouse() {
     repo=$workspace/fieldmouse
     idric=$workspace/Idric
@@ -280,6 +303,7 @@ build_ir() {
 build_grease
 build_idric
 build_fieldmouse
+build_idric_net
 build_icu
 build_ib
 build_ithon

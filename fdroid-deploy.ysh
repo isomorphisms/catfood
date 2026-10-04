@@ -187,6 +187,29 @@ find_or_create_mr() {
     printf 'Pipeline: %s\n' "$(printf '%s' "$full" | jq -r '.head_pipeline.status // "not reported yet"')"
 }
 
+find_existing_app_branch() {
+    fork_json=$(project_json "$GITLAB_FORK")
+    upstream_json=$(project_json "$GITLAB_UPSTREAM")
+    fork_id=$(printf '%s' "$fork_json" | jq -r '.id')
+    upstream_id=$(printf '%s' "$upstream_json" | jq -r '.id')
+    target_q=$(uri "$GITLAB_UPSTREAM_BRANCH")
+    metadata_path=metadata/$app_id.yml
+
+    mrs=$(api_get "/projects/$upstream_id/merge_requests?scope=all&state=opened&target_branch=$target_q&order_by=updated_at&sort=desc&per_page=100")
+    for iid in $(printf '%s' "$mrs" | jq -r --argjson fork "$fork_id" \
+        '.[] | select(.source_project_id == $fork) | .iid')
+    do
+        diffs=$(api_get "/projects/$upstream_id/merge_requests/$iid/diffs?per_page=100")
+        if printf '%s' "$diffs" | jq -e --arg path "$metadata_path" \
+            'any(.[]; .new_path == $path or .old_path == $path)' >/dev/null
+        then
+            printf '%s' "$mrs" | jq -r --argjson iid "$iid" \
+                '[.[] | select(.iid == $iid)] | first | .source_branch // empty'
+            return 0
+        fi
+    done
+}
+
 if [ "${1:-}" = --help ] || [ "${1:-}" = -h ]; then
     usage
     exit 0
@@ -249,9 +272,15 @@ if [ -z "$app_id" ]; then
 fi
 
 if [ -z "$branch" ]; then
-    safe=$(printf '%s' "$app_id" | sed 's/[^A-Za-z0-9._-]/-/g; s/^[.-]*//; s/[.-]*$//')
-    [ -n "$safe" ] || { printf 'fdroid-deploy: cannot derive branch from app id: %s\n' "$app_id" >&2; exit 2; }
-    branch=submit/$safe
+    existing_branch=$(find_existing_app_branch)
+    if [ -n "$existing_branch" ]; then
+        branch=$existing_branch
+        printf 'reusing existing submission branch: %s\n' "$branch" >&2
+    else
+        safe=$(printf '%s' "$app_id" | sed 's/[^A-Za-z0-9._-]/-/g; s/^[.-]*//; s/[.-]*$//')
+        [ -n "$safe" ] || { printf 'fdroid-deploy: cannot derive branch from app id: %s\n' "$app_id" >&2; exit 2; }
+        branch=submit/$safe
+    fi
 fi
 
 if [ -z "$title" ]; then

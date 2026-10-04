@@ -1,0 +1,17 @@
+schema	aici-follower-receipt-v1
+job_id	catfood-188508808e97-phone
+repository	isomorphisms/catfood
+trigger_commit	188508808e97a22eef1f2ce8f4a4b3dfece4ca11
+follower_platform	phone
+follower_arch	armv7
+acceptance_kind	physical-device
+result	pass
+attempt_commit	188508808e97a22eef1f2ce8f4a4b3dfece4ca11
+os_runtime	MIRO A1; Android; Linux 5.15.149-android13-8-g8407b75767d0-dirty armv7l; ABI armeabi-v7a
+build_command	-
+test_command	./catfood && sh android/check.sh gaps phone
+artifact	-
+artifact_sha256	-
+evidence_url	-
+recorded_at	2026-09-17T08:43:03Z
+note	Physical ARMv7 phone acceptance at the exact trigger. Cat Food installed all currently published phone packages and left grease, ysh, az, and abe available under $HOME/opt/bin. android/check.sh gaps phone enumerated the expected remaining gap:android-package-missing inventory rows. This pass establishes the Cat Food phone package/install command boundary only; it does not claim missing applications, az search, Creators API success, Android handoff, returned-product rendering, browser delegation, emulator acceptance, or behavior beyond the acceptance action.

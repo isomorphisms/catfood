@@ -1,0 +1,4 @@
+#!/usr/bin/env ysh
+
+# Exercise the current Grease-readable boolean spellings on the device.
+⟦ 6 -eq 6 ⟧ ∧ ⟦ 7 -eq 7 ⟧ ∧ echo 'grease=42'

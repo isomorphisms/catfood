@@ -6,6 +6,70 @@ Before changing this repository, read its README and repository-local documentat
 
 Keep this file repository-specific. Do not copy the shared `ai-ci` rulebook here.
 
+## Local checkout locations
+
+- Treat `tools.tsv` as repository inventory, not proof that a checkout exists on the current machine.
+- Do not guess checkout paths from repository names, `$HOME`, `/opt`, cache naming, or acceptance-directory naming.
+- `./catfood where [TOOL]` is the authoritative query. It emits stable tab-separated rows `TOOL<TAB>ROLE<TAB>PATH` only after re-verifying the path's Git `origin` against Cat Food's repository inventory.
+- Cat Food considers only its current control checkout, the selected Cat Food workbench root, and explicitly registered machine-local paths. It does not scan arbitrary storage.
+- Register noncanonical or additional working copies with `./catfood register TOOL ROLE PATH`. Roles are `workbench`, `acceptance`, `test`, `cache`, `control`, or `other`. Registration verifies the Git origin before writing machine-local state.
+- Multiple rows for one tool are valid. Stale paths and paths whose Git origin later changes are not reported as current.
+- The machine-local checkout inventory defaults to `${XDG_STATE_HOME:-$HOME/.local/state}/catfood/checkouts.tsv`; `CATFOOD_CHECKOUTS` may point at another machine-local file.
+- Phone and tablet are runtime consumers, so a missing source checkout there is normally correct. Registration and lookup never clone the source fleet or install build tooling.
+
+## Device identity and storage paths
+
+Cat Food is the canonical place to record device-local path and mount facts.
+Before giving a phone or tablet command that depends on repository location,
+executable location, shared storage, or removable storage:
+
+- Never copy a storage assumption from phone to tablet or tablet to phone.
+  Model, architecture, mount aliases, removable media, free space, and
+  executable locations are independent facts.
+- `~/storage/downloads` is Android shared Downloads, not a synonym for an SD
+  card. Call storage "external SD" only after the exact device shows a distinct
+  removable mount such as a verified `~/storage/external-1`.
+- Verify mutable paths on the exact device with `readlink -f`, `df -h`,
+  existence/mount checks, or an execution probe when execution capability
+  matters. Android shared/removable storage may be `noexec`.
+- **Phone convention:** `~/opt/bin` is the preferred executable location on
+  the phone's internal Termux storage. The phone has previously exposed an
+  external SD card as `~/storage/external-1` (historically resolving to
+  `/storage/4A21-0000/Android/data/com.termux/files`), but removable media must
+  still be verified before use. Do not project either fact onto the tablet.
+- **Phone Shizuku terminal export, verified 2026-09-29 on MIRO A1:** Shizuku's
+  exported terminal files are in shared storage at `~/storage/shared/Shizuku`
+  (Android path `/storage/emulated/0/Shizuku`), containing `rish` and
+  `rish_shizuku.dex`. A convenience link exists at `~/opt/Shizuku ->
+  ../storage/shared/Shizuku/`. This is observed device state, not a Cat Food
+  delivery claim. On Android 14+, `app_process` cannot load a writable DEX, so
+  consumers that actually execute `rish_shizuku.dex` must copy it into
+  Termux-private storage and make it non-writable rather than assuming the
+  shared-storage copy is executable/loadable. Do not project this path or link
+  onto the tablet or another phone without fresh verification.
+- **Tablet observation, verified 2026-09-18:** physical `TAB_P10`,
+  `sun65iw1p1`, `aarch64`; `~/storage/downloads` resolves to
+  `/storage/emulated/0/Download`; `~/storage/external-1` is absent; no
+  working external SD card has been established. Shared Downloads rejected
+  direct ELF execution, while private Termux storage executed the same Mali-G57
+  test binary. Do not call tablet Downloads an SD card.
+- **Tablet ADB boundary, verified 2026-09-18 and explicitly deferred:** do
+  not turn a physical tablet test that can run directly under Termux into an ADB
+  prerequisite. The current Termux client reports `adb mdns services` as
+  unsupported and same-device Android 15 wireless pairing failed with
+  `protocol fault (couldn't read status message): Success`. ADB setup is a
+  separate problem for another session. Do not ask the human to retry pairing,
+  install ADB tooling, or route ordinary tablet acceptance through ADB unless
+  the human explicitly reopens ADB work.
+- **Tablet removable-storage boundary, verified 2026-09-18 and explicitly
+  deferred:** `~/storage/external-1` is absent and no working external SD card
+  has been established on `TAB_P10`. Do not prescribe SD-card paths, SD-card
+  diagnostics, or moving work to removable storage on this tablet unless the
+  human explicitly reopens the tablet SD-card problem and new direct evidence
+  establishes a working mount.
+- When these facts change, update this section rather than relying on chat
+  history or another device's layout.
+
 ## Android delivery
 
 Before changing phone/tablet delivery, read [`android/README.md`](android/README.md), `android/delivery.tsv`, and `android/packages.tsv`.
@@ -13,10 +77,26 @@ Before changing phone/tablet delivery, read [`android/README.md`](android/README
 - Every `tools.tsv` row plus the separate Grease bootstrap entry must have exactly one Android delivery classification.
 - Do not omit a difficult intended runtime to make the distribution look green. Leave it as `gap:<reason>` or unresolved `review` work.
 - Phone and tablet are runtime consumers. Their normal path must not clone the source fleet, bootstrap compilers, install build toolchains, or fall back to source builds.
-- Direct DEX/ART plus explicitly intended JNI/NDK code is the current Android path where needed. Do not substitute Java/Kotlin/Gradle/d8 or RefC/generated-C lowering.
-- Unfinished ARM/Thumb or other experimental native backends are not prerequisites for unrelated Android delivery.
+- Treat a missing command on a phone or tablet as a delivery defect, not as permission to compile on the device.
+- Crawl Space is a declared first-party Android runtime. Cat Food pins its exact Android binary and verifies `crawlspace identify` reports the expected build ID before considering a live daemon current. A stale daemon may be replaced through the existing one-time ADB bootstrap, but repeated runtime operations do not route through ADB.
+- Android producer builds follow the shared AICI ICK-or-NDK rule. `dex-jni`
+  describes a package/runtime shape, not a third build toolchain. Maintained
+  compile/link stages use qualified ICK when its exact required surface is
+  proven; a stage uses Android NDK only with the exact ICK revision, a specific
+  ICK capability gap, and durable evidence. A hybrid ICK-object/NDK-link build
+  records those as separate stages rather than hiding either toolchain.
+- Direct DEX/ART remains a runtime representation and may remain in an existing
+  package or reviewed common trampoline; it is not permission to generate new
+  application code through Java/Kotlin/Gradle/d8 or another undeclared build
+  path. Do not substitute RefC/generated-C lowering.
+- An unfinished ICK capability is not an unrelated Android delivery prerequisite:
+  record the exact gap on the stage that needs NDK instead of claiming broader
+  ICK maturity or silently switching compilers.
 - Bind packages to exact source/package commits, ABI, URL, SHA-256, runtime dependencies, and package dependencies.
+- Strip native ELF executables and shared objects before an APK/archive is considered shippable. Unstripped/debug outputs may exist only as separate debugging artifacts, not as the package Cat Food publishes or delivers. Record pre-strip native size, post-strip native size, and final package size, then rerun the relevant ABI/install/launch checks against the stripped artifact.
 - Keep publication, digest verification, installation, launch, behavior, emulator evidence, and physical-device evidence separate.
+- `gopeed`, `gdl`, and `go_down_load` on phone/tablet are Cat Food control-plane helpers installed after YSH is delivered; their presence does not claim that Cat Food delivered or accepted the Gopeed Android app. Ordinary unprivileged Termux must use Gopeed's TCP loopback API for cross-app control; do not assume an app-private Unix socket is reachable and do not rewrite Gopeed's private settings on the user's behalf.
+- When a phone/tablet command block is meant to produce output the human will paste back, use ANSI-colored section/action/PASS/FAIL markers when supported so the requested result is easy to find. Keep receipt fields and other machine-readable evidence plain, and never make color the only signal.
 
 Run `sh tests/android-delivery.sh` for repository-side contract changes. `sh android/check.sh ready phone|tablet` is intentionally allowed to remain red while declared runtime gaps exist.
 
@@ -28,11 +108,19 @@ For the exact source commit being led from mobile:
 
 - infer affected followers rather than relying on a human reminder to test x86;
 - run follower checks available in the current environment;
-- create durable follower jobs for every affected environment that cannot run here;
+- create durable follower jobs for every affected **maintained target** that cannot run here; do not turn every architecture/page-size/emulator/hardware combination into a target;
 - bind jobs and artifacts to exact commits and SHA-256 identities;
 - never claim GitHub, local/container x86-64, Hetzner, tablet, or phone acceptance from another target's receipt;
 - preserve build, runtime, artifact, publication, and physical-device evidence as separate acceptance kinds;
 - leave inaccessible or unsupported targets pending/blocked/unsupported rather than calling them green;
+- if a possible future target is worth recording before it is actually maintained, use the shared conditional `n/a` policy rather than a required blocked follower; physical-device work is required only for an identified physical deployment target;
 - record explicit supersession when later work replaces an unfinished follower obligation.
 
 Before declaring follower work caught up, run AICI follower verification/reconciliation, `sh followers/stale.sh`, and inspect `sh followers/manage.sh pending <source-commit>`. A follower closes only after its required matching receipt exists.
+
+For merge-state collection, use `sh followers/manage.sh blockers <source-commit>`.
+Current exact follower debt is informational for the source merge unless the PR
+declares it as a promotion requirement. Reconcile stale ancestor jobs with
+`sh followers/manage.sh supersede-ancestors <source-commit>` only when its
+same-target, same-acceptance-kind preflight succeeds; this records succession
+and never manufactures acceptance.

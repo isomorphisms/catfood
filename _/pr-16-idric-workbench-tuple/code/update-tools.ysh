@@ -1,0 +1,244 @@
+#!/usr/bin/env ysh
+set -eu
+
+root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+workspace=${CATFOOD_ROOT:-/opt}
+history_depth=${CATFOOD_DEPTH:-12}
+manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
+failures=0
+
+feed_repository() {
+    name=$1
+    repository=$2
+    branch=$3
+    submodules=$4
+    target=$workspace/$name
+
+    printf '%-22s %s\n' "$name" "$target"
+
+    if [ -e "$target/.git" ]; then
+        origin=$(git -C "$target" remote get-url origin 2>/dev/null || true)
+        if [ "$origin" != "$repository" ]; then
+            printf '  origin is %s, expected %s; leaving it alone\n' "${origin:-<missing>}" "$repository" >&2
+            return 1
+        fi
+
+        if ! git -C "$target" fetch --prune origin "$branch"; then
+            printf '  fetch failed\n' >&2
+            return 1
+        fi
+
+        if [ -n "$(git -C "$target" status --porcelain)" ]; then
+            printf '  local changes present; fetched but did not move it\n'
+            return 0
+        fi
+
+        if git -C "$target" show-ref --verify --quiet "refs/heads/$branch"; then
+            if ! git -C "$target" checkout "$branch"; then
+                return 1
+            fi
+        else
+            if ! git -C "$target" checkout -b "$branch" --track "origin/$branch"; then
+                return 1
+            fi
+        fi
+
+        if ! git -C "$target" merge --ff-only "origin/$branch"; then
+            printf '  local history diverged; not rewriting it\n' >&2
+            return 1
+        fi
+    elif [ -e "$target" ]; then
+        printf '  path exists but is not a git checkout; leaving it alone\n' >&2
+        return 1
+    else
+        if ! git clone --depth "$history_depth" --single-branch --branch "$branch" \
+            "$repository" "$target"; then
+            return 1
+        fi
+    fi
+
+    if [ "$submodules" = recursive ]; then
+        if ! git -C "$target" submodule sync --recursive || \
+           ! git -C "$target" submodule update --init --recursive --depth "$history_depth"; then
+            printf '  submodule update failed\n' >&2
+            return 1
+        fi
+    fi
+}
+
+link_first() {
+    name=$1
+    shift
+    link=$workspace/bin/$name
+
+    for candidate do
+        if [ -x "$candidate" ]; then
+            if [ -e "$link" ] && [ ! -L "$link" ]; then
+                printf '  %s exists and is not a symlink; leaving it alone\n' "$link" >&2
+                return 1
+            fi
+            rm -f "$link"
+            ln -s "$candidate" "$link"
+            return 0
+        fi
+    done
+
+    return 0
+}
+
+link_shell() {
+    name=$1
+    shift
+    link=$workspace/bin/$name
+
+    # Provisioning may deliberately point the stable shell name at a released
+    # native Oils install outside the source checkout. Keep that link as long
+    # as it is still runnable instead of regressing to an older source launcher.
+    if [ -L "$link" ] && [ -x "$link" ] && "$link" -c 'echo' >/dev/null 2>&1; then
+        return 0
+    fi
+
+    link_first "$name" "$@"
+}
+
+install_az_wrapper() {
+    name=$1
+    script=$workspace/az/bin/$name
+    wrapper=$workspace/bin/$name
+
+    [ -f "$script" ] || return 0
+
+    if [ -e "$wrapper" ] || [ -L "$wrapper" ]; then
+        if [ -f "$wrapper" ] && grep -F '# catfood az wrapper' "$wrapper" >/dev/null 2>&1; then
+            :
+        elif [ -L "$wrapper" ]; then
+            rm -f "$wrapper"
+        else
+            printf '  %s exists and is not a Cat Food wrapper; leaving it alone\n' "$wrapper" >&2
+            return 1
+        fi
+    fi
+
+cat > "$wrapper" <<'EOF'
+#!/bin/sh
+# catfood az wrapper
+set -eu
+bin_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+workspace=$(dirname -- "$bin_dir")
+name=$(basename -- "$0")
+script=$workspace/az/bin/$name
+
+# az's checked-in test suite and shell features target Bash.  Keep the stable
+# command on that tested interpreter until the repository adds a YSH gate.
+exec bash "$script" "$@"
+EOF
+    chmod 0755 "$wrapper"
+}
+
+install_idric_program_wrapper() {
+    name=$1
+    target=$2
+    working_directory=${3:-}
+    wrapper=$workspace/bin/$name
+
+    [ -x "$workspace/$target" ] || return 0
+
+    if [ -e "$wrapper" ] || [ -L "$wrapper" ]; then
+        if [ -f "$wrapper" ] && grep -F '# catfood idric program wrapper' "$wrapper" >/dev/null 2>&1; then
+            :
+        elif [ -L "$wrapper" ]; then
+            rm -f "$wrapper"
+        else
+            printf '  %s exists and is not a Cat Food wrapper; leaving it alone\n' "$wrapper" >&2
+            return 1
+        fi
+    fi
+
+cat > "$wrapper" <<'EOF'
+#!/bin/sh
+# catfood idric program wrapper
+set -eu
+bin_dir=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+workspace=$(dirname -- "$bin_dir")
+EOF
+    printf 'PATH="$workspace/Idric/.tools/bin:$PATH"\n' >> "$wrapper"
+    printf '%s\n' 'export PATH' >> "$wrapper"
+    if [ -n "$working_directory" ]; then
+        printf 'cd "$workspace/%s"\n' "$working_directory" >> "$wrapper"
+    fi
+    printf 'exec "$workspace/%s" "$@"\n' "$target" >> "$wrapper"
+    chmod 0755 "$wrapper"
+}
+
+install_command_links() {
+    mkdir -p "$workspace/bin"
+
+    link_first R \
+        "$workspace/r/bin/R"
+    link_first Rscript \
+        "$workspace/r/bin/Rscript"
+    link_first edric \
+        "$workspace/Idric/edric"
+    link_first ick \
+        "$workspace/ick-runtime/bin/ick" \
+        "$workspace/ick-runtime/bin/gcc"
+    link_first ithon \
+        "$workspace/.build/ithon/python" \
+        "$workspace/ithon/ithon" \
+        "$workspace/ithon/bin/ithon"
+    link_shell osh \
+        "$workspace/oils/_bin/cxx-sh/osh" \
+        "$workspace/oils/bin/osh" \
+        "$workspace/oils/osh"
+    link_shell ysh \
+        "$workspace/oils/_bin/cxx-sh/ysh" \
+        "$workspace/oils/bin/ysh" \
+        "$workspace/oils/ysh"
+    link_first grease \
+        "$workspace/grease/_bin/cxx-sh/ysh" \
+        "$workspace/grease/bin/ysh" \
+        "$workspace/grease/ysh" \
+        "$workspace/grease/source/_bin/cxx-sh/ysh" \
+        "$workspace/grease/source/bin/ysh"
+
+    install_az_wrapper az
+    install_az_wrapper abe
+    install_idric_program_wrapper idris2 Idric/build/exec/idris2
+    install_idric_program_wrapper fieldmouse fieldmouse/build/exec/fieldmouse
+    install_idric_program_wrapper ib-arxiv-prepaint ib/src/build/exec/ib-arxiv-prepaint
+    install_idric_program_wrapper icu icu/build/exec/icu icu
+}
+
+command -v git >/dev/null 2>&1 || {
+    printf '%s\n' 'cat food needs git' >&2
+    exit 127
+}
+mkdir -p "$workspace"
+
+if [ "${CATFOOD_LINKS_ONLY:-0}" != 1 ]; then
+    while read -r name repository branch submodules || [ -n "${name:-}" ]; do
+        case ${name:-} in
+            ''|'#'*) continue ;;
+        esac
+
+        if ! feed_repository "$name" "$repository" "$branch" "$submodules"; then
+            failures=1
+        fi
+    done < "$manifest"
+fi
+
+if ! install_command_links; then
+    failures=1
+fi
+
+if [ "$failures" -ne 0 ]; then
+    printf '%s\n' 'cat food finished with failures' >&2
+    exit 1
+fi
+
+if [ "${CATFOOD_LINKS_ONLY:-0}" = 1 ]; then
+    printf 'cat food links are current under %s/bin\n' "$workspace"
+else
+    printf 'cat food is current under %s\n' "$workspace"
+    printf 'commands are under %s/bin\n' "$workspace"
+fi

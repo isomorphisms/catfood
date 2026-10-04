@@ -23,6 +23,10 @@ Aliases installed by Cat Food:
 Environment:
   GOPEED_URL        REST base URL (default http://127.0.0.1:9999)
   GOPEED_API_TOKEN  optional API token
+
+Android:
+  Termux cross-app control uses TCP loopback. Gopeed's private Unix socket is
+  not the Cat Food transport.
 EOF
 }
 
@@ -31,6 +35,19 @@ need() {
         printf 'gopeed: required command not found: %s\n' "$1" >&2
         return 127
     }
+}
+
+connection_failure() {
+    printf 'gopeed: request to %s failed\n' "$gopeed_url" >&2
+    case ${PREFIX:-} in
+        /data/data/com.termux/*)
+            if test "$gopeed_url" = http://127.0.0.1:9999; then
+                printf '%s\n' 'gopeed: Termux controls the Android Gopeed app through TCP loopback, not its private Unix socket.' >&2
+                printf '%s\n' 'gopeed: in Gopeed Settings > Advanced, select TCP and use 127.0.0.1:9999.' >&2
+                printf '%s\n' 'gopeed: Cat Food does not rewrite Gopeed app-private settings.' >&2
+            fi
+            ;;
+    esac
 }
 
 api_request() {
@@ -101,7 +118,7 @@ submit_download() {
     need jq || return
     payload=$(jq -cn --arg url "$url" '{req:{url:$url}}')
     response=$(api_request POST /api/v1/tasks "$payload") || {
-        printf 'gopeed: request to %s failed\n' "$gopeed_url" >&2
+        connection_failure
         return 1
     }
 
@@ -122,7 +139,7 @@ show_info() {
     need curl || return
     need jq || return
     response=$(api_request GET /api/v1/info) || {
-        printf 'gopeed: request to %s failed\n' "$gopeed_url" >&2
+        connection_failure
         return 1
     }
     printf '%s\n' "$response" | jq -e '

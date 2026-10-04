@@ -15,6 +15,8 @@ The initialized REST defaults are:
 
 The default listener is therefore loopback-only: Termux on the same Android device can reach it, but it is not exposed to the LAN. A particular installed Android build still needs runtime verification; check it with `GET /api/v1/info` or `gopeed info` rather than treating source configuration as a physical-device receipt.
 
+Older Android Gopeed builds, and devices with an already stored configuration, may still be set to `Unix`. In the older Android client that socket is created as `gopeed.sock` under Gopeed's application-private temporary directory. Ordinary unprivileged Termux is a different Android application and cannot use that private pathname as the cross-app control transport. For Cat Food control, set Gopeed to `TCP` on loopback and use a fixed address such as `127.0.0.1:9999`. Cat Food does not rewrite Gopeed's private application configuration.
+
 ```sh
 GOPEED=http://127.0.0.1:9999
 curl -sS "$GOPEED/api/v1/info"
@@ -30,7 +32,7 @@ or `Authorization: Bearer $GOPEED_API_TOKEN` to requests. With no API token and 
 
 ## Cat Food command
 
-Cat Food installs a small `gopeed` command that submits a URL to the local REST service. `gdl` and `go_down_load` are aliases of the same command.
+Cat Food installs a small `gopeed` command that submits a URL to the local REST service. `gdl` and `go_down_load` are aliases of the same command. On phone/tablet, this command is installed from the Cat Food control-plane checkout after the delivered YSH runtime is present; it is not a package or acceptance claim for the Gopeed Android app.
 
 ```sh
 gopeed https://example.com/file
@@ -52,7 +54,7 @@ Cat Food's conditional `aa` wrapper also carries a future handoff: after a succe
 next: aa resolve <MD5> | gdl    # gdl = go_down_load = gopeed
 ```
 
-The current `az` `AA` branch intentionally does **not** implement `aa search`; it only has the stable member fast-download resolver. The hook therefore stays dormant rather than inventing an HTML scraper or claiming search support that does not exist.
+Current `az:main` includes the stable `aa resolve MD5` member fast-download resolver, but it still does **not** implement `aa search`. The search hook therefore stays dormant rather than inventing an HTML scraper or claiming search support that does not exist.
 
 ## Endpoints
 
