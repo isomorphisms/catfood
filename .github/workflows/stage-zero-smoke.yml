@@ -17,9 +17,9 @@ jobs:
           for script in \
             catfood bootstrap.sh check-manifest.sh update-tools.ysh ci/repositories.sh \
             provision.sh install-binaries.sh activate.sh build-tools.sh refresh.sh doctor.sh import-config.sh \
-            android/check.sh android/install.sh android/install-local-clients.sh android/bootstrap-crawlspace.sh android/install-crawlspace-bootstrap.sh \
+            android/check.sh android/install.sh android/install-local-clients.sh android/bootstrap-crawlspace.sh android/install-crawlspace-bootstrap.sh android/provision-shizuku-rish.sh \
             tests/check-manifest.sh tests/repository-identities.sh tests/entrypoint.sh tests/targets.sh tests/android-delivery.sh \
-            tests/android-local-clients.sh tests/android-crawlspace.sh tests/runtime-binaries.sh
+            tests/android-local-clients.sh tests/android-crawlspace.sh tests/android-shizuku-provision.sh tests/android-miro-phone-setup.sh tests/runtime-binaries.sh
           do
             if [ -f "$script" ]; then
               dash -n "$script"
@@ -53,3 +53,9 @@ jobs:
       - name: Verify Android local client feed
         shell: sh
         run: sh tests/android-local-clients.sh
+      - name: Verify Shizuku rish provisioning
+        shell: sh
+        run: sh tests/android-shizuku-provision.sh
+      - name: Verify MIRO phone setup policy
+        shell: sh
+        run: sh tests/android-miro-phone-setup.sh

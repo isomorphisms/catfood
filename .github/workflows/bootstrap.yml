@@ -30,8 +30,10 @@ jobs:
           dash -n android/install.sh
           dash -n android/bootstrap-crawlspace.sh
           dash -n android/install-crawlspace-bootstrap.sh
+          dash -n android/provision-shizuku-rish.sh
           dash -n tests/android-delivery.sh
           dash -n tests/android-crawlspace.sh
+          dash -n tests/android-shizuku-provision.sh
           dash -n tests/runtime-binaries.sh
           dash -n tests/lua.sh
           dash -n tests/entrypoint.sh
@@ -46,6 +48,9 @@ jobs:
       - name: Exercise Crawl Space Android runtime contract
         shell: sh
         run: sh tests/android-crawlspace.sh
+      - name: Exercise Shizuku rish provisioning
+        shell: sh
+        run: sh tests/android-shizuku-provision.sh
       - name: Exercise pinned runtime binary contracts
         shell: sh
         run: sh tests/runtime-binaries.sh

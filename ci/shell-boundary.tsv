@@ -11,6 +11,8 @@ android/check.sh	stage-zero	sh	Validates total Android inventory coverage and pa
 android/install.sh	stage-zero	sh	Installs verified Android runtime packages without a compiler
 android/bootstrap-crawlspace.sh	stage-zero	sh	Starts the delivered Crawl Space shell daemon without device compilation
 android/install-crawlspace-bootstrap.sh	stage-zero	sh	Installs the stable post-reboot Crawl Space helper
+android/miro-phone-setup.sh	stage-zero	sh	Fresh MIRO phones and adb shell have no Grease yet
+android/provision-shizuku-rish.sh	stage-zero	sh	Provisions the stock Shizuku terminal bundle before rish is available
 activate.sh	transition	sh	Creates stable command links after bootstrap
 refresh.sh	transition	sh	Hands YSH files to a runnable Grease or YSH
 build-tools.sh	transition	sh	Existing post-bootstrap build driver pending Grease migration
@@ -21,6 +23,8 @@ tests/entrypoint.sh	test	sh	Cloud and generic Termux dispatch fixtures
 tests/targets.sh	test	sh	Target selection fixtures
 tests/android-delivery.sh	test	sh	Whole-inventory Android runtime delivery fixtures
 tests/android-crawlspace.sh	test	sh	Crawl Space exact-build delivery, bootstrap, and no-device-build fixtures
+tests/android-miro-phone-setup.sh	test	sh	MIRO dry-run, exact-scope, and idempotence fixtures
+tests/android-shizuku-provision.sh	test	sh	Shizuku export, installed-APK, idempotence, and no-removable-SD fixtures
 tests/runtime-binaries.sh	test	sh	Pinned runtime-binary digest, install, and ownership fixtures
 tests/lua.sh	test	sh	Lua package acquisition, semantic smoke, parse smoke, and link ownership fixtures
 update-tools.ysh	grease	ysh	Repository feed after the Grease bootstrap
