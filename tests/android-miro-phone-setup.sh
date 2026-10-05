@@ -10,6 +10,10 @@ mkdir -p "$fake_bin" "$state"
 
 cat > "$state/installed" <<'EOF_INSTALLED'
 com.king.candycrushsaga
+us.sliide.harp
+com.particlenews.newsbreak
+com.huub.flamingo
+com.amazon.mShop.android.shopping
 com.google.android.apps.magazines
 com.google.android.googlequicksearchbox
 com.openai.chatgpt
@@ -78,7 +82,7 @@ case $command in
       if [ -n "$filter" ] && [ "$p" != "$filter" ]; then continue; fi
       if [ "$third_party" -eq 1 ]; then
         case $p in
-          com.king.*|com.openai.*|com.termux|com.vendor.*) ;;
+          com.king.*|us.sliide.*|com.particlenews.*|com.huub.*|com.amazon.*|com.openai.*|com.termux|com.vendor.*) ;;
           *) continue ;;
         esac
       fi
@@ -140,15 +144,24 @@ run_setup() {
 # Dry run must expose exact intended actions but perform no mutation.
 dry=$(run_setup --scope android --dry-run --level attention)
 printf '%s\n' "$dry" | grep -F 'would_uninstall_for_user' | grep -F 'com.king.candycrushsaga' >/dev/null
+printf '%s\n' "$dry" | grep -F 'would_uninstall_for_user' | grep -F 'us.sliide.harp' >/dev/null
+printf '%s\n' "$dry" | grep -F 'would_uninstall_for_user' | grep -F 'com.particlenews.newsbreak' >/dev/null
+printf '%s\n' "$dry" | grep -F 'would_uninstall_for_user' | grep -F 'com.huub.flamingo' >/dev/null
 printf '%s\n' "$dry" | grep -F 'would_disable' | grep -F 'com.google.android.apps.magazines' >/dev/null
 printf '%s\n' "$dry" | grep -F 'third_party' | grep -F 'review' | grep -F 'com.vendor.mystery.newsfeed' >/dev/null
+printf '%s\n' "$dry" | grep -F 'third_party' | grep -F 'review' | grep -F 'com.amazon.mShop.android.shopping' >/dev/null
 test ! -s "$state/mutations"
 grep -Fqx 'com.king.candycrushsaga' "$state/installed"
 
-# Attention apply removes the game, disables News, changes exactly three settings,
-# and leaves the aggressive Google-app target and unknown vendor package alone.
+# Attention apply removes the game and named C67 news preloads, disables Google
+# News, changes exactly three settings, and leaves Amazon, the aggressive Google
+# app target, and unknown vendor packages alone.
 run_setup --scope android --apply --level attention >/dev/null
 ! grep -Fqx 'com.king.candycrushsaga' "$state/installed"
+! grep -Fqx 'us.sliide.harp' "$state/installed"
+! grep -Fqx 'com.particlenews.newsbreak' "$state/installed"
+! grep -Fqx 'com.huub.flamingo' "$state/installed"
+grep -Fqx 'com.amazon.mShop.android.shopping' "$state/installed"
 grep -Fqx 'com.google.android.apps.magazines' "$state/disabled"
 grep -Fqx 'com.google.android.googlequicksearchbox' "$state/installed"
 grep -Fqx 'com.vendor.mystery.newsfeed' "$state/installed"
@@ -168,6 +181,7 @@ second_count=$(wc -l < "$state/mutations" | tr -d ' ')
 # Aggressive adds the remaining selected targets/settings and is itself repeatable.
 run_setup --scope android --apply --level aggressive >/dev/null
 grep -Fqx 'com.google.android.googlequicksearchbox' "$state/disabled"
+grep -Fqx 'com.amazon.mShop.android.shopping' "$state/installed"
 grep -Fqx 'global|heads_up_notifications_enabled|0' "$state/settings"
 third_count=$(wc -l < "$state/mutations" | tr -d ' ')
 run_setup --scope android --apply --level aggressive >/dev/null
