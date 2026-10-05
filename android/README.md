@@ -46,6 +46,14 @@ phones. It defaults to a dry run and has three removal levels:
 unrecognized third-party packages are reported for review and are never guessed
 at or removed.
 
+The current MIRO cleanup policy explicitly removes known bundled games at the
+`safe` level and, at the default `attention` level, removes the C67 news
+preloads identified as Headlines (`us.sliide.harp`), NewsBreak
+(`com.particlenews.newsbreak`), and Pulse / News Pulse
+(`com.huub.flamingo`). Amazon Shopping is deliberately not a removal target;
+even `aggressive` leaves `com.amazon.mShop.android.shopping` alone. Additional
+game/news packages remain audit-only until their exact package IDs are known.
+
 From the Cat Food checkout in Termux:
 
 ```sh
