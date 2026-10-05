@@ -133,6 +133,9 @@ package_policy() {
 1|uninstall|com.moonactive.coinmaster|Coin Master
 1|uninstall|com.supercell.clashofclans|Clash of Clans
 1|uninstall|com.supercell.clashroyale|Clash Royale
+2|uninstall|us.sliide.harp|Headlines
+2|uninstall|com.particlenews.newsbreak|NewsBreak
+2|uninstall|com.huub.flamingo|Pulse / News Pulse
 2|disable|com.google.android.apps.magazines|Google News
 2|disable|com.google.android.videos|Google TV
 2|uninstall|com.facebook.katana|Facebook
@@ -144,7 +147,6 @@ package_policy() {
 2|disable|com.facebook.appmanager|Facebook app manager
 2|disable|com.facebook.services|Facebook services
 3|uninstall|com.netflix.mediaclient|Netflix
-3|uninstall|com.amazon.mShop.android.shopping|Amazon Shopping
 3|uninstall|com.ebay.mobile|eBay
 3|uninstall|com.reddit.frontpage|Reddit
 3|disable|com.google.android.googlequicksearchbox|Google app, Discover, and Assistant surface
