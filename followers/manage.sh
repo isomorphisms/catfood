@@ -67,6 +67,7 @@ affected_paths() {
     paths=$1 scratch=$2
     while IFS= read -r path; do
         [ -n "$path" ] || continue
+        control_path "$path" && continue
         rule_for_path "$path"
     done < "$paths" > "$scratch/rules"
     while IFS="$tab" read -r follower reason; do
@@ -124,9 +125,14 @@ stale_target() {
 }
 
 control_path() {
-    classified=$(rule_for_path "$1")
-    follower_set=$(printf '%s\n' "$classified" | awk -F '\t' '{print $1}')
-    [ "$follower_set" = - ]
+    case $1 in
+        followers/*|AGENTS.md|docs/followers.md|tests/followers.sh|.github/workflows/followers.yml|android/README.md|android/devices/*|docs/observations/*)
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
 }
 
 latest_source_from() {
