@@ -338,4 +338,50 @@ make_integration_fixture "$squash_fixture"
     sh followers/stale.sh >/dev/null
 )
 
+
+# A commit that only records documentation/device observations is not a new
+# runtime or physical-acceptance source trigger.
+noimpact_fixture=$tmp/noimpact-repo
+make_integration_fixture "$noimpact_fixture"
+(
+    cd "$noimpact_fixture"
+    git init -q
+    git config user.email follower-test@example.invalid
+    git config user.name follower-test
+    git add .
+    git commit -qm base
+
+    printf '%s\n' '# source change' >> provision.sh
+    git add provision.sh
+    git commit -qm source
+    source_trigger=$(git rev-parse HEAD)
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
+        prepare "$source_trigger" phone armv7 - noimpact 1 >/dev/null
+    git add followers
+    git commit -qm follower-ledger
+
+    mkdir -p android/devices docs/observations
+    printf '%s\n' '# Android notes only' > android/README.md
+    printf '%s\n' '# device profile only' > android/devices/fixture.md
+    printf '%s\n' 'kind\tvalue' 'observation\tfixture' > docs/observations/fixture.tsv
+    git add android/README.md android/devices/fixture.md docs/observations/fixture.tsv
+    git commit -qm observation-evidence
+    evidence_commit=$(git rev-parse HEAD)
+
+    affected=$(sh followers/manage.sh affected "$evidence_commit")
+    [ -z "$affected" ] || {
+        echo 'no-impact evidence commit must not become a follower trigger' >&2
+        exit 1
+    }
+    [ "$(sh followers/manage.sh latest)" = "$source_trigger" ] || {
+        echo 'no-impact evidence commit must not become a follower trigger' >&2
+        exit 1
+    }
+    [ "$(sh followers/manage.sh resolve "$evidence_commit")" = "$source_trigger" ] || {
+        echo 'no-impact evidence commit must preserve exact source-state resolution' >&2
+        exit 1
+    }
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh reconcile "$(sh followers/manage.sh latest)" >/dev/null
+)
+
 printf '%s\n' 'cat food follower inference self-test passes'
