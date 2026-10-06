@@ -44,8 +44,9 @@ Cat Food may expose a control-plane helper from its own checked-out version afte
 Device-specific facts do not redefine Cat Food's ABI targets. They document how
 a physical product maps onto those targets after an actual runtime receipt.
 
-- [MIRO C67 target note](devices/miro-c67.md) — Helio G36/Cortex-A53/GE8320
-  model facts are known; physical Android ABI mapping remains unverified.
+- [MIRO C67 physical profile](devices/miro-c67.md) — physical Android 14 /
+  API 34, arm64-v8a with 32-bit compatibility, MT6765/Cortex-A53, PowerVR
+  GE8320, 720x1600 at 60/90 Hz, and retained peripheral observations.
 
 ## Evidence boundaries
 
