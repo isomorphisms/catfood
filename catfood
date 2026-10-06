@@ -11,6 +11,7 @@ usage: ./catfood [--target]
        ./catfood help [tool]
        ./catfood where [tool]
        ./catfood register TOOL ROLE PATH
+       ./catfood inspect|record|compare|packages|report
 
 Feed the selected Cat Food target.
 
@@ -435,6 +436,9 @@ case ${1:-} in
         fi
         register_checkout "$2" "$3" "$4"
         exit $?
+        ;;
+    inspect|record|compare|packages|report)
+        exec sh "$root/device-state.sh" "$@"
         ;;
     *) usage >&2; exit 2 ;;
 esac

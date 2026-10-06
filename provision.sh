@@ -52,6 +52,7 @@ fi
 # before package managers, compiler bootstraps, repository feeds, and host builds.
 case $target in
     phone|c67|tablet)
+        CATFOOD_ROOT=$workspace sh "$root/android/preserve-shizuku.sh" save
         if [ -n "${CATFOOD_CONFIG_DIR:-}" ]; then
             CATFOOD_CONFIG_DIR=$CATFOOD_CONFIG_DIR sh "$root/import-config.sh"
         fi
