@@ -1,4 +1,5 @@
-#!/usr/bin/env grease
+#!/usr/bin/env ysh
+# Repository shebang contract; deployed execution uses the pinned Grease runtime.
 set -eu -o pipefail
 test "$#" = 4 || { echo 'expected AUTHENTICATED_DECISION APK SOURCE_COMMIT TARGET' >&2; exit 2; }
 var decision = "$1"

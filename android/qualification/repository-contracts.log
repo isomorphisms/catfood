@@ -1,0 +1,21 @@
+{"kind":"assertion","status":"pass","code":"CATFOOD-ENTRYPOINT","operation":"nonempty","detail":"catfood"}
+{"kind":"assertion","status":"pass","code":"CATFOOD-MANIFEST","operation":"nonempty","detail":"tools.tsv"}
+{"kind":"assertion","status":"pass","code":"CATFOOD-TERMUX-TEST","operation":"nonempty","detail":"tests/entrypoint.sh"}
+{"kind":"assertion","status":"pass","code":"CATFOOD-ENTRYPOINT-NO-SUDO","operation":"not_contains","detail":"catfood :: sudo"}
+{"kind":"assertion","status":"pass","code":"CATFOOD-ENTRYPOINT-NO-APT","operation":"not_contains","detail":"catfood :: apt-get"}
+{"kind":"summary","status":"pass","assertions":5,"failures":0}
+{"kind":"assertion","status":"pass","code":"CATFOOD-CI-CONTINUE","operation":"yaml_forbid_key","detail":".github/workflows/bootstrap.yml excludes key continue-on-error"}
+{"kind":"assertion","status":"pass","code":"CATFOOD-CI-CONTINUE-SMOKE","operation":"yaml_forbid_key","detail":".github/workflows/stage-zero-smoke.yml excludes key continue-on-error"}
+{"kind":"assertion","status":"pass","code":"CATFOOD-CI-SWALLOW","operation":"not_contains","detail":".github/workflows/bootstrap.yml :: set +e"}
+{"kind":"assertion","status":"pass","code":"CATFOOD-CI-SWALLOW-SMOKE","operation":"not_contains","detail":".github/workflows/stage-zero-smoke.yml :: set +e"}
+{"kind":"assertion","status":"pass","code":"CATFOOD-CI-PINS","operation":"actions_pinned","detail":".github/workflows/bootstrap.yml"}
+{"kind":"assertion","status":"pass","code":"CATFOOD-CI-PINS-SMOKE","operation":"actions_pinned","detail":".github/workflows/stage-zero-smoke.yml"}
+{"kind":"summary","status":"pass","assertions":6,"failures":0}
+{"kind":"assertion","status":"pass","code":"CATFOOD-SHELL-BOUNDARY","operation":"nonempty","detail":"ci/shell-boundary.tsv"}
+{"kind":"assertion","status":"pass","code":"CATFOOD-SHELL-BOUNDARY-HEADER","operation":"tsv_header","detail":"ci/shell-boundary.tsv header=path,layer,runner,reason"}
+{"kind":"assertion","status":"pass","code":"CATFOOD-SHELL-BOUNDARY-FIELDS","operation":"tsv","detail":"ci/shell-boundary.tsv fields=4 rows=15"}
+{"kind":"assertion","status":"pass","code":"CATFOOD-YSH-SHEBANG","operation":"suffix_first_line","detail":". *.ysh starts #!/usr/bin/env ysh"}
+{"kind":"assertion","status":"pass","code":"CATFOOD-YSH-NOT-SH-WRAPPED","operation":"not_contains","detail":"activate.sh :: exec sh"}
+{"kind":"assertion","status":"pass","code":"CATFOOD-UPDATER-NOT-SH-RUN","operation":"not_contains","detail":"refresh.sh :: sh \"$root/update-tools.ysh\""}
+{"kind":"summary","status":"pass","assertions":6,"failures":0}
+{"kind":"suite-summary","status":"pass","contracts":3,"failures":0}

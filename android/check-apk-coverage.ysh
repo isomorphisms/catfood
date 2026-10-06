@@ -1,4 +1,5 @@
-#!/usr/bin/env grease
+#!/usr/bin/env ysh
+# Repository shebang contract; execute with the pinned Grease implementation.
 set -eu -o pipefail
 var script = $(/usr/bin/readlink -f "$0")
 var root = $(/usr/bin/dirname "$script")

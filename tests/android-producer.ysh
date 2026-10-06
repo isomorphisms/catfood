@@ -1,4 +1,5 @@
-#!/usr/bin/env grease
+#!/usr/bin/env ysh
+# Repository shebang contract; qualification uses the pinned Grease implementation.
 set -eu -o pipefail
 # Negative public-boundary tests use actual canonical APK bytes.
 # No fixture deployment/key override is offered to this public route.

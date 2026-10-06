@@ -31,6 +31,8 @@ jobs:
           "$RUNNER_TEMP/aici" verify \
             _ai-ci/contracts/catfood-issh-v0.contract.tsv .
 
-      - name: Verify Android producer receipt handoff
+      - name: Require authenticated Android producer deployment
         shell: sh
-        run: sh tests/android-producer.sh
+        run: |
+          test -x /opt/aici/android-producer/current/runtime/grease || { echo '::error::BLOCKED: independent Android producer runtime/release unavailable'; exit 1; }
+          exec /usr/bin/env -i PATH=/usr/bin:/bin /opt/aici/android-producer/current/runtime/grease /opt/aici/android-producer/current/policy/android-producer/preflight.ysh
