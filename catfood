@@ -122,7 +122,28 @@ detect_target() {
                 *) printf '%s\n' termux ;;
             esac
             ;;
-        *) printf '%s\n' cloud ;;
+        *)
+            system=$(uname -s 2>/dev/null || printf '%s\n' unknown)
+            if [ "$system" != Linux ]; then
+                printf 'unsupported automatic Cat Food platform: %s; no provisioning performed\n' "$system" >&2
+                return 2
+            fi
+            # Stage-zero sh boundary: Grease is not installed yet. Read only
+            # the distribution ID, never execute the OS description as code.
+            release_file=${1:-/etc/os-release}
+            if [ -r "$release_file" ]; then
+                while IFS= read -r release_line || [ -n "$release_line" ]; do
+                    case $release_line in
+                        ID=debian|ID=ubuntu|ID=\"debian\"|ID=\"ubuntu\")
+                            printf '%s\n' cloud
+                            return 0
+                            ;;
+                    esac
+                done < "$release_file"
+            fi
+            printf '%s\n' 'unsupported automatic Linux distribution; Debian/Ubuntu evidence required; no provisioning performed' >&2
+            return 2
+            ;;
     esac
 }
 
