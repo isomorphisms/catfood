@@ -1,0 +1,5 @@
+Cat Food APK coverage: PASS (all three explicitly blocked; no delivery claimed)
+coverage	PASS
+undeployed-public-validation	DENIED
+undeployed-public-delivery	DENIED_NO_OUTPUT
+positive-authenticated-delivery	BLOCKED

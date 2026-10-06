@@ -10,6 +10,8 @@ usage: ./catfood [--target]
        ./catfood help [tool]
        ./catfood where [tool]
        ./catfood register TOOL ROLE PATH
+       ./catfood check-apk DECISION APK SOURCE_COMMIT TARGET
+       ./catfood deliver-apk DECISION APK SOURCE_COMMIT TARGET NEW_DIRECTORY
 
 Feed the selected Cat Food target.
 
@@ -424,6 +426,14 @@ case ${1:-} in
     '') ;;
     --target) show_target=1 ;;
     -h|--help) usage; exit 0 ;;
+    check-apk)
+        shift
+        exec grease "$root/android/check-producer.ysh" "$@"
+        ;;
+    deliver-apk)
+        shift
+        exec grease "$root/android/deliver-apk.ysh" "$@"
+        ;;
     help)
         show_help_page "${2:-}"
         exit $?

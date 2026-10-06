@@ -1,0 +1,16 @@
+#!/usr/bin/env grease
+set -eu -o pipefail
+var script = $(/usr/bin/readlink -f "$0")
+var root = $(/usr/bin/dirname "$script")
+/usr/bin/awk -F '\t' '
+  /^#/ || /^$/ {next}
+  {rows++}
+  NF!=8 {bad=1}
+  $2!="miro-a1" || $3!="armeabi-v7a" || $5!="test" || $6!="1404850438" || $7!="functorial-games/crystal" {bad=1}
+  $1=="crystal-halite" && $4=="org.isomorphisms.crystal.halite" {halite++}
+  $1=="crystal-quartz" && $4=="org.isomorphisms.crystal.quartz" {quartz++}
+  $1=="crystal-bismuth" && $4=="org.isomorphisms.crystal.bismuth" {bismuth++}
+  $8!~/^blocked:/ {bad=1}
+  END {if(bad||rows!=3||halite!=1||quartz!=1||bismuth!=1)exit 1}
+' "$root/apks.tsv"
+echo 'Cat Food APK coverage: PASS (all three explicitly blocked; no delivery claimed)'

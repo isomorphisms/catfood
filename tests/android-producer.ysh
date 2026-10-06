@@ -1,0 +1,25 @@
+#!/usr/bin/env grease
+set -eu -o pipefail
+# Negative public-boundary tests use actual canonical APK bytes.
+# No fixture deployment/key override is offered to this public route.
+test "$#" = 1 || { echo 'expected REAL_CANONICAL_APK' >&2; exit 2; }
+var apk = "$1"
+var GREASE = ENV.GREASE_BIN
+var script = $(/usr/bin/readlink -f "$0")
+var tests = $(/usr/bin/dirname "$script")
+var root = $(/usr/bin/dirname "$tests")
+var work = $(/usr/bin/mktemp -d /tmp/catfood-apk-qualification.XXXXXXXX)
+trap --add EXIT { /usr/bin/rm -r "$work" }
+/usr/bin/unzip -t "$apk" > /dev/null
+"$GREASE" "$root/android/check-apk-coverage.ysh"
+printf 'schema\taici-android-producer-v1\nresult\tPASS\n' > "$work/forged.tsv"
+if "$GREASE" "$root/android/check-producer.ysh" "$work/forged.tsv" "$apk" b8fb0cbe18b37ad38411e70e47c105a1b76e58fb miro-a1 > "$work/forged.log" 2>&1; then
+  echo 'unsigned receipt unexpectedly accepted' >&2
+  exit 1
+fi
+/usr/bin/grep -Fq 'BLOCKED: authenticated APK producer runtime is unavailable' "$work/forged.log"
+if "$GREASE" "$root/android/deliver-apk.ysh" "$work/forged.tsv" "$apk" b8fb0cbe18b37ad38411e70e47c105a1b76e58fb miro-a1 "$work/delivery" > "$work/delivery.log" 2>&1; then
+  exit 1
+fi
+test ! -e "$work/delivery"
+printf 'coverage\tPASS\nundeployed-public-validation\tDENIED\nundeployed-public-delivery\tDENIED_NO_OUTPUT\npositive-authenticated-delivery\tBLOCKED\n'

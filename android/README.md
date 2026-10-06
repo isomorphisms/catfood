@@ -58,17 +58,24 @@ Known gaps remain visible. Installing all currently published packages is not a 
 
 ## First-party APK producer handoff
 
-`check-producer.sh` consumes an `aici-android-producer-v1` receipt for the
-exact APK bytes produced on a build host. It verifies the receipt schema/result,
-policy and packager commit shapes, APK SHA-256, package/version/ABI/signing
-metadata presence, and keeps producer acceptance separate from update
-continuity.
+`apks.tsv` gives all three canonical Crystal IDs first-class MIRO A1 /
+armeabi-v7a / test-lane coverage, with promotion explicitly blocked. Coverage
+does not invent download URLs or mark the Termux product fleet delivered.
 
-Use `--require-update` only when the task requires an already-accepted APK to
-be replaceable in place. A producer receipt with
-`update_identity_result=NOT_VERIFIED` may describe a valid first stable
-identity or migration candidate, but it is not replacement-install evidence.
+`check-producer.ysh` takes DECISION, APK, SOURCE_COMMIT and TARGET. It rehashes
+the APK, checks coverage and invokes the fixed independently deployed AICI v2
+consumer. AICI authenticates the decision and mandatory witness under the active
+release and independently inspects actual package/version/ABI/signer bytes.
+Unsigned v1 receipts and caller policy/key overrides have no accepted route.
 
-This check intentionally does not rebuild the APK or duplicate AICI's signer
-registry. AICI owns producer-policy verification; Cat Food verifies that the
-artifact entering its handoff is exactly the artifact that passed that policy.
+`./catfood check-apk` exposes validation. `./catfood deliver-apk` invokes
+`deliver-apk.ysh`: validate before staging, revalidate the copied bytes and
+publish a new sealed directory without replacing a prior attempt. Build/package
+evidence remains separate from installation, launch, replacement, visual,
+emulator and physical evidence. Delivery does not install.
+
+Original Crystal private-key recoverability remains UNKNOWN. The registered
+public test signer proves no compatibility with original differently signed
+installs. No uninstall, package-ID workaround or migration is performed.
+Negative public tests use real canonical APK bytes; positive authenticated
+delivery is blocked by the unavailable independent producer deployment.
