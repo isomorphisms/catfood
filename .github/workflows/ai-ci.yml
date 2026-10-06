@@ -30,3 +30,7 @@ jobs:
             _ai-ci/contracts/catfood-idric-cli-v0.contract.tsv .
           "$RUNNER_TEMP/aici" verify \
             _ai-ci/contracts/catfood-issh-v0.contract.tsv .
+
+      - name: Verify Android producer receipt handoff
+        shell: sh
+        run: sh tests/android-producer.sh
