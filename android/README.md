@@ -54,3 +54,21 @@ A package receipt records exact package identity and one result/evidence pair fo
 The installer can prove a matching package digest and its own completed installation. A fresh successful download also proves that exact package URL was published at install time. It cannot prove the producer build, application launch, runtime behavior, emulator execution, or physical-device execution, so those remain `NOT_VERIFIED` until their own actions produce evidence. A package installed on one Android target does not accept the other target.
 
 Known gaps remain visible. Installing all currently published packages is not a whole-distribution readiness claim while `check.sh ready <target>` still fails.
+
+
+## First-party APK producer handoff
+
+`check-producer.sh` consumes an `aici-android-producer-v1` receipt for the
+exact APK bytes produced on a build host. It verifies the receipt schema/result,
+policy and packager commit shapes, APK SHA-256, package/version/ABI/signing
+metadata presence, and keeps producer acceptance separate from update
+continuity.
+
+Use `--require-update` only when the task requires an already-accepted APK to
+be replaceable in place. A producer receipt with
+`update_identity_result=NOT_VERIFIED` may describe a valid first stable
+identity or migration candidate, but it is not replacement-install evidence.
+
+This check intentionally does not rebuild the APK or duplicate AICI's signer
+registry. AICI owns producer-policy verification; Cat Food verifies that the
+artifact entering its handoff is exactly the artifact that passed that policy.
