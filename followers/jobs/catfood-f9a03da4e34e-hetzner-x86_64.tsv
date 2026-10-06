@@ -1,9 +1,9 @@
 schema	aici-follower-job-v1
-job_id	catfood-75412656fa22-hetzner-x86_64
+job_id	catfood-f9a03da4e34e-hetzner-x86_64
 repository	isomorphisms/catfood
-branch	cleanup/transferred-repositories
-pr	81
-trigger_commit	75412656fa227573462c3213aea0996b6b58f9a9
+branch	c67-physical-profile
+pr	115
+trigger_commit	f9a03da4e34e6ad3ac8dcf690c77e521f8c77ce0
 leader_platform	github-x86_64
 leader_arch	x86_64
 leader_evidence	-
@@ -12,14 +12,14 @@ artifact_sha256	-
 follower_platform	hetzner-x86_64
 follower_arch	x86_64
 required	yes
-action	follower target for Cat Food commit 75412656fa227573462c3213aea0996b6b58f9a9 on hetzner-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+action	follower target for Cat Food commit f9a03da4e34e6ad3ac8dcf690c77e521f8c77ce0 on hetzner-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh cloud
-state	superseded
+state	pending
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	shared-portable
-superseded_by	catfood-f9a03da4e34e-hetzner-x86_64
+superseded_by	-
 follow_policy	exact
