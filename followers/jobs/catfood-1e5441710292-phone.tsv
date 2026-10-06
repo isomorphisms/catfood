@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-1e5441710292-phone
+repository	isomorphisms/catfood
+branch	android/miro-phone-first-run
+pr	80
+trigger_commit	1e54417102928f22f3b54aac5131f66a84dc1e32
+leader_platform	github-x86_64-artifact
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	phone
+follower_arch	armv7
+required	yes
+action	carried-forward follower target for Cat Food commit 1e54417102928f22f3b54aac5131f66a84dc1e32 on phone; fetch that exact commit, run the unchanged named acceptance action, and record a receipt.
+acceptance_kind	physical-device
+acceptance_action	./catfood && sh android/check.sh gaps phone
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	carry-forward unresolved exact follower debt onto repaired MIRO setup source
+superseded_by	-
+follow_policy	exact
