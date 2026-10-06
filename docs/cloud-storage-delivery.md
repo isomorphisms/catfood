@@ -1,7 +1,7 @@
 # Cloud storage delivery reconciliation (issue 117)
 
 The current inventory includes `dilapidated-shed/cloud-storage-api`. Android
-delivery remains an explicit current-client-bundle publication gap, not the
+delivery remains an explicit current-client-bundle admission gap, not the
 retired branch's ordinary-unzip package masquerading as the complete client.
 The old architecture-neutral command is preserved at producer
 4be1d5a3d603154262f247581dcd76f6a4b317cd, SHA-256
@@ -18,9 +18,14 @@ to Android/Bionic acceptance. Build on a qualified host through ICK where
 supported, otherwise NDK with the exact ICK gap recorded; no phone compiler.
 The producer now has `build/android-client.grease`, NDK r27c/API 21 and separate
 ARMv7/ARM64 bundles containing all four helpers, commands, table and digests.
-Both were built and ELF/interpreter checked on a disposable Linux host. Hosted
-artifact publication and admission into target-specific acquisition records
-still require current exact-head evidence; no installed-runtime receipt exists.
+Both were built and ELF/interpreter checked locally and on hosted Ubuntu, and
+published as exact-head workflow artifacts. `cloud-storage-candidates.tsv`
+retains verified archive hashes and source/run identities. All internal bundle
+hashes were checked after download. Admission into target-specific acquisition
+records remains missing; no installed-runtime receipt exists. Workflow ZIPs
+expire and may lose executable modes, so they are inspectable candidates, not
+stable acquisition packages. The existing installer expects stable archive/file
+delivery and its phone/tablet ABI model still needs the issue 118 profile fix.
 
 The C67 profile is retained in `android/devices/miro-c67.md` on current main,
 including the 2026-10-06 native ARM32/Bionic and 4 KiB page-size receipt.
