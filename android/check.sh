@@ -305,8 +305,22 @@ check_receipt() {
             value["runtime_result"] != "PASS")
             fail("emulator/physical-device PASS requires runtime PASS")
 
+        if ("device_target" in value) {
+            if (value["device_target"] != "phone" && value["device_target"] != "tablet" && value["device_target"] != "c67")
+                fail("invalid device_target: " value["device_target"])
+            if (value["device_target"] == "c67") {
+                require_field("device_product")
+                require_field("device_model")
+                require_field("device_fingerprint")
+                if (value["target"] != "tablet" || value["abi"] != "arm64-v8a")
+                    fail("c67 receipt must use the tablet/arm64-v8a delivery lane")
+                if (value["device_product"] != "Miro_C67" && value["device_model"] != "Miro C67")
+                    fail("c67 receipt does not contain MIRO C67 physical identity")
+            }
+        }
+
         allowed["schema"] = allowed["package"] = 1
-        split("target abi mode source source_ref package_ref url sha256 termux_packages runtime_requires package_requires", identity, / /)
+        split("target device_target device_product device_model device_fingerprint abi mode source source_ref package_ref url sha256 termux_packages runtime_requires package_requires", identity, / /)
         for (i in identity) allowed[identity[i]] = 1
         split("build package publication installation launch runtime emulator physical_device", stages, / /)
         for (i in stages) {
@@ -325,7 +339,7 @@ case "$command" in
         ;;
     gaps|ready)
         target=${2:-}
-        case "$target" in phone|tablet) ;; *) printf 'usage: %s %s phone|tablet\n' "$0" "$command" >&2; exit 2 ;; esac
+        case "$target" in phone|c67|tablet) ;; *) printf 'usage: %s %s phone|c67|tablet\n' "$0" "$command" >&2; exit 2 ;; esac
         if [ "$target" = phone ]; then column=3; else column=4; fi
         unresolved=$(
             awk -F '\t' -v column="$column" '
@@ -349,7 +363,7 @@ case "$command" in
         printf '%s\n' 'Cat Food Android evidence receipt is valid'
         ;;
     *)
-        printf 'usage: %s [check | gaps phone|tablet | ready phone|tablet | receipt RECEIPT]\n' "$0" >&2
+        printf 'usage: %s [check | gaps phone|c67|tablet | ready phone|c67|tablet | receipt RECEIPT]\n' "$0" >&2
         exit 2
         ;;
 esac

@@ -2,6 +2,7 @@
 set -eu
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
+. "$root/android/target.sh"
 packages=${CATFOOD_ANDROID_PACKAGES:-"$root/android/packages.tsv"}
 delivery=${CATFOOD_ANDROID_DELIVERY:-"$root/android/delivery.tsv"}
 tools=${CATFOOD_TOOLS:-"$root/tools.tsv"}
@@ -9,14 +10,12 @@ target=${CATFOOD_TARGET:-}
 workspace=${CATFOOD_ROOT:-"$HOME/opt"}
 cache=${CATFOOD_CACHE:-"${XDG_CACHE_HOME:-$HOME/.cache}/catfood"}
 
-case "$target" in
-    phone) expected_abi=armeabi-v7a ;;
-    tablet) expected_abi=arm64-v8a ;;
-    *)
-        printf 'Android delivery requires CATFOOD_TARGET=phone or tablet; found %s\n' "${target:-unset}" >&2
-        exit 2
-        ;;
-esac
+delivery_target=$(catfood_android_delivery_target "$target") || {
+    printf 'Android delivery requires CATFOOD_TARGET=phone, c67, or tablet; found %s\n' "${target:-unset}" >&2
+    exit 2
+}
+expected_abi=$(catfood_android_expected_abi "$target") || exit 2
+catfood_android_verify_device_target "$target"
 
 CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" \
     sh "$root/android/check.sh" check >/dev/null
@@ -37,6 +36,13 @@ if [ "$abi" != "$expected_abi" ]; then
     printf 'Cat Food %s delivery requires ABI %s; found %s\n' "$target" "$expected_abi" "$abi" >&2
     exit 2
 fi
+
+device_product=$(catfood_android_getprop ro.product.device || :)
+device_model=$(catfood_android_getprop ro.product.model || :)
+device_fingerprint=$(catfood_android_getprop ro.build.fingerprint || :)
+[ -n "$device_product" ] || device_product=-
+[ -n "$device_model" ] || device_model=-
+[ -n "$device_fingerprint" ] || device_fingerprint=-
 
 mkdir -p "$workspace/bin" "$workspace/downloads" "$workspace/packages" "$workspace/receipts" "$cache"
 PATH="$workspace/bin:$PATH"
@@ -152,7 +158,7 @@ check_package_requirements() {
     set -- $values
     IFS=$old_ifs
     for required in "$@"; do
-        expected_ref=$(awk -F '\t' -v package="$required" -v target="$target" '
+        expected_ref=$(awk -F '\t' -v package="$required" -v target="$delivery_target" '
             /^[[:space:]]*($|#)/ { next }
             $1 == package && $2 == target { print $7; exit }
         ' "$packages")
@@ -229,7 +235,7 @@ safe_command_destination() {
     exit 4
 }
 
-package_ids=$(awk -F '\t' -v target="$target" '
+package_ids=$(awk -F '\t' -v target="$delivery_target" '
     /^[[:space:]]*($|#)/ { next }
     $2 == target && !seen[$1]++ { print $1 }
 ' "$packages")
@@ -248,7 +254,7 @@ for package in $package_ids; do
 $row
 EOF_ROW
 
-    [ "$package_target" = "$target" ] && [ "$package_abi" = "$abi" ] || {
+    [ "$package_target" = "$delivery_target" ] && [ "$package_abi" = "$abi" ] || {
         printf '%s manifest target/ABI does not match device\n' "$package" >&2
         exit 3
     }
@@ -320,7 +326,7 @@ EOF_ROW
                 exit 3
             }
             for expected in \
-                "target${tab}$target" \
+                "target${tab}$delivery_target" \
                 "abi${tab}$abi" \
                 "source_ref${tab}$source_ref" \
                 "package_ref${tab}$package_ref"; do
@@ -383,7 +389,11 @@ EOF_WRAPPER
         {
             printf 'schema\tcatfood-android-evidence-v1\n'
             printf 'package\t%s\n' "$package"
-            printf 'target\t%s\n' "$target"
+            printf 'target\t%s\n' "$delivery_target"
+            printf 'device_target\t%s\n' "$target"
+            printf 'device_product\t%s\n' "$device_product"
+            printf 'device_model\t%s\n' "$device_model"
+            printf 'device_fingerprint\t%s\n' "$device_fingerprint"
             printf 'abi\t%s\n' "$abi"
             printf 'mode\t%s\n' "$mode"
             printf 'source\t%s\n' "$source"

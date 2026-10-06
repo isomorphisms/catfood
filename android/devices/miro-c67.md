@@ -39,8 +39,10 @@ kernel machine      aarch64
 This resolves the previous model-only uncertainty: the C67 is an
 `arm64-v8a` Android runtime and also exposes 32-bit ARM compatibility.
 
-Runtime page size and a retained native execution receipt are still separate
-acceptance facts and remain to be captured.
+Runtime page size and native execution are captured by
+`android/record-c67-runtime.sh` during normal `c67` provisioning. The
+result is retained at `$CATFOOD_ROOT/receipts/c67-runtime.tsv`; application-level
+physical acceptance remains separate for each APK.
 
 ## CPU
 
@@ -245,19 +247,22 @@ Build rules:
    signer, then separately record package, install, launch, runtime, and
    physical-device evidence.
 
-## Cat Food target-selection conflict
+## Cat Food target selection
 
-Cat Food currently equates Android architecture with device class:
+The target model now keeps physical device identity separate from the package
+ABI lane. Automatic Termux selection is:
 
 ```text
-ARMv7 Termux    -> phone
-AArch64 Termux  -> tablet
+ARMv7 Termux                         -> phone
+AArch64 + Miro_C67 / Miro C67      -> c67
+other AArch64 Termux                -> tablet
 ```
 
-That rule misclassifies this AArch64 **phone** as `tablet`. Do not use the
-automatic target-selection result as C67 identity evidence. The control-plane
-target model needs a separate repair before C67 Cat Food delivery can be called
-correct.
+The `c67` target consumes the existing `tablet` delivery column only as the
+shared `arm64-v8a` package lane. Installer receipts retain `device_target=c67`
+and the observed product/model/fingerprint, so package reuse no longer erases
+the physical-device distinction. `android/check.sh ready c67` applies the same
+AArch64 manifest readiness gate while C67 physical acceptance stays independent.
 
 Canonical generic Android-native architecture remains in
 `isomorphisms/android-NDK`; this Cat Food file owns the concrete C67

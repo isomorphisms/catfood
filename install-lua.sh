@@ -26,7 +26,7 @@ resolve_command() {
 
 termux_runtime=0
 case $target in
-    phone|tablet|termux) termux_runtime=1 ;;
+    phone|c67|tablet|termux) termux_runtime=1 ;;
     cloud|container|hetzner|auto) ;;
     *)
         printf 'Cat Food Lua installer does not know target: %s\n' "$target" >&2

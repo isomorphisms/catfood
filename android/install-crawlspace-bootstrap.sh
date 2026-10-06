@@ -9,13 +9,13 @@ destination=$workspace/bin/crawlspace-bootstrap
 marker='# Cat Food Crawl Space phone bootstrap.'
 
 case "$target" in
-    tablet)
-        printf '%s\n' 'Cat Food tablet: Crawl Space client installed; ADB bootstrap remains deferred.'
+    c67|tablet)
+        printf 'Cat Food %s: Crawl Space client installed; ADB bootstrap remains deferred.\n' "$target"
         exit 0
         ;;
     phone) ;;
     *)
-        printf 'Crawl Space bootstrap installation requires CATFOOD_TARGET=phone or tablet; found %s\n' "${target:-unset}" >&2
+        printf 'Crawl Space bootstrap installation requires CATFOOD_TARGET=phone, c67, or tablet; found %s\n' "${target:-unset}" >&2
         exit 2
         ;;
 esac

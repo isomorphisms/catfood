@@ -1,15 +1,15 @@
 # Android delivery
 
-Phone and tablet are runtime targets, not build hosts.
+Phone, C67, and tablet are runtime targets, not build hosts.
 
 The device path is intentionally short:
 
 1. `delivery.tsv` accounts for every row of the workbench inventory plus the separately bootstrapped Grease entry. A repository that exposes several independently packaged commands may use `packages:<id>,<id>` for a target.
 2. `packages.tsv` names only artifacts that actually exist, with exact source commit, packaging commit, target ABI, URL, SHA-256, commands, and dependency declarations.
-3. `check.sh` rejects inventory drift and invalid package/disposition relationships. `check.sh ready phone|tablet` is the manifest-level readiness gate; current gaps make it fail.
+3. `check.sh` rejects inventory drift and invalid package/disposition relationships. `check.sh ready phone|c67|tablet` is the manifest-level readiness gate; `c67` evaluates the existing arm64-v8a/tablet package lane while retaining C67 device identity separately. Current gaps still make whole-distribution readiness fail.
 4. `install.sh` installs explicitly declared commodity Termux dependencies, downloads and verifies published Cat Food packages, installs their runtime files, and reports unresolved inventory. It never clones sources, bootstraps a compiler/toolchain, or repairs a missing package by building locally.
 
-`runtime`, `host`, `reference`, and `review` are distinct inventory roles. `review` means the role is not settled yet; it is explicit debt and blocks readiness. Runtime entries must be `package:<id>`, `packages:<id>,<id>`, or `gap:<reason>` independently for phone and tablet. Host/reference entries are `n/a`; this is classification, not evidence that an intended application was successfully delivered.
+`runtime`, `host`, `reference`, and `review` are distinct inventory roles. `review` means the role is not settled yet; it is explicit debt and blocks readiness. Runtime entries must be `package:<id>`, `packages:<id>,<id>`, or `gap:<reason>` independently for the ARMv7 `phone` and AArch64 `tablet` package lanes. The physical `c67` target consumes the AArch64 lane without being relabeled as a tablet. Host/reference entries are `n/a`; this is classification, not evidence that an intended application was successfully delivered.
 
 ## Termux packages
 
@@ -52,6 +52,6 @@ a physical product maps onto those targets after an actual runtime receipt.
 
 A package receipt records exact package identity and one result/evidence pair for each of `build`, `package`, `publication`, `installation`, `launch`, `runtime`, `emulator`, and `physical_device`. Results use the shared `PASS`, `FAIL`, `SKIP`, and `NOT_VERIFIED` vocabulary. Every stage is mandatory, `NOT_VERIFIED` carries no invented evidence, and a later stage cannot pass merely because an earlier stage passed. Validate a receipt with `sh android/check.sh receipt RECEIPT`.
 
-The installer can prove a matching package digest and its own completed installation. A fresh successful download also proves that exact package URL was published at install time. It cannot prove the producer build, application launch, runtime behavior, emulator execution, or physical-device execution, so those remain `NOT_VERIFIED` until their own actions produce evidence. A package installed on one Android target does not accept the other target.
+The installer can prove a matching package digest and its own completed installation. A fresh successful download also proves that exact package URL was published at install time. It cannot prove the producer build, application launch, runtime behavior, emulator execution, or physical-device execution, so those remain `NOT_VERIFIED` until their own actions produce evidence. A package installed on one Android target does not accept another physical target; in particular, C67 and tablet may share `arm64-v8a` artifacts without sharing physical acceptance.
 
 Known gaps remain visible. Installing all currently published packages is not a whole-distribution readiness claim while `check.sh ready <target>` still fails.

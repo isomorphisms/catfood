@@ -167,10 +167,12 @@ CATFOOD_ROOT="$workspace" CATFOOD_TARGET=phone CATFOOD_CRAWLSPACE_BOOTSTRAP=0 \
 test -x "$workspace/bin/crawlspace-bootstrap"
 grep -F '# Cat Food Crawl Space phone bootstrap.' "$workspace/bin/crawlspace-bootstrap" >/dev/null
 
-tablet_workspace=$tmp/tablet
-mkdir -p "$tablet_workspace/bin"
-CATFOOD_ROOT="$tablet_workspace" CATFOOD_TARGET=tablet \
-    sh "$root/android/install-crawlspace-bootstrap.sh" >/dev/null
-test ! -e "$tablet_workspace/bin/crawlspace-bootstrap"
+for deferred_target in c67 tablet; do
+    deferred_workspace=$tmp/$deferred_target
+    mkdir -p "$deferred_workspace/bin"
+    CATFOOD_ROOT="$deferred_workspace" CATFOOD_TARGET="$deferred_target" \
+        sh "$root/android/install-crawlspace-bootstrap.sh" >/dev/null
+    test ! -e "$deferred_workspace/bin/crawlspace-bootstrap"
+done
 
 printf '%s\n' 'Cat Food Crawl Space runtime-only delivery and bootstrap contract passes'
