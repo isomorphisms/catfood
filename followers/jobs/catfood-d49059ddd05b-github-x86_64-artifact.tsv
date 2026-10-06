@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-d49059ddd05b-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	docs/miro-a1-diagnostic-evidence
+pr	https://github.com/isomorphisms/catfood/pull/111
+trigger_commit	d49059ddd05be880607577774103873f883e38be
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit d49059ddd05be880607577774103873f883e38be on github-x86_64-artifact; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	blocked
+last_attempt_commit	d49059ddd05be880607577774103873f883e38be
+blocker	BLOCKED: Android runtime archive publication and authenticated producer authority unavailable; host acquisition fixtures are not an accepted published artifact
+evidence	-
+depends_on	-
+reason	android-artifact-and-device
+superseded_by	-
+follow_policy	exact

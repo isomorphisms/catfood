@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-d49059ddd05b-phone
+repository	isomorphisms/catfood
+branch	docs/miro-a1-diagnostic-evidence
+pr	https://github.com/isomorphisms/catfood/pull/111
+trigger_commit	d49059ddd05be880607577774103873f883e38be
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	phone
+follower_arch	armv7
+required	yes
+action	follower target for Cat Food commit d49059ddd05be880607577774103873f883e38be on phone; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	physical-device
+acceptance_action	./catfood && sh android/check.sh gaps phone
+state	blocked
+last_attempt_commit	d49059ddd05be880607577774103873f883e38be
+blocker	NOT_RUN: ARM runtime publication/installation, current A1 session and physical acceptance; no phone changes or fixture acceptance
+evidence	-
+depends_on	-
+reason	android-artifact-and-device
+superseded_by	-
+follow_policy	exact
