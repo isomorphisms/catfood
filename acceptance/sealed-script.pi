@@ -1,0 +1,44 @@
+"""Inspect/seal regular script bytes; no pathname-following acceptance."""
+import os
+import stat
+import sys
+import hashlib
+import json
+from pathlib import Path
+from builtins import ValueError
+argv ∈ list[str] ← sys.argv
+source ∈ str ← argv[1]
+expected ∈ str ← argv[2]
+destination ∈ str ← argv[3]
+nofollow ∈ int ← os.O_NOFOLLOW
+read_flag ∈ int ← os.O_RDONLY
+write_flag ∈ int ← os.O_WRONLY
+create_flag ∈ int ← os.O_CREAT
+exclusive_flag ∈ int ← os.O_EXCL
+fd ∈ int ← os.open(source, read_flag | nofollow)
+try:
+    info ∈ object ← os.fstat(fd)
+    regular ∈ bool ← stat.S_ISREG(info.st_mode)
+    size ∈ int ← info.st_size
+    links ∈ int ← info.st_nlink
+    if not regular or links != 1 or size > 2097152:
+        raise ValueError("invalid output file")
+    data ∈ bytes ← os.read(fd, 2097153)
+    digest ∈ str ← hashlib.sha256(data).hexdigest()
+    if len(data) != size or digest != expected:
+        raise ValueError("exact-byte mismatch")
+finally:
+    os.close(fd)
+out ∈ int ← os.open(destination, write_flag | create_flag | exclusive_flag | nofollow, 292)
+try:
+    count ∈ int ← os.write(out, data)
+    if count != len(data):
+        raise ValueError("partial seal")
+    os.fsync(out)
+finally:
+    os.close(out)
+sealed ∈ bytes ← Path(destination).read_bytes()
+sealed_digest ∈ str ← hashlib.sha256(sealed).hexdigest()
+if sealed_digest != expected:
+    raise ValueError("sealed bytes changed")
+print(json.dumps({"status": "PASS", "sha256": expected, "size": len(data)}))
