@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-a66b6e602f60-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	integration/cloud-storage-delivery
+pr	121
+trigger_commit	a66b6e602f60820f61a5ff443a16ea102ab8aced
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit a66b6e602f60820f61a5ff443a16ea102ab8aced on github-x86_64-artifact; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	blocked
+last_attempt_commit	-
+blocker	Exact NDK bundles exist; package digest admission and install contract remain issue 117
+evidence	-
+depends_on	-
+reason	android-artifact-and-device
+superseded_by	-
+follow_policy	exact
