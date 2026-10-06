@@ -1,0 +1,9 @@
+test_actual_entrypoint_platform_and_overrides (__main__.HostTests.test_actual_entrypoint_platform_and_overrides) ... ok
+test_old_negative_cloud_default_rejected (__main__.HostTests.test_old_negative_cloud_default_rejected) ... ok
+test_positive_distribution_and_unknown_linux (__main__.HostTests.test_positive_distribution_and_unknown_linux) ... ok
+test_probe_non_mutating_and_netbsd_required (__main__.HostTests.test_probe_non_mutating_and_netbsd_required) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.070s
+
+OK
