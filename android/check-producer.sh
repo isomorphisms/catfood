@@ -52,28 +52,26 @@ update_result=$(value update_identity_result)
     exit 1
 }
 case $policy_commit in
-    [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*)
-        [ "${#policy_commit}" -eq 40 ] || { echo "invalid AICI policy commit" >&2; exit 1; }
-        ;;
-    *) echo "invalid AICI policy commit" >&2; exit 1 ;;
+    *[!0-9a-f]*|'') echo "invalid AICI policy commit" >&2; exit 1 ;;
 esac
+[ "${#policy_commit}" -eq 40 ] || { echo "invalid AICI policy commit" >&2; exit 1; }
+
 case $packager_commit in
-    [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]*)
-        [ "${#packager_commit}" -eq 40 ] || { echo "invalid android-NDK packager commit" >&2; exit 1; }
-        ;;
-    *) echo "invalid android-NDK packager commit" >&2; exit 1 ;;
+    *[!0-9a-f]*|'') echo "invalid android-NDK packager commit" >&2; exit 1 ;;
 esac
+[ "${#packager_commit}" -eq 40 ] || { echo "invalid android-NDK packager commit" >&2; exit 1; }
 [ -n "$package" ] || { echo "producer package is empty" >&2; exit 1; }
 [ -n "$abi" ] || { echo "producer ABI is empty" >&2; exit 1; }
 case $version_code in *[!0-9]*|'') echo "invalid producer versionCode: $version_code" >&2; exit 1 ;; esac
 case $signer in
-    [0-9a-f]*) [ "${#signer}" -eq 64 ] || { echo "invalid signer digest" >&2; exit 1; } ;;
-    *) echo "invalid signer digest" >&2; exit 1 ;;
+    *[!0-9a-f]*|'') echo "invalid signer digest" >&2; exit 1 ;;
 esac
+[ "${#signer}" -eq 64 ] || { echo "invalid signer digest" >&2; exit 1; }
+
 case $declared_sha in
-    [0-9a-f]*) [ "${#declared_sha}" -eq 64 ] || { echo "invalid APK digest" >&2; exit 1; } ;;
-    *) echo "invalid APK digest" >&2; exit 1 ;;
+    *[!0-9a-f]*|'') echo "invalid APK digest" >&2; exit 1 ;;
 esac
+[ "${#declared_sha}" -eq 64 ] || { echo "invalid APK digest" >&2; exit 1; }
 
 actual_sha=$(sha256sum "$apk" | awk '{print $1}')
 [ "$actual_sha" = "$declared_sha" ] || {
