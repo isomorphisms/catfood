@@ -58,4 +58,21 @@ if sh "$root/android/check-producer.sh" "$receipt" "$apk" >"$tmp/duplicate.out" 
 fi
 grep -Fq 'must contain exactly one result field' "$tmp/duplicate.out"
 
+
+write_receipt PASS "$sha"
+sed -i 's/^policy_commit.*/policy_commit\t111111111111111111111111111111111111111g/' "$receipt"
+if sh "$root/android/check-producer.sh" "$receipt" "$apk" >"$tmp/bad-policy.out" 2>&1; then
+    echo "non-hex policy commit unexpectedly passed" >&2
+    exit 1
+fi
+grep -Fq 'invalid AICI policy commit' "$tmp/bad-policy.out"
+
+write_receipt PASS "$sha"
+sed -i 's/^signer_cert_sha256.*/signer_cert_sha256\t333333333333333333333333333333333333333333333333333333333333333g/' "$receipt"
+if sh "$root/android/check-producer.sh" "$receipt" "$apk" >"$tmp/bad-signer.out" 2>&1; then
+    echo "non-hex signer digest unexpectedly passed" >&2
+    exit 1
+fi
+grep -Fq 'invalid signer digest' "$tmp/bad-signer.out"
+
 printf 'Cat Food AICI Android producer receipt tests: PASS\n'
