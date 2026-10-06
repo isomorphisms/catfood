@@ -377,6 +377,10 @@ make_integration_fixture "$noimpact_fixture"
         echo 'no-impact evidence commit must not become a follower trigger' >&2
         exit 1
     }
+    [ "$(sh followers/manage.sh resolve "$evidence_commit")" = "$source_trigger" ] || {
+        echo 'no-impact evidence commit must preserve exact source-state resolution' >&2
+        exit 1
+    }
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh reconcile "$(sh followers/manage.sh latest)" >/dev/null
 )
 
