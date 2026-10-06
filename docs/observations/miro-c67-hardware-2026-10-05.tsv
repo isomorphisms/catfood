@@ -73,3 +73,16 @@ battery	capture_temperature_C	18.8	physical	dumpsys battery at 100%
 shizuku	rish	working	physical	Shizuku server + rish shell on C67
 shizuku	termux_private_location	$HOME/opt/rish + $HOME/opt/rish_shizuku.dex	physical	current C67 setup; PATH includes $HOME/opt
 shizuku	android14_dex_rule	DEX must be non-writable in private storage	physical/rule	rish reported Android 14 writable-DEX restriction
+abi	zygote_mode	zygote64_32	physical	getprop ro.zygote; 2026-10-06 follow-up
+abi	live_zygotes	zygote64,zygote	physical	ps -A; both 64-bit and 32-bit zygotes live at capture
+abi	native_bridge	0	physical	getprop ro.dalvik.vm.native.bridge; no Android native bridge configured
+abi	arm32_linker	/system/bin/linker -> /apex/com.android.runtime/bin/linker; ELF32	physical	ELF ident + direct execution; 2026-10-06
+abi	arm32_libc	/system/lib/libc.so -> /apex/com.android.runtime/lib/bionic/libc.so; ELF32	physical	ELF ident; 2026-10-06
+abi	app_process32	ELF32,ET_DYN,EM_ARM	physical	ELF header bytes: class=1 type=3 machine=40
+abi	arm32_direct_execution	reached Android runtime; exit 134 after dalvik-cache ownership denied	physical	/system/bin/app_process32; not an ELF exec-format failure
+abi	arm32_linker_execution	reached Android runtime; exit 134 after dalvik-cache ownership denied	physical	/system/bin/linker /system/bin/app_process32; dynamic-loader path exercised
+kernel	runtime_page_size_bytes	4096	physical	getconf PAGESIZE; 2026-10-06
+kernel	kernel_page_size_kB	4	physical	/proc/self/smaps KernelPageSize
+kernel	mmu_page_size_kB	4	physical	/proc/self/smaps MMUPageSize
+kernel	product_cpu_pagesize_max	4096	physical	getprop ro.product.cpu.pagesize.max
+bionic	linker_config	/linkerconfig/ld.config.txt	physical	readable under rish; /data/local/tmp listed as unrestricted

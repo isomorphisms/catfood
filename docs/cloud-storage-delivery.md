@@ -22,9 +22,10 @@ Both were built and ELF/interpreter checked on a disposable Linux host. Hosted
 artifact publication and admission into target-specific acquisition records
 still require current exact-head evidence; no installed-runtime receipt exists.
 
-The C67 profile is owned by the existing c67-physical-profile/profile-plan line.
+The C67 profile is retained in `android/devices/miro-c67.md` on current main,
+including the 2026-10-06 native ARM32/Bionic and 4 KiB page-size receipt.
 It observes Android API 34 with arm64-v8a and ARM32 compatibility. The storage
-line must consume that profile after integration, never classify all AArch64
+line must consume that profile, never classify all AArch64
 targets as C67 or borrow tablet physical evidence. Until current-profile
 acquisition and exact bundle publication are integrated, C67 install/runtime
 remain blocked. No target-detector rewrite is made here; issue 118 owns it.
@@ -32,8 +33,9 @@ remain blocked. No target-detector rewrite is made here; issue 118 owns it.
 IB's existing Google authorization APK is Java/Play Services without native
 libraries. It needs a compatible Android runtime and the canonical signer,
 package/version/OAuth registration, not a separate arm64 build. The receiver
-remains experimental and read-only; SDF write credentials require drive.file
-in addition to readonly. Physical C67 Google authorization is not build evidence.
+remains experimental. The current narrow receiver allows readonly by default
+and readonly + drive.file for application-owned archives. Google client/signer
+registration and physical C67 Google authorization remain independent gates.
 
 For host registration, `commands/activate-cloud-storage.grease` adds help-tested
 commands through a verified installed Grease and an explicit checkout. It does

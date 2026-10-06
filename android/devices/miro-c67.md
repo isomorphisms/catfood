@@ -1,8 +1,11 @@
 # MIRO C67 physical Android profile
 
 This is the retained Cat Food profile for the physical MIRO C67 measured on
-2026-10-05. The machine-readable observation ledger is
+2026-10-05, with ARM32/Bionic execution followed up on 2026-10-06. The
+machine-readable observation ledger is
 [`docs/observations/miro-c67-hardware-2026-10-05.tsv`](../../docs/observations/miro-c67-hardware-2026-10-05.tsv).
+The raw ARM32/Bionic receipt is
+[`docs/observations/miro-c67-arm32-bionic-2026-10-06.txt`](../../docs/observations/miro-c67-arm32-bionic-2026-10-06.txt).
 
 The profile records observed device facts separately from model/platform claims
 and from build acceptance. It does not claim a package has passed physical C67
@@ -37,10 +40,39 @@ kernel machine      aarch64
 ```
 
 This resolves the previous model-only uncertainty: the C67 is an
-`arm64-v8a` Android runtime and also exposes 32-bit ARM compatibility.
+`arm64-v8a` Android runtime with native 32-bit ARM compatibility.
 
-Runtime page size and a retained native execution receipt are still separate
-acceptance facts and remain to be captured.
+A 2026-10-06 physical `rish` receipt closes the previous ARM32, Bionic, and
+page-size uncertainties:
+
+```text
+zygote mode          zygote64_32
+live zygotes         zygote64, zygote
+native bridge        0 (disabled)
+runtime page size    4096 bytes
+kernel page size     4 kB
+MMU page size        4 kB
+max product page     4096 bytes
+32-bit linker        /system/bin/linker -> runtime APEX linker, ELF32
+32-bit libc          /system/lib/libc.so -> runtime APEX Bionic libc, ELF32
+app_process32        ELF32, ET_DYN, EM_ARM
+```
+
+Direct execution of the ELF32 `/system/bin/linker` reached its own argument
+parser. Direct execution of `/system/bin/app_process32`, and execution of that
+same binary through the 32-bit linker, both reached the Android runtime and
+then aborted with exit 134 after:
+
+```text
+Error changing dalvik-cache ownership : Permission denied
+Aborted
+```
+
+That is a shell-UID runtime permission failure after ELF admission and dynamic
+loading, not an `Exec format error`. Together with
+`ro.dalvik.vm.native.bridge=0`, the receipt demonstrates native AArch32
+execution on the AArch64 kernel and an operational 32-bit Bionic dynamic-loader
+path. Both 32-bit and 64-bit zygotes were live at capture.
 
 ## CPU
 
