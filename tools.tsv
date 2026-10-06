@@ -24,6 +24,7 @@ programmers-keyboard https://github.com/isomorphisms/programmers-keyboard.git ma
 icu https://github.com/dilapidated-shed/icu.git icu none
 
 # Workbench, browser, publication, and shared-CI repositories
+cloud-storage-api https://github.com/dilapidated-shed/cloud-storage-api.git main none
 az https://github.com/Ashtray-Archer/az.git main none
 ib https://github.com/dilapidated-shed/ib.git main recursive
 internetarchive https://github.com/dilapidated-shed/internetarchive.git master none

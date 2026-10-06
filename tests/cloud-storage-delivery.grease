@@ -1,0 +1,18 @@
+#!/usr/bin/env grease
+set -eu
+root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
+runner=${GREASE:?verified Grease runtime required}
+source=${CLOUD_STORAGE_SOURCE:?explicit producer checkout required}
+temporary=$(mktemp -d)
+trap 'rm -rf -- "$temporary"' EXIT HUP INT TERM
+mkdir "$temporary/bin"
+git clone --quiet --no-hardlinks "$source" "$temporary/cloud-storage-api"
+git -C "$temporary/cloud-storage-api" remote set-url origin https://github.com/dilapidated-shed/cloud-storage-api.git
+# Exercise the exact dispatcher under the real Grease interpreter.
+ln -s "$root/commands/cloud-storage.grease" "$temporary/bin/google-drive-api"
+CATFOOD_ROOT=$temporary CATFOOD_GREASE=$runner "$runner" "$temporary/bin/google-drive-api" --help > "$temporary/help"
+grep -F 'google-drive-api' "$temporary/help" >/dev/null
+git -C "$temporary/cloud-storage-api" remote set-url origin https://github.com/example/wrong.git
+if CATFOOD_ROOT=$temporary CATFOOD_GREASE=$runner "$runner" "$temporary/bin/google-drive-api" --help 2> "$temporary/error"; then exit 1; fi
+grep -F 'origin differs' "$temporary/error" >/dev/null
+printf 'PASS Cat Food cloud command dispatch and wrong-origin refusal; mobile/live NOT_RUN\n'

@@ -25,6 +25,7 @@ icu	runtime	gap:android-package-missing	gap:android-package-missing	stable-runti
 
 az	runtime	packages:az-phone,abe-phone	packages:az-tablet,abe-tablet	stable-command-suite
 ib	runtime	gap:android-package-missing	gap:android-package-missing	browser-application
+cloud-storage-api	runtime	gap:qualified-helper-bundle-missing	gap:qualified-helper-bundle-missing	Grease-suite-source-is-not-mobile-package-or-C67-qualification
 internetarchive	runtime	gap:android-package-missing	gap:android-package-missing	user-facing-tool
 bookreader	runtime	gap:android-package-missing	gap:android-package-missing	browser-application
 harvest-images-from-pdf	reference	n/a	n/a	superseded-historical-source-use-isomorphisms-pdf

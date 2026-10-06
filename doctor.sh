@@ -51,6 +51,24 @@ for stable_name in lua luac R Rscript grease edric idris2 fieldmouse icu ib-smok
     check_stable "$stable_name"
 done
 
+# Acquisition/command availability is distinct from native helper qualification.
+if awk '$1 == "cloud-storage-api" { found=1 } END { exit !found }' "$manifest"; then
+    for cloud_name in google-drive-api google-drive-auth google-drive-files google-drive-download google-drive-zip-inventory google-drive-copy-tree google-drive-unzip sdf-mailbox-stream-upload; do
+        check_command "$cloud_name"
+        check_stable "$cloud_name"
+        if [ -x "$workspace/bin/$cloud_name" ] && ! "$workspace/bin/$cloud_name" --help >/dev/null 2>&1; then
+            printf '%-22s declared Grease/source help smoke failed\n' "$cloud_name" >&2
+            failures=1
+        fi
+    done
+    for cloud_helper in google-oauth-loopback google-drive-download-state google-drive-upload-state zip-central-directory; do
+        if [ ! -x "$workspace/cloud-storage-api/commands/$cloud_helper" ]; then
+            printf '%-22s qualified helper delivery missing\n' "$cloud_helper" >&2
+            failures=1
+        fi
+    done
+fi
+
 if [ -x "$workspace/bin/osh" ] && ! "$workspace/bin/osh" -c 'echo' >/dev/null 2>&1; then
     printf '%-22s stable command not runnable\n' osh >&2
     failures=1
