@@ -104,6 +104,16 @@ if [ -x "$workspace/bin/fdroid-check-deployed" ] && ! "$workspace/bin/fdroid-che
     printf '%-22s help smoke failed\n' fdroid-check-deployed >&2
     failures=1
 fi
+
+# Registration is optional until the exact current suite is delivered. Once a
+# command is registered, its installed help path must actually run.
+for cloud_command in google-drive-api google-drive-auth google-drive-files google-drive-copy-tree google-drive-download google-drive-zip-inventory sdf-mailbox-stream-upload; do
+    if [ -e "$workspace/bin/$cloud_command" ] &&
+       ! "$workspace/bin/$cloud_command" --help >/dev/null 2>&1; then
+        printf '%-22s installed help smoke failed\n' "$cloud_command" >&2
+        failures=1
+    fi
+done
 if [ -x "$workspace/bin/R" ]; then
     mkdir -p "$workspace/.build/r-library"
     if ! R_LIBS_USER="$workspace/.build/r-library" \
