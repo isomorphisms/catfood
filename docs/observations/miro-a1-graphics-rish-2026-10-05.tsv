@@ -1,0 +1,25 @@
+field	value	evidence	context
+observation_date	2026-10-05	session-2026-10-05	local conversation date; exact capture time not supplied
+evidence_kind	user-pasted-terminal-transcript	session-2026-10-05	selected excerpts in sibling .txt file
+device_model	MIRO A1	session-2026-10-05	conversation attribution; not getprop result
+device_instance_id	NOT_CAPTURED	session-2026-10-05	must not merge multiple A1 phones by model name
+build_fingerprint	NOT_CAPTURED	session-2026-10-05	firmware identity unknown
+ro.opengles.version	196610	session-2026-10-05	Android property
+advertised_gles_version	3.2	session-2026-10-05	decoded property; not app-context observation
+egl_implementation	1.5 Android META-EGL	session-2026-10-05	SurfaceFlinger
+reported_gl_vendor	Imagination Technologies	session-2026-10-05	SurfaceFlinger RenderEngine
+reported_gl_renderer	PowerVR Rogue GE8322	session-2026-10-05	SurfaceFlinger RenderEngine
+reported_gl_version	OpenGL ES 3.2 build 1.18@6267915	session-2026-10-05	SurfaceFlinger RenderEngine
+extension_source	miro-a1-graphics-rish-2026-10-05.txt	session-2026-10-05	reported compositor EGL/GL strings only
+app_gl_context	NOT_CAPTURED	session-2026-10-05	Crystal version/extensions/enabled paths unknown
+installed_package	org.isomorphisms.crystal.bismuth	session-2026-10-05	package list; artifact identity not established
+installed_package	org.isomorphisms.crystal.halite	session-2026-10-05	package list; artifact identity not established
+installed_package	org.isomorphisms.crystal.quartz	session-2026-10-05	package list; artifact identity not established
+installed_package	org.isomorphisms.crystal.inspect.halite	session-2026-10-05	package list; artifact identity not established
+selected_foreground_crystal	NOT_CAPTURED	session-2026-10-05	original and inspect Halite both present
+installed_apk_sha256	NOT_CAPTURED	session-2026-10-05	no current source-to-installed-bytes binding
+rish_observed_operations	package listing; SurfaceFlinger query	session-2026-10-05	successful output in reported session only
+rish_explicit_id_result	NOT_CAPTURED	session-2026-10-05	no UID/root claim from prompt or executable presence
+historical_os_abi	Android 14; Foxx MIRO A1; armeabi-v7a	phone-receipt-2026-09-18	historical human-reported shader-runner receipt; not fresh probe
+historical_runner_artifact_sha256	714e5f706a05224ff4f43188a6fb043e7fa39f6a7f7f6ea7b0ef0dcb424502de	phone-receipt-2026-09-18	acceptance applies only to that runner/archive
+crystal_visual_acceptance	NOT_VERIFIED	session-2026-10-05	user reports zoom/wireframe defects; no independent reproduction in this audit
