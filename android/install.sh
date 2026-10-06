@@ -303,7 +303,7 @@ EOF_ROW
         rm -rf "$staging"
         mkdir -p "$staging"
         case "$mode" in
-            archive|dex-jni) tar -xzf "$download" -C "$staging" ;;
+            archive|dex-jni) tar -xzof "$download" -C "$staging" ;;
             file)
                 mkdir -p "$staging/$(dirname -- "$first_entrypoint")"
                 cp "$download" "$staging/$first_entrypoint"

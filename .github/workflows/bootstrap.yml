@@ -48,6 +48,9 @@ jobs:
       - name: Exercise Android delivery contracts
         shell: sh
         run: sh tests/android-delivery.sh
+      - name: Verify exact published Reddit archives without launching Android
+        shell: sh
+        run: sh tests/android-reddit-artifact.sh
       - name: Exercise Crawl Space Android runtime contract
         shell: sh
         run: sh tests/android-crawlspace.sh
