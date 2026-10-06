@@ -1,0 +1,24 @@
+#!/usr/bin/env ysh
+# Repository shebang contract; deployed execution uses the pinned Grease runtime.
+set -eu -o pipefail
+test "$#" = 4 || { echo 'expected AUTHENTICATED_DECISION APK SOURCE_COMMIT TARGET' >&2; exit 2; }
+var decision = "$1"
+var apk = "$2"
+var source_commit = "$3"
+var target = "$4"
+test "$target" = miro-a1 || { echo 'Cat Food APK target mismatch' >&2; exit 1; }
+var script = $(/usr/bin/readlink -f "$0")
+var root = $(/usr/bin/dirname "$script")
+var GREASE = '/opt/aici/android-producer/current/runtime/grease'
+test -x "$GREASE" || { echo 'BLOCKED: authenticated APK producer runtime is unavailable' >&2; exit 1; }
+"$GREASE" "$root/check-apk-coverage.ysh" >/dev/null
+var package = $(/usr/bin/awk -F '\t' '$1=="package" {n++;v=$2} END{if(n!=1)exit 1;print v}' "$decision")
+/usr/bin/awk -F '\t' -v p="$package" -v t="$target" '$4==p&&$2==t&&$3=="armeabi-v7a"&&$5=="test" {n++} END{if(n!=1)exit 1}' "$root/apks.tsv" || { echo 'APK is outside Cat Food coverage' >&2; exit 1; }
+test -f "$apk" && test ! -L "$apk" || exit 1
+var digest_before = $(/usr/bin/sha256sum "$apk" | /usr/bin/awk '{print $1}')
+# This fixed independently deployed entrypoint authenticates the decision and
+# its execution witness, re-inspects actual metadata/ELF, and checks current policy.
+/usr/bin/env -i PATH=/usr/bin:/bin "$GREASE" /opt/aici/android-producer/current/policy/android-producer/check.ysh "$decision" "$apk" "$source_commit" "$target" android-native-package
+var digest_after = $(/usr/bin/sha256sum "$apk" | /usr/bin/awk '{print $1}')
+test "$digest_before" = "$digest_after" || { echo 'APK changed at Cat Food handoff' >&2; exit 1; }
+printf 'CATFOOD_AUTHENTICATED_APK\tPASS\nAPK_SHA256\t%s\ninstall\tNOT_RUN\nlaunch\tNOT_RUN\nreplacement\tNOT_RUN\nvisual\tNOT_RUN\nphysical\tNOT_RUN\n' "$digest_after"

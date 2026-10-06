@@ -128,6 +128,12 @@ Amazon and AbeBooks credentials stay outside Git. A private config directory can
 
 ## Stable commands
 
+Crystal APK validation/delivery uses `./catfood check-apk` and
+`./catfood deliver-apk`; see [APK handoff](android/README.md#first-party-apk-producer-handoff).
+All three canonical MIRO packages have explicit coverage. Promotion needs an
+independently qualified producer release and separately approved stable lane.
+Package inspection alone does not prove install or continuity.
+
 Workbenches keep stable command names under `$CATFOOD_ROOT/bin`. Current host names include `lua`, `luac`, `R`, `Rscript`, `grease`, `edric`, `idris2`, `fieldmouse`, `icu`, `ib-smoke`, `ithon`, `osh`, `ysh`, `az`, `abe`, `gopeed`, `gdl`, `go_down_load`, `fdroid-deploy`, `fdroid-check-deployed`, `jq`, and `mlr` when their targets are present. `aa` is installed when the fed `az` checkout contains `bin/aa`. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`.
 
 `gdl` and `go_down_load` are aliases of the `gopeed` REST client. It accepts a direct URL or one URL on standard input, so `aa resolve MD5 | gdl` hands a resolved Anna's Archive member URL to Gopeed without making Gopeed part of AA's HTTP transport.

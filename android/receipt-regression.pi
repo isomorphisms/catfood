@@ -1,0 +1,46 @@
+"""Replay the exact old forged-PASS acceptance and the repaired boundary."""
+from argparse import ArgumentParser
+from pathlib import Path
+from builtins import dict
+import hashlib
+import subprocess
+import sys
+
+def main() → None:
+    parser ∈ ArgumentParser ← ArgumentParser()
+    parser.add_argument("--output", required=True)
+    args ∈ object ← parser.parse_args()
+    output_name ∈ str ← args.output
+    root ∈ Path ← Path(output_name).resolve()
+    root.mkdir(mode=448, exist_ok=False)
+    program_name ∈ str ← sys._getframe().f_code.co_filename
+    android ∈ Path ← Path(program_name).resolve().parent
+    apk ∈ Path ← root.joinpath("forged.apk")
+    apk.write_bytes(b"not an APK; historical consumer never inspected APK structure")
+    digest ∈ str ← hashlib.sha256(apk.read_bytes()).hexdigest()
+    receipt ∈ Path ← root.joinpath("forged.tsv")
+    receipt.write_text("schema\taici-android-producer-v1\nresult\tPASS\npolicy_commit\t1111111111111111111111111111111111111111\npackager_commit\t2222222222222222222222222222222222222222\npackage\torg.isomorphisms.crystal.halite\nversion_code\t2\nabi\tarmeabi-v7a\nsigner_cert_sha256\t" + "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" + "\napk_sha256\t" + digest + "\nupdate_identity_result\tPASS\n")
+    environment ∈ dict[str, str] ← dict()
+    environment.__setitem__("PATH", "/usr/bin:/bin")
+    old ∈ subprocess.CompletedProcess ← subprocess.run(["/bin/sh", str(android.joinpath("fixtures/check-producer-8e746931.sh")), "--require-update", str(receipt), str(apk)], env=environment, cwd="/", capture_output=True)
+    repaired ∈ subprocess.CompletedProcess ← subprocess.run(["/bin/sh", str(android.joinpath("check-producer.sh")), "--require-update", str(receipt), str(apk)], env=environment, cwd="/", capture_output=True)
+    old_code ∈ int ← old.returncode
+    new_code ∈ int ← repaired.returncode
+    old_stdout ∈ bytes ← old.stdout
+    new_stderr ∈ bytes ← repaired.stderr
+    root.joinpath("historical.stdout").write_bytes(old_stdout)
+    root.joinpath("repaired.stderr").write_bytes(new_stderr)
+    ledger ← "case\texpected\tobserved\tresult\n"
+    verdict ← "FAIL"
+    rejected ∈ bool ← new_stderr.__contains__(b"MISSING_RUNTIME")
+    if old_code == 0:
+        if new_code != 0:
+            if rejected:
+                verdict ← "PASS"
+    ledger ← ledger + "forged-PASS-8e746931\told accepted; new requires independent verifier\t" + str(old_code) + "," + str(new_code) + "\t" + verdict + "\n"
+    root.joinpath("results.tsv").write_text(ledger)
+    print(ledger)
+    if verdict != "PASS":
+        sys.exit(1)
+
+main()

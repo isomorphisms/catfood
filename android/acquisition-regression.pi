@@ -1,0 +1,120 @@
+"""Fresh cached-archive consumer test. HOST_FIXTURE is not Android acceptance."""
+from argparse import ArgumentParser
+from pathlib import Path
+from builtins import dict
+import hashlib
+import json
+import shutil
+import subprocess
+import sys
+
+def sha(path ∈ Path) → str:
+    answer ∈ str ← hashlib.sha256(path.read_bytes()).hexdigest()
+    return answer
+
+def write(path ∈ Path, record ∈ dict[str, object]) → None:
+    text ∈ str ← json.dumps(record, sort_keys=True)
+    path.write_text(text + "\n")
+
+def main() → None:
+    parser ∈ ArgumentParser ← ArgumentParser()
+    for name in ["bundle", "kitchen-ref", "fixture", "python", "output"]:
+        parser.add_argument("--" + name, required=True)
+    args ∈ object ← parser.parse_args()
+    bundle_name ∈ str ← args.bundle
+    kitchen_ref ∈ str ← args.kitchen_ref
+    fixture ∈ str ← args.fixture
+    host_python ∈ str ← args.python
+    output_name ∈ str ← args.output
+    root ∈ Path ← Path(output_name).resolve()
+    root.mkdir(mode=448, exist_ok=False)
+    program_name ∈ str ← sys._getframe().f_code.co_filename
+    android ∈ Path ← Path(program_name).resolve().parent
+    bundle ∈ Path ← Path(bundle_name)
+    digest ∈ str ← sha(bundle)
+    root.joinpath("tools.tsv").write_text("kitchen https://github.com/isomorphisms/kitchen.git main none\n")
+    root.joinpath("delivery.tsv").write_text("grease\truntime\tgap:fixture-excluded\tgap:fixture-excluded\tHOST_FIXTURE\nkitchen\truntime\tpackage:kitchen-capture-host-fixture\tgap:not-tested\tHOST_FIXTURE\n")
+    root.joinpath("packages.tsv").write_text("kitchen-capture-host-fixture\tphone\tarmeabi-v7a\tarchive\tisomorphisms/kitchen\t" + kitchen_ref + "\t" + kitchen_ref + "\thttps://example.invalid/HOST_FIXTURE.tar.gz\t" + digest + "\tkitchen-android-capture\tbin/kitchen-android-capture\t-\t-\t-\tcurl,tar\t-\tpath:" + host_python + "\t-\n")
+    runtime ∈ Path ← root.joinpath("runtime")
+    runtime.joinpath("downloads").mkdir(parents=True, mode=448)
+    shutil.copyfile(bundle, runtime.joinpath("downloads/kitchen-capture-host-fixture-" + digest))
+    environment ∈ dict[str, str] ← dict()
+    environment.__setitem__("PATH", "/usr/bin:/bin")
+    environment.__setitem__("HOME", str(root))
+    environment.__setitem__("CATFOOD_TARGET", "phone")
+    environment.__setitem__("CATFOOD_DEVICE_ABI", "armeabi-v7a")
+    environment.__setitem__("CATFOOD_ROOT", str(runtime))
+    environment.__setitem__("CATFOOD_CACHE", str(root.joinpath("cache")))
+    environment.__setitem__("CATFOOD_TOOLS", str(root.joinpath("tools.tsv")))
+    environment.__setitem__("CATFOOD_ANDROID_PACKAGES", str(root.joinpath("packages.tsv")))
+    environment.__setitem__("CATFOOD_ANDROID_DELIVERY", str(root.joinpath("delivery.tsv")))
+    install ∈ subprocess.CompletedProcess ← subprocess.run(["/bin/sh", str(android.joinpath("install.sh"))], env=environment, cwd="/", capture_output=True, timeout=20)
+    install_code ∈ int ← install.returncode
+    root.joinpath("installer.stdout").write_bytes(install.stdout)
+    root.joinpath("installer.stderr").write_bytes(install.stderr)
+    if install_code != 0:
+        sys.exit("ACQUISITION_FAILED")
+    package ∈ Path ← runtime.joinpath("packages/kitchen-capture-host-fixture/" + kitchen_ref)
+    command ∈ Path ← runtime.joinpath("bin/kitchen-android-capture")
+    task ∈ Path ← package.joinpath("tasks/android-diagnostic.pi")
+    provenance ∈ dict[str, object] ← json.loads(package.joinpath("PROVENANCE.json").read_text())
+    recorded_ref ∈ str ← provenance.get("kitchen_source_commit", "")
+    if recorded_ref != kitchen_ref:
+        sys.exit("ACQUISITION_SOURCE_REF_MISMATCH")
+    recorded_task ∈ str ← provenance.get("task_sha256", "")
+    if recorded_task != sha(task):
+        sys.exit("ACQUISITION_TASK_DIGEST_MISMATCH")
+    bound ∈ Path ← package.joinpath("bin/bounded-process")
+    ledger ← "trial\tscope\tcommand_sha256\ttask_sha256\tresult\n"
+    for trial in ["fresh directory", "fresh 'quoted' directory"]:
+        case ∈ Path ← root.joinpath(trial)
+        case.mkdir(mode=448)
+        channel ∈ Path ← case.joinpath("rish")
+        shutil.copyfile(fixture, channel)
+        channel.chmod(448)
+        case.joinpath("scenario.txt").write_text("valid")
+        dex ∈ Path ← case.joinpath("rish_shizuku.dex")
+        dex.write_bytes(b"fixture-readonly-dex")
+        dex.chmod(256)
+        profile ∈ dict[str, object] ← dict()
+        profile.__setitem__("target", "phone")
+        profile.__setitem__("device_instance", "a1-fixture-one")
+        write(case.joinpath("profile.json"), profile)
+        config ∈ dict[str, object] ← dict()
+        config.__setitem__("channel", "rish")
+        config.__setitem__("launcher", str(channel))
+        config.__setitem__("launcher_sha256", sha(channel))
+        config.__setitem__("dex", str(dex))
+        config.__setitem__("dex_sha256", sha(dex))
+        config.__setitem__("bounded_process", str(bound))
+        config.__setitem__("bounded_process_sha256", sha(bound))
+        write(case.joinpath("capture-runtime.json"), config)
+        plan ∈ dict[str, object] ← dict()
+        plan.__setitem__("target", "phone")
+        plan.__setitem__("device_instance", "a1-fixture-one")
+        plan.__setitem__("source_commit", "1111111111111111111111111111111111111111")
+        plan.__setitem__("package", "org.isomorphisms.crystal.halite")
+        plan.__setitem__("claim", "crash-observation")
+        plan.__setitem__("permitted_actions", "observe")
+        plan.__setitem__("task_sha256", sha(task))
+        plan.__setitem__("apk_sha256", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        write(case.joinpath("plan.json"), plan)
+        clean ∈ dict[str, str] ← dict()
+        clean.__setitem__("PATH", "/usr/bin:/bin")
+        clean.__setitem__("HOME", "/nonexistent")
+        clean.__setitem__("PYTHONPATH", "/nonexistent-shadow")
+        child ∈ subprocess.CompletedProcess ← subprocess.run([str(command), "--plan", str(case.joinpath("plan.json")), "--profile", str(case.joinpath("profile.json")), "--runtime", str(case.joinpath("capture-runtime.json")), "--output", str(case.joinpath("capture"))], env=clean, cwd=str(case), capture_output=True, timeout=30)
+        code ∈ int ← child.returncode
+        case.joinpath("stdout").write_bytes(child.stdout)
+        case.joinpath("stderr").write_bytes(child.stderr)
+        if code != 0:
+            sys.exit("DELIVERED_COMMAND_FAILED:" + trial)
+        captured ∈ dict[str, object] ← json.loads(case.joinpath("capture/capture.json").read_text())
+        state ∈ str ← captured.get("state", "")
+        if state != "CAPTURED":
+            sys.exit("DELIVERED_COMMAND_POSTCONDITION_FAILED")
+        ledger ← ledger + trial + "\tHOST_FIXTURE\t" + sha(command) + "\t" + sha(task) + "\tPASS\n"
+        root.joinpath("results.tsv").write_text(ledger)
+    print(ledger)
+
+main()

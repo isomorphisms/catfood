@@ -1,0 +1,77 @@
+"""Package supplied prebuilt runtime bytes for existing archive acquisition."""
+from argparse import ArgumentParser
+from pathlib import Path
+from builtins import dict, list
+import hashlib
+import json
+import shutil
+import sys
+import tarfile
+import subprocess
+
+def main() → None:
+    parser ∈ ArgumentParser ← ArgumentParser()
+    for name in ["kitchen", "expected-kitchen-ref", "ithon", "launcher", "bounded-process", "runtime-receipt", "output", "scope"]:
+        parser.add_argument("--" + name, required=True)
+    args ∈ object ← parser.parse_args()
+    kitchen ∈ str ← args.kitchen
+    ithon ∈ str ← args.ithon
+    launcher ∈ str ← args.launcher
+    bound ∈ str ← args.bounded_process
+    output_name ∈ str ← args.output
+    scope ∈ str ← args.scope
+    expected ∈ str ← args.expected_kitchen_ref
+    runtime_receipt ∈ str ← args.runtime_receipt
+    if scope != "HOST_FIXTURE":
+        if scope != "ANDROID_CANDIDATE":
+            sys.exit("UNSUPPORTED_PACKAGE_SCOPE")
+    identity ∈ subprocess.CompletedProcess ← subprocess.run(["/usr/bin/git", "--no-replace-objects", "-C", kitchen, "rev-parse", "HEAD"], capture_output=True, check=True)
+    identity_bytes ∈ bytes ← identity.stdout
+    observed ∈ str ← identity_bytes.decode().strip()
+    if observed != expected:
+        sys.exit("PACKAGE_SOURCE_REF_MISMATCH")
+    blob ∈ subprocess.CompletedProcess ← subprocess.run(["/usr/bin/git", "--no-replace-objects", "-C", kitchen, "show", observed + ":tasks/android-diagnostic/capture.pi"], capture_output=True, check=True)
+    committed ∈ bytes ← blob.stdout
+    task_bytes ∈ bytes ← Path(kitchen + "/tasks/android-diagnostic/capture.pi").read_bytes()
+    if committed != task_bytes:
+        sys.exit("UNCOMMITTED_DELIVERED_TASK")
+    native_receipt ∈ str ← Path(runtime_receipt).read_text()
+    if not native_receipt.__contains__("source_commit\t" + observed + "\n"):
+        sys.exit("NATIVE_RUNTIME_SOURCE_MISMATCH")
+    output ∈ Path ← Path(output_name).resolve()
+    output.mkdir(mode=448, exist_ok=False)
+    package ∈ Path ← output.joinpath("payload")
+    package.joinpath("bin").mkdir(parents=True, mode=448)
+    package.joinpath("lib/ithon/Lib").mkdir(parents=True, mode=448)
+    package.joinpath("tasks").mkdir(mode=448)
+    provenance ∈ dict[str, str] ← dict()
+    provenance.__setitem__("kitchen_source_commit", observed)
+    provenance.__setitem__("task_sha256", hashlib.sha256(task_bytes).hexdigest())
+    provenance.__setitem__("native_candidate_receipt_sha256", hashlib.sha256(Path(runtime_receipt).read_bytes()).hexdigest())
+    provenance.__setitem__("scope", scope)
+    package.joinpath("PROVENANCE.json").write_text(json.dumps(provenance, sort_keys=True))
+    shutil.copyfile(runtime_receipt, package.joinpath("native-candidate.tsv"))
+    shutil.copyfile(launcher, package.joinpath("bin/kitchen-android-capture"))
+    shutil.copyfile(bound, package.joinpath("bin/bounded-process"))
+    shutil.copyfile(kitchen + "/tasks/android-diagnostic/capture.pi", package.joinpath("tasks/android-diagnostic.pi"))
+    shutil.copyfile(ithon + "/ithon_host.py", package.joinpath("lib/ithon/ithon_host.py"))
+    for module in ["ithon_static.py", "ithon_frontend.py", "ithon_run.py"]:
+        shutil.copyfile(ithon + "/Lib/" + module, package.joinpath("lib/ithon/Lib/" + module))
+    for entry in ["bin/kitchen-android-capture", "bin/bounded-process"]:
+        package.joinpath(entry).chmod(320)
+    manifest ← "path\tsha256\n"
+    files ∈ list[Path] ← list(package.rglob("*"))
+    for file in files:
+        if file.is_file():
+            digest ∈ str ← hashlib.sha256(file.read_bytes()).hexdigest()
+            manifest ← manifest + str(file.relative_to(package)) + "\t" + digest + "\n"
+    package.joinpath("CONTENTS.tsv").write_text(manifest)
+    package.joinpath("AVAILABILITY.txt").write_text(scope + ": package bytes only; Android runtime and physical acceptance NOT_VERIFIED\n")
+    archive ∈ Path ← output.joinpath("kitchen-android-capture.tar.gz")
+    writer ∈ object ← tarfile.open(archive, "w:gz")
+    writer.add(package, arcname=".")
+    writer.close()
+    print(str(archive))
+    print(hashlib.sha256(archive.read_bytes()).hexdigest())
+
+main()

@@ -57,3 +57,28 @@ A package receipt records exact package identity and one result/evidence pair fo
 The installer can prove a matching package digest and its own completed installation. A fresh successful download also proves that exact package URL was published at install time. It cannot prove the producer build, application launch, runtime behavior, emulator execution, or physical-device execution, so those remain `NOT_VERIFIED` until their own actions produce evidence. A package installed on one Android target does not accept the other target.
 
 Known gaps remain visible. Installing all currently published packages is not a whole-distribution readiness claim while `check.sh ready <target>` still fails.
+
+
+## First-party APK producer handoff
+
+`apks.tsv` gives all three canonical Crystal IDs first-class MIRO A1 /
+armeabi-v7a / test-lane coverage, with promotion explicitly blocked. Coverage
+does not invent download URLs or mark the Termux product fleet delivered.
+
+`check-producer.ysh` takes DECISION, APK, SOURCE_COMMIT and TARGET. It rehashes
+the APK, checks coverage and invokes the fixed independently deployed AICI v2
+consumer. AICI authenticates the decision and mandatory witness under the active
+release and independently inspects actual package/version/ABI/signer bytes.
+Unsigned v1 receipts and caller policy/key overrides have no accepted route.
+
+`./catfood check-apk` exposes validation. `./catfood deliver-apk` invokes
+`deliver-apk.ysh`: validate before staging, revalidate the copied bytes and
+publish a new sealed directory without replacing a prior attempt. Build/package
+evidence remains separate from installation, launch, replacement, visual,
+emulator and physical evidence. Delivery does not install.
+
+Original Crystal private-key recoverability remains UNKNOWN. The registered
+public test signer proves no compatibility with original differently signed
+installs. No uninstall, package-ID workaround or migration is performed.
+Negative public tests use real canonical APK bytes; positive authenticated
+delivery is blocked by the unavailable independent producer deployment.

@@ -1,0 +1,132 @@
+"""Read selected device evidence without provisioning or mutable probes."""
+from argparse import ArgumentParser
+from pathlib import Path
+from builtins import dict
+import hashlib
+import json
+import subprocess
+import sys
+
+def main() → None:
+    parser ∈ ArgumentParser ← ArgumentParser(description="Read a provenance-scoped Android profile")
+    parser.add_argument("--model", required=True)
+    parser.add_argument("--instance", required=True)
+    parser.add_argument("--inventory")
+    parser.add_argument("--firmware")
+    parser.add_argument("--require-current", action="store_true")
+    parser.add_argument("--output", required=True)
+    args ∈ object ← parser.parse_args()
+    model ∈ str ← args.model
+    instance ∈ str ← args.instance
+    output_name ∈ str ← args.output
+    if model != "miro-a1":
+        sys.exit("PROFILE_ABSENT:" + model)
+    source_name ∈ str ← sys._getframe().f_code.co_filename
+    root ∈ Path ← Path(source_name).resolve().parents.__getitem__(1)
+    source ∈ Path ← root.joinpath("docs/observations/miro-a1-graphics-rish-2026-10-05.tsv")
+    present ∈ bool ← source.is_file()
+    if present == False:
+        sys.exit("PROFILE_ABSENT:miro-a1 observations")
+    data ∈ bytes ← source.read_bytes()
+    rows ∈ list[str] ← data.decode().splitlines()
+    facts ∈ dict[str, str] ← dict()
+    scoped_observations ∈ list[dict[str, str]] ← []
+    packages ∈ list[str] ← []
+    for row in rows:
+        fields ∈ list[str] ← row.split("\t")
+        count ∈ int ← fields.__len__()
+        if count != 4:
+            sys.exit("PROFILE_CORRUPT:four fields required")
+        key ∈ str ← fields.__getitem__(0)
+        value ∈ str ← fields.__getitem__(1)
+        if key == "installed_package":
+            packages.append(value)
+        elif key != "field":
+            duplicate ∈ bool ← facts.__contains__(key)
+            if duplicate:
+                sys.exit("PROFILE_CONFLICT:" + key)
+            facts.__setitem__(key, value)
+        if key != "field":
+            observation ∈ dict[str, str] ← dict()
+            observation.__setitem__("field", key)
+            observation.__setitem__("value", value)
+            observation.__setitem__("provenance", fields.__getitem__(2))
+            observation.__setitem__("limit", fields.__getitem__(3))
+            scoped_observations.append(observation)
+    result ∈ dict[str, object] ← dict()
+    result.__setitem__("schema", "catfood-device-profile-v1")
+    result.__setitem__("target", "phone")
+    result.__setitem__("model", "MIRO A1")
+    result.__setitem__("device_instance", instance)
+    result.__setitem__("instance_binding", "DECLARED_NOT_OBSERVED")
+    result.__setitem__("firmware", "UNKNOWN")
+    result.__setitem__("application_context", "UNKNOWN")
+    result.__setitem__("current_session_capabilities", "UNKNOWN")
+    result.__setitem__("installed_application_identity", "UNKNOWN")
+    result.__setitem__("historical_packages", packages)
+    result.__setitem__("historical_observations", scoped_observations)
+    stable_facts ∈ dict[str, str] ← dict()
+    for stable_key in ["device_model", "established_gpu", "established_soc", "established_android_abi"]:
+        stable_value ∈ str ← facts.get(stable_key, "UNKNOWN")
+        stable_facts.__setitem__(stable_key, stable_value)
+    result.__setitem__("model_facts", stable_facts)
+    result.__setitem__("freshness", "CURRENT_SESSION_UNKNOWN; historical observations retain their stated scope")
+    result.__setitem__("provenance_path", str(source))
+    result.__setitem__("provenance_sha256", hashlib.sha256(data).hexdigest())
+    result.__setitem__("observation_date", facts.get("observation_date", "UNKNOWN"))
+    result.__setitem__("availability", "BRANCH_ONLY")
+    # Exact local object observation; source ancestry is discoverability only.
+    identity ∈ subprocess.CompletedProcess ← subprocess.run(["git", "-C", str(root), "rev-parse", "HEAD"], capture_output=True)
+    identity_bytes ∈ bytes ← identity.stdout
+    result.__setitem__("profile_commit", identity_bytes.decode().strip())
+    landed ∈ subprocess.CompletedProcess ← subprocess.run(["git", "-C", str(root), "show", "origin/main:docs/observations/miro-a1-graphics-rish-2026-10-05.tsv"], capture_output=True)
+    landed_code ∈ int ← landed.returncode
+    if landed_code == 0:
+        landed_bytes ∈ bytes ← landed.stdout
+        if landed_bytes == data:
+            result.__setitem__("availability", "LANDED_LOCAL_REMOTE_SNAPSHOT")
+        else:
+            result.__setitem__("availability", "BRANCH_ONLY:landed profile has different bytes")
+    inventory_name ∈ str ← args.inventory
+    if inventory_name:
+        inventory ∈ Path ← Path(inventory_name)
+        inventory_rows ∈ list[str] ← inventory.read_text().splitlines()
+        metadata ∈ dict[str, str] ← dict()
+        for inventory_row in inventory_rows:
+            if inventory_row.startswith("meta\t"):
+                values ∈ list[str] ← inventory_row.split("\t")
+                n ∈ int ← values.__len__()
+                if n != 4:
+                    sys.exit("INVENTORY_CORRUPT")
+                name ∈ str ← values.__getitem__(1)
+                repeated ∈ bool ← metadata.__contains__(name)
+                if repeated:
+                    sys.exit("INVENTORY_CONFLICT:" + name)
+                metadata.__setitem__(name, values.__getitem__(2))
+        observed_instance ∈ str ← metadata.get("device_id", "UNKNOWN")
+        if observed_instance != instance:
+            sys.exit("PROFILE_CONFLICT:physical instance")
+        observed_model ∈ str ← metadata.get("model", "UNKNOWN")
+        if observed_model != "MIRO A1":
+            sys.exit("PROFILE_CONFLICT:model")
+        result.__setitem__("instance_binding", "INVENTORY_OBSERVATION")
+        result.__setitem__("inventory_sha256", hashlib.sha256(inventory.read_bytes()).hexdigest())
+        fingerprint ∈ str ← metadata.get("build_fingerprint", "UNKNOWN")
+        result.__setitem__("firmware", fingerprint)
+        expected_firmware ∈ str ← args.firmware
+        if expected_firmware:
+            if fingerprint != expected_firmware:
+                sys.exit("PROFILE_FRESHNESS:firmware changed or unknown")
+    required ∈ bool ← args.require_current
+    if required:
+        binding ∈ str ← result.get("instance_binding", "")
+        if binding != "INVENTORY_OBSERVATION":
+            sys.exit("PROFILE_FRESHNESS:physical-instance inventory required")
+    output ∈ Path ← Path(output_name)
+    if output.exists():
+        sys.exit("OUTPUT_ALREADY_EXISTS")
+    rendered ∈ str ← json.dumps(result, sort_keys=True, indent=2)
+    output.write_text(rendered + "\n")
+    print(rendered)
+
+main()

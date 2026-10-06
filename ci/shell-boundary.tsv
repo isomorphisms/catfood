@@ -28,3 +28,9 @@ gopeed.ysh	grease	ysh	User-facing Gopeed REST client after the Grease bootstrap
 fdroid-deploy.ysh	grease	ysh	F-Droid publication command
 fdroid-check-deployed.ysh	grease	ysh	F-Droid publication status command
 tests/ib-handoff.sh	test	sh	Pre-Grease checkout registration, lookup, and bounded IB handoff fixtures
+android/check-producer.sh	transition	sh	Thin compatibility exec to Grease APK validation
+tests/android-producer.sh	transition	sh	Thin compatibility exec to real-APK Grease tests
+android/check-producer.ysh	grease	ysh	Authenticated APK validation under deployed AICI policy
+android/check-apk-coverage.ysh	grease	ysh	First-class canonical Crystal APK coverage
+android/deliver-apk.ysh	grease	ysh	Sealed authenticated APK delivery without installation
+tests/android-producer.ysh	grease	ysh	Real-APK negative public boundary tests

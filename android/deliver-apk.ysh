@@ -1,0 +1,37 @@
+#!/usr/bin/env ysh
+# Repository shebang contract; deployed execution uses the pinned Grease runtime.
+set -eu -o pipefail
+test "$#" = 5 || { echo 'expected DECISION APK SOURCE_COMMIT TARGET NEW_DELIVERY_DIRECTORY' >&2; exit 2; }
+var decision = "$1"
+var apk = "$2"
+var source_commit = "$3"
+var target = "$4"
+var output = "$5"
+test ! -e "$output" || { echo 'delivery output already exists' >&2; exit 1; }
+var script = $(/usr/bin/readlink -f "$0")
+var root = $(/usr/bin/dirname "$script")
+var GREASE = '/opt/aici/android-producer/current/runtime/grease'
+test -x "$GREASE" || { echo 'BLOCKED: authenticated APK producer runtime is unavailable' >&2; exit 1; }
+# Validate before starting delivery; unsigned sidecars never reach staging.
+"$GREASE" "$root/check-producer.ysh" "$decision" "$apk" "$source_commit" "$target"
+var parent = $(/usr/bin/dirname "$output")
+test -d "$parent" && test ! -L "$parent" || exit 1
+var sealed = $(/usr/bin/mktemp -d "$parent/.apk-delivery.XXXXXXXX")
+trap --add EXIT { /usr/bin/rm -r "$sealed" }
+/usr/bin/cp "$apk" "$sealed/payload.apk"
+/usr/bin/cp "$decision" "$sealed/decision.tsv"
+/usr/bin/cp "$decision.sig" "$sealed/decision.tsv.sig"
+/usr/bin/cp "$decision.witness.tsv" "$sealed/decision.tsv.witness.tsv"
+/usr/bin/cp "$decision.witness.tsv.sig" "$sealed/decision.tsv.witness.tsv.sig"
+# Inspect/re-hash the copied bytes, so changing the source during copying fails.
+"$GREASE" "$root/check-producer.ysh" "$sealed/decision.tsv" "$sealed/payload.apk" "$source_commit" "$target" > "$sealed/validation.tsv"
+var digest = $(/usr/bin/sha256sum "$sealed/payload.apk" | /usr/bin/awk '{print $1}')
+printf 'apk_sha256\t%s\ninstall\tNOT_RUN\nlaunch\tNOT_RUN\nreplacement\tNOT_RUN\nvisual\tNOT_RUN\nphysical\tNOT_RUN\n' "$digest" > "$sealed/delivery.tsv"
+# Publish the already validated copy; mv -T forbids treating a raced output as
+# a destination directory. Deployment storage must reserve this attempt name.
+/usr/bin/mv -T --no-clobber "$sealed" "$output"
+test ! -e "$sealed" || { echo 'delivery name was occupied concurrently' >&2; exit 1; }
+var final_digest = $(/usr/bin/sha256sum "$output/payload.apk" | /usr/bin/awk '{print $1}')
+test "$final_digest" = "$digest" || { echo 'sealed delivery changed during export' >&2; exit 1; }
+trap --remove EXIT
+printf 'CATFOOD_VERIFIED_APK_DELIVERY\tPASS\nAPK_SHA256\t%s\n' "$digest"

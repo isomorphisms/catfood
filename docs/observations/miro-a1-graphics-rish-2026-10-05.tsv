@@ -1,4 +1,7 @@
 field	value	evidence	context
+established_gpu	PowerVR Rogue GE8322	https://github.com/isomorphisms/android-NDK/blob/7c61ee43e75f7c2dab9288edb0e10055898b36e6/hardware/gpu/miro-a1-powervr-ge8322.md	model dossier backed by historical physical shader runner; does not accept Crystal or its selected graphics path
+established_soc	SC9863A / SharkL3 / 1H10 family	https://github.com/isomorphisms/android-NDK/blob/7c61ee43e75f7c2dab9288edb0e10055898b36e6/hardware/board-and-kernel/miro-a1-sc9863a.md	model platform receipt; not electrical equivalence with other boards
+established_android_abi	armeabi-v7a / 32-bit Bionic	https://github.com/isomorphisms/android-NDK/blob/7c61ee43e75f7c2dab9288edb0e10055898b36e6/hardware/cpu/miro-a1-armv7-abi.md	established Android userspace target; not proof the silicon is an ARMv7-era CPU
 observation_date	2026-10-05	session-2026-10-05	local conversation date; exact capture time not supplied
 evidence_kind	user-pasted-terminal-transcript	session-2026-10-05	selected excerpts in sibling .txt file
 device_model	MIRO A1	session-2026-10-05	conversation attribution; not getprop result

@@ -1,0 +1,5 @@
+"""Retired unsigned receipt interface. Use authenticated deliver-apk.ysh."""
+import sys
+
+# Caller-owned runtime JSON cannot nominate itself as verification authority.
+sys.exit("OPERATION_VERSION_REQUIRED: signed v2 decision and android/deliver-apk.ysh required; caller runtime is not authority")
