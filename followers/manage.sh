@@ -124,14 +124,9 @@ stale_target() {
 }
 
 control_path() {
-    case $1 in
-        followers/*|AGENTS.md|docs/followers.md|tests/followers.sh|.github/workflows/followers.yml)
-            return 0
-            ;;
-        *)
-            return 1
-            ;;
-    esac
+    classified=$(rule_for_path "$1")
+    follower_set=$(printf '%s\n' "$classified" | awk -F '\t' '{print $1}')
+    [ "$follower_set" = - ]
 }
 
 latest_source_from() {
