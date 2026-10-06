@@ -15,11 +15,11 @@ required	yes
 action	follower target for Cat Food commit 75412656fa227573462c3213aea0996b6b58f9a9 on container-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	runtime
 acceptance_action	sh followers/accept-x86.sh container
-state	blocked
+state	superseded
 last_attempt_commit	-
 blocker	Provisioned container runtime is unavailable: CATFOOD_ROOT and CATFOOD_PREFIX are not configured
 evidence	-
 depends_on	-
 reason	shared-portable
-superseded_by	-
+superseded_by	catfood-a66b6e602f60-container-x86_64
 follow_policy	exact

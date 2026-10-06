@@ -12,7 +12,7 @@ artifact_sha256	-
 follower_platform	github-x86_64-artifact
 follower_arch	x86_64
 required	yes
-action	follower target for Cat Food commit a66b6e602f60820f61a5ff443a16ea102ab8aced on github-x86_64-artifact; fetch that exact commit, run the named acceptance action, and record a receipt.
+action	Carry forward the unfinished generic inventory artifact obligations from catfood-22ff3eeaab58-github-x86_64-artifact and catfood-233a9a88d838-github-x86_64-artifact via catfood-75412656fa22-github-x86_64-artifact; validate the exact current source inventory artifact identity, hash, metadata, extraction and install contract, plus the cloud-storage helper bundle admission required by issue 117.
 acceptance_kind	artifact
 acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
 state	blocked
@@ -20,6 +20,6 @@ last_attempt_commit	-
 blocker	Exact NDK bundles exist; package digest admission and install contract remain issue 117
 evidence	-
 depends_on	-
-reason	android-artifact-and-device
+reason	android-artifact-and-device; preserves the generic inventory artifact obligation from catfood-75412656fa22-github-x86_64-artifact
 superseded_by	-
 follow_policy	exact

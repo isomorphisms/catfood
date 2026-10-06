@@ -20,6 +20,6 @@ last_attempt_commit	-
 blocker	Full workbench runtime and qualified helper delivery are not accepted by source/dispatcher fixtures
 evidence	-
 depends_on	-
-reason	shared-portable
+reason	shared-portable; carries unfinished runtime acceptance from catfood-75412656fa22-container-x86_64; dispatcher fixtures do not accept the full workbench
 superseded_by	-
 follow_policy	exact

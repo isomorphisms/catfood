@@ -20,6 +20,6 @@ last_attempt_commit	-
 blocker	No Hetzner runtime acceptance or host facts collected in this task
 evidence	-
 depends_on	-
-reason	shared-portable
+reason	shared-portable; carries unfinished runtime acceptance from catfood-75412656fa22-hetzner-x86_64
 superseded_by	-
 follow_policy	exact

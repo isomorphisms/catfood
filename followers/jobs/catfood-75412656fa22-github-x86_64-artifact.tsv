@@ -15,11 +15,11 @@ required	yes
 action	Carry forward the unfinished generic inventory artifact obligations from catfood-22ff3eeaab58-github-x86_64-artifact and catfood-233a9a88d838-github-x86_64-artifact; validate the exact current source inventory artifact identity, hash, metadata, extraction and install contract.
 acceptance_kind	artifact
 acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	carried-forward-artifact-obligation
-superseded_by	-
+superseded_by	catfood-a66b6e602f60-github-x86_64-artifact
 follow_policy	exact

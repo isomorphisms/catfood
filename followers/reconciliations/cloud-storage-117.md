@@ -7,6 +7,12 @@ do not accept a complete installed runtime. GitHub runtime remains pending;
 artifact, container, Hetzner and physical-device work carries explicit blockers.
 No historical receipt is reused for this changed source state.
 
+The standard successor operation moves the five stale 75412656fa22 obligations
+to same-target, same-acceptance-kind jobs at this trigger. The generic inventory
+artifact action explicitly preserves the earlier 22ff3eeaab58/233a9a88d838
+obligations. Supersession is pending work, not acceptance. Unaffected historical
+jobs retain their existing state and exact triggers.
+
 Issue 117 remains the sole successor of retired cloud-storage delivery. The old
 ae27f2938d405d382d22363c59dbfa1a8d802772 and db7b39f5ede0… obligations are not
 silently completed or erased by these jobs. Their exact runtime/device/artifact
