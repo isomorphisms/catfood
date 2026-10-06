@@ -195,7 +195,10 @@ same_source_state() {
         ':(exclude)AGENTS.md' \
         ':(exclude)docs/followers.md' \
         ':(exclude)tests/followers.sh' \
-        ':(exclude).github/workflows/followers.yml'
+        ':(exclude).github/workflows/followers.yml' \
+        ':(exclude)android/README.md' \
+        ':(exclude)android/devices/**' \
+        ':(exclude)docs/observations/**'
 }
 
 resolve_trigger() {
