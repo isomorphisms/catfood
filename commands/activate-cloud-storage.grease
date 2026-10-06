@@ -1,0 +1,35 @@
+#!/usr/bin/env grease
+set -eu
+fail() { printf 'cloud-storage activation: %s\n' "$*" >&2; exit 2; }
+test "$#" = 3 || fail 'usage: activate-cloud-storage GREASE_EXECUTABLE CLOUD_CHECKOUT BIN_DIRECTORY'
+runner=$1
+checkout=$2
+bindir=$3
+case $runner in /*) ;; *) fail 'Grease path must be absolute' ;; esac
+case $checkout in /*) ;; *) fail 'checkout path must be absolute' ;; esac
+case $bindir in /*) ;; *) fail 'bin path must be absolute' ;; esac
+test -x "$runner" || fail 'verified Grease runtime is unavailable'
+test -d "$checkout/.git" || fail 'explicit cloud-storage checkout is unavailable'
+test -z "$(git -C "$checkout" status --porcelain --untracked-files=no)" || fail 'tracked source is dirty'
+case $runner$checkout in *"'"*) fail 'single quote in registered paths is unsupported' ;; esac
+case $runner$checkout in *'
+'*) fail 'newline in registered paths is unsupported' ;; esac
+"$runner" -c 'echo grease-runtime-ready' >/dev/null
+for name in google-drive-api google-drive-auth google-drive-files google-drive-copy-tree google-drive-download google-drive-zip-inventory sdf-mailbox-stream-upload; do
+  test -f "$checkout/commands/$name.grease" || fail "missing command: $name"
+  "$runner" "$checkout/commands/$name.grease" --help >/dev/null
+done
+mkdir -p "$bindir"
+for name in google-drive-api google-drive-auth google-drive-files google-drive-copy-tree google-drive-download google-drive-zip-inventory sdf-mailbox-stream-upload; do
+  destination=$bindir/$name
+  if test -e "$destination" || test -L "$destination"; then
+    fail "command already exists; reconcile rather than overwrite: $destination"
+  fi
+done
+for name in google-drive-api google-drive-auth google-drive-files google-drive-copy-tree google-drive-download google-drive-zip-inventory sdf-mailbox-stream-upload; do
+  destination=$bindir/$name
+  # Literal arguments go in data lines rather than interpolated shell code.
+  printf '#!/usr/bin/env grease\n# catfood cloud-storage wrapper\nexec '\''%s'\'' '\''%s/commands/%s.grease'\'' "$@"\n' "$runner" "$checkout" "$name" > "$destination"
+  chmod 755 "$destination"
+done
+printf 'source_revision\t%s\nregistration\tPASS\ninstalled_runtime\tNOT_RUN\nlive_drive\tNOT_RUN\n' "$(git -C "$checkout" rev-parse HEAD)"

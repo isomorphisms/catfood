@@ -35,6 +35,7 @@ manimi	host	n/a	n/a	desktop-animation-rendering-build-tool
 wegert	runtime	gap:android-package-missing	gap:android-package-missing	android-mathematical-application
 yt-shorts	host	n/a	n/a	publication-build-tool
 ai-ci	host	n/a	n/a	build-test-policy-tool
+cloud-storage-api	runtime	gap:current-client-bundle-not-admitted	gap:current-client-bundle-not-admitted	published-build-candidates-see-docs/cloud-storage-candidates.tsv
 computer-science	reference	n/a	n/a	reference-source
 utilities-android-phone-user	runtime	gap:android-package-missing	gap:android-package-missing	android-runtime-applications
 

@@ -1,10 +1,10 @@
 schema	aici-follower-job-v1
-job_id	catfood-75412656fa22-phone
+job_id	catfood-63e89eeac65f-phone
 repository	isomorphisms/catfood
-branch	cleanup/transferred-repositories
-pr	81
-trigger_commit	75412656fa227573462c3213aea0996b6b58f9a9
-leader_platform	github-x86_64
+branch	storage-delivery-reconciliation
+pr	120
+trigger_commit	63e89eeac65fbe4f48aed16cecec5d5173ff9e1b
+leader_platform	container-x86_64
 leader_arch	x86_64
 leader_evidence	-
 artifact	-
@@ -12,7 +12,7 @@ artifact_sha256	-
 follower_platform	phone
 follower_arch	armv7
 required	yes
-action	follower target for Cat Food commit 75412656fa227573462c3213aea0996b6b58f9a9 on phone; fetch that exact commit, run the named acceptance action, and record a receipt.
+action	follower target for Cat Food commit 63e89eeac65fbe4f48aed16cecec5d5173ff9e1b on phone; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	physical-device
 acceptance_action	./catfood && sh android/check.sh gaps phone
 state	superseded
@@ -20,6 +20,6 @@ last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
-reason	shared-portable
+reason	android-artifact-and-device
 superseded_by	catfood-c48bde055c76-phone
 follow_policy	exact
