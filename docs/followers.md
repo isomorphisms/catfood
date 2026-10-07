@@ -1,6 +1,6 @@
 # Cat Food follower architecture
 
-Cat Food lets phone or tablet work lead, but every affected maintained target must either produce independent acceptance evidence or remain durable unfinished work.
+Cat Food lets phone, C67, or tablet work lead, but every affected maintained target must either produce independent acceptance evidence or remain durable unfinished work.
 
 The target meanings remain defined in [`TARGETS.md`](../TARGETS.md). Physical phone, physical tablet, disposable/container Linux, GitHub-hosted Linux, and persistent Hetzner/cloud acceptance are not interchangeable.
 
@@ -17,7 +17,7 @@ Resolution is deliberately fail-closed. No matching exact trigger stays red. Mor
 `followers/impact-rules.tsv` maps changed paths to affected targets. Rules are first-match and conservative:
 
 - follower-control and policy files do not create product follower debt;
-- `android/` changes affect the physical phone, physical tablet, and GitHub artifact-contract follower;
+- `android/` changes affect the physical phone, physical C67, physical tablet, and GitHub artifact-contract follower;
 - Android contract tests affect the GitHub artifact-contract follower;
 - ordinary GitHub workflow changes affect GitHub-hosted x86-64;
 - everything else defaults to the concrete phone, tablet, GitHub x86-64, independent container/local x86-64, and Hetzner x86-64 targets.
@@ -32,7 +32,7 @@ A job carries the exact trigger commit, leader, follower, architecture, required
 
 Build, runtime, artifact, physical-device, and publication acceptance are separate evidence kinds. `unsupported`, `blocked`, and `not run` are not green. Conditional `n/a` requires an explicit reason.
 
-For architecture-specific Cat Food artifacts, record the artifact name and SHA-256 in the follower job. A receipt for a different artifact cannot satisfy it. Both Android targets are runtime-only consumers in the normal Cat Food path: missing ARMv7 or AArch64 output stays explicit rather than turning either device into a source build farm. Android delivery gaps do not authorize unrelated experimental compiler/backend gates, and Android capacity does not substitute for x86, Hetzner, or GitHub acceptance.
+For architecture-specific Cat Food artifacts, record the artifact name and SHA-256 in the follower job. A receipt for a different artifact cannot satisfy it. All physical Android targets are runtime-only consumers in the normal Cat Food path: missing ARMv7 or AArch64 output stays explicit rather than turning either device into a source build farm. Android delivery gaps do not authorize unrelated experimental compiler/backend gates, and Android capacity does not substitute for x86, Hetzner, or GitHub acceptance.
 
 ## Operations
 

@@ -8,6 +8,11 @@ provision.sh	stage-zero	sh	Dispatches runtime-only Android delivery before host 
 install-binaries.sh	stage-zero	sh	Installs verified prebuilt jq and Miller binaries before consumers need them
 install-lua.sh	stage-zero	sh	Establishes the packaged Lua runtime before Grease can be assumed
 android/check.sh	stage-zero	sh	Validates total Android inventory coverage and package metadata
+android/target.sh	stage-zero	sh	Identity is checked before Grease delivery
+android/record-c67-runtime.sh	stage-zero	sh	Records the exact delivered runtime probe
+tests/c67-delivery.sh	test	sh	Stage-zero shared-artifact and device-bound receipt probes
+tests/android-properties.sh	test	sh	Synthetic Android properties for bootstrap tests only
+tests/target-mutations.sh	test	sh	Known-bad classification and receipt mutants
 android/install.sh	stage-zero	sh	Installs verified Android runtime packages without a compiler
 android/bootstrap-crawlspace.sh	stage-zero	sh	Starts the delivered Crawl Space shell daemon without device compilation
 android/install-crawlspace-bootstrap.sh	stage-zero	sh	Installs the stable post-reboot Crawl Space helper
@@ -28,3 +33,9 @@ gopeed.ysh	grease	ysh	User-facing Gopeed REST client after the Grease bootstrap
 fdroid-deploy.ysh	grease	ysh	F-Droid publication command
 fdroid-check-deployed.ysh	grease	ysh	F-Droid publication status command
 tests/ib-handoff.sh	test	sh	Pre-Grease checkout registration, lookup, and bounded IB handoff fixtures
+device-state.sh	stage-zero	sh	Inventory is available before Grease delivery
+android/preserve-shizuku.sh	stage-zero	sh	Preserves exports before Android runtime mutation
+tests/device-state.sh	test	sh	Stage-zero inventory regression fixtures
+tests/shizuku-state.sh	test	sh	Stage-zero snapshot corruption and precedence fixtures
+android/acceptance/reddit-installed.sh	test	sh	Inherited installed-runtime acceptance procedure pending Kitchen migration
+tests/android-reddit-artifact.sh	test	sh	Published-artifact verifier inherited from retired generation

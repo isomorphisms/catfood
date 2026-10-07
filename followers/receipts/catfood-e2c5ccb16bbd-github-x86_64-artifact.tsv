@@ -1,0 +1,17 @@
+schema	aici-follower-receipt-v1
+job_id	catfood-e2c5ccb16bbd-github-x86_64-artifact
+repository	isomorphisms/catfood
+trigger_commit	e2c5ccb16bbd37dd3ec3b791fd40006119e58b55
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+acceptance_kind	artifact
+result	pass
+attempt_commit	e2c5ccb16bbd37dd3ec3b791fd40006119e58b55
+os_runtime	GitHub Actions ubuntu-24.04
+build_command	-
+test_command	sh tests/android-reddit-artifact.sh
+artifact	SHA256SUMS
+artifact_sha256	a5a2f1dd8496924821ae647afaf7be4b92af741ce96454540f8af0c136f1ffa5
+evidence_url	https://github.com/isomorphisms/catfood/actions/runs/35509762538
+recorded_at	2026-09-20T12:08:55Z
+note	Exact-head artifact contract verified the release manifest, both pinned archive SHA-256 values, embedded Cat Food package identity, generic installation, and read-only DEX/JNI payloads. The test would fail if app_process executed; launch, runtime, emulator, and physical-device evidence remained NOT_VERIFIED.
