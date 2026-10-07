@@ -77,9 +77,9 @@ def provision(work ∈ str) → None:
     Path(executable).chmod(493)
     run(["sudo", "sysctl", "-w", "vm.mmap_rnd_bits=28"], work, work + "/provision/asan-host")
     launcher ∈ str ← work + "/profile/bin/grease"
-    write(launcher, "#!" + executable + "\nexport ASAN_OPTIONS=detect_leaks=0\nexec " + executable + ' "$@"\n')
+    write(launcher, "#!" + executable + "\nsetglobal ENV.ASAN_OPTIONS = 'detect_leaks=0'\nexec " + executable + ' "$@"\n')
     Path(launcher).chmod(493)
-    run([launcher, "-c", "var result = 6 * 7; write -- rhs-$result"], work, work + "/provision/grease-smoke")
+    run([launcher, "-c", "write -- rhs-runtime"], work, work + "/provision/grease-smoke")
     write(work + "/profile/grease.tsv", "source\t" + GREASE_SOURCE + "\ninherited_source\t5651cf97a1b5042f24f14112a7ade9a1518eb0bc\nartifact\t11419782646\narchive_sha256\t" + archive_hash + "\nexecutable_sha256\t" + digest(Path(executable).read_bytes()) + "\n")
     run(["python3", "-m", "venv", work + "/model-runtime"], work, work + "/provision/venv")
     interpreter ∈ str ← work + "/model-runtime/bin/python"
