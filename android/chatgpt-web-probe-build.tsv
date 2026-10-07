@@ -1,0 +1,2 @@
+package_id	min_sdk	target_sdk	native_library	activity	no_dex
+org.isomorphisms.chatgptprobe	21	34	chatgptprobe	android.app.NativeActivity	true
