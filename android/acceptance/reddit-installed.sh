@@ -62,12 +62,12 @@ install_receipt="$workspace/receipts/$target-$package.tsv"
 [ -x "$reddit" ] || fail "installed Reddit command is missing: $reddit"
 [ -f "$install_receipt" ] || fail "installation receipt is missing: $install_receipt"
 
-sh "$root/android/check.sh" receipt "$install_receipt" "$target" "$device_id" >/dev/null ||
+sh "$root/android/check.sh" authorize "$install_receipt" "$target" "$device_id" installation >/dev/null ||
     fail "installation receipt does not match the current Cat Food package manifest"
 
 stamp=$(date -u '+%Y%m%dT%H%M%SZ' 2>/dev/null || printf unknown)
 evidence_dir=${CATFOOD_REDDIT_EVIDENCE:-"$workspace/receipts/reddit-$target-$stamp"}
-mkdir -p "$evidence_dir"
+mkdir "$evidence_dir" || fail 'evidence attempt already exists; refusing replacement'
 
 device_log="$evidence_dir/device.tsv"
 url_log="$evidence_dir/reddit-url.log"
@@ -89,7 +89,7 @@ fingerprint=$("$getprop_command" ro.build.fingerprint 2>/dev/null | tr -d '\r')
 } > "$device_log"
 cat "$device_log"
 [ "$abi" = "$expected_abi" ] || fail "device ABI $abi does not match $expected_abi"
-pass "physical target identity matches $target"
+pass "observed target identity matches $target"
 
 section "Reddit DEX/JNI launch"
 action "Run the installed stable reddit command through app_process"
@@ -111,24 +111,33 @@ fi
 cat "$runtime_log"
 grep -Fq 'reddit: missing REDDIT_ACCESS_TOKEN' "$runtime_log" ||
     fail "missing-token diagnostic did not come from the Reddit runtime"
-pass "JNI runtime boundary executed on the physical device"
+pass "installed command returned the expected runtime-boundary diagnostic"
 
-awk -F '\t' -v OFS='\t' \
-    -v launch="$url_log" \
-    -v runtime="$runtime_log" \
-    -v physical="$device_log" '
-    $1 == "launch_result" { $2 = "PASS" }
-    $1 == "launch_evidence" { $2 = launch }
-    $1 == "runtime_result" { $2 = "PASS" }
-    $1 == "runtime_evidence" { $2 = runtime }
-    $1 == "physical_device_result" { $2 = "PASS" }
-    $1 == "physical_device_evidence" { $2 = physical }
-    { print }
-' "$install_receipt" > "$physical_receipt"
+# Revalidate after execution: a launcher, DEX, JNI library, dependency or device
+# fact changed during the run must not publish a successful observation.
+sh "$root/android/check.sh" authorize "$install_receipt" "$target" "$device_id" installation >/dev/null ||
+    fail 'installed bytes or device facts changed during execution'
+. "$root/android/content.sh"
+scope=$(cf_field "$install_receipt" evidence_scope)
+{
+    printf 'schema\tcatfood-execution-observation-v1\n'
+    printf 'scope\t%s\n' "$scope"
+    printf 'kind\tfresh-reddit-procedure\n'
+    printf 'procedure_sha256\t%s\n' "$(cf_hash "$0")"
+    printf 'installation_receipt_sha256\t%s\n' "$(cf_hash "$install_receipt")"
+    printf 'launch_log_sha256\t%s\n' "$(cf_hash "$url_log")"
+    printf 'runtime_log_sha256\t%s\n' "$(cf_hash "$runtime_log")"
+    printf 'device_log_sha256\t%s\n' "$(cf_hash "$device_log")"
+    printf 'launch_observation\tPASS\nruntime_observation\tPASS\nacceptance_authorization\tNOT_VERIFIED\n'
+} > "$evidence_dir/execution.tsv"
+
+# Local unsigned logs cannot authenticate their own execution. Retain the
+# installation receipt unchanged and keep this fresh observation separate.
+cp "$install_receipt" "$physical_receipt"
 
 sh "$root/android/check.sh" receipt "$physical_receipt" "$target" "$device_id" >/dev/null ||
-    fail "generated physical-device receipt failed Cat Food validation"
+    fail "retained installation receipt failed Cat Food validation"
 
 section "Receipt"
 cat "$physical_receipt"
-pass "physical Reddit acceptance receipt: $physical_receipt"
+pass "fresh Reddit observation ($scope): $evidence_dir/execution.tsv; acceptance NOT_VERIFIED"

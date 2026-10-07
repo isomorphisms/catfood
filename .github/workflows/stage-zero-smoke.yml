@@ -17,7 +17,7 @@ jobs:
           for script in \
             catfood bootstrap.sh check-manifest.sh update-tools.ysh ci/repositories.sh \
             provision.sh install-binaries.sh activate.sh build-tools.sh refresh.sh doctor.sh import-config.sh \
-            android/target.sh android/check.sh android/install.sh android/install-local-clients.sh android/bootstrap-crawlspace.sh android/install-crawlspace-bootstrap.sh \
+            android/target.sh android/content.sh android/check.sh android/install.sh android/install-local-clients.sh android/bootstrap-crawlspace.sh android/install-crawlspace-bootstrap.sh \
             android/record-c67-runtime.sh \
             tests/check-manifest.sh tests/repository-identities.sh tests/entrypoint.sh tests/targets.sh tests/android-delivery.sh \
             tests/c67-delivery.sh tests/android-local-clients.sh tests/android-crawlspace.sh tests/runtime-binaries.sh

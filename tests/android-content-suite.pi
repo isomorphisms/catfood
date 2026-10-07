@@ -1,0 +1,33 @@
+"""Finite S3 inventory of inherited stage-zero contract tests."""
+import sys
+import os
+import subprocess
+from pathlib import Path
+from builtins import dict
+
+def main() → None:
+    arguments ∈ list[str] ← sys.argv
+    root ∈ str ← arguments.__getitem__(1)
+    output ∈ str ← arguments.__getitem__(2)
+    Path(output).mkdir(parents=True, exist_ok=False)
+    names ∈ list[str] ← ["targets", "android-delivery", "c67-delivery", "device-state", "runtime-binaries", "target-mutations", "android-reddit-artifact", "android-acceptance-bundles", "android-acceptance-bundles-v2", "android-crawlspace", "shizuku-state", "entrypoint"]
+    environment ∈ dict[str, str] ← dict(os.environ)
+    ledger ∈ str ← "test\texit\tresult\tscope\n"
+    failed ∈ bool ← False
+    for name in names:
+        result ∈ object ← subprocess.run(["sh", root + "/tests/" + name + ".sh"], env=environment, capture_output=True, text=True, timeout=300)
+        stdout ∈ str ← result.stdout
+        stderr ∈ str ← result.stderr
+        code ∈ int ← result.returncode
+        Path(output + "/" + name + ".log").write_text(stdout + stderr)
+        status ∈ str ← "PASS" if code == 0 else "FAIL"
+        ledger ← ledger + name + "\t" + str(code) + "\t" + status + "\thost-contract\n"
+        print(name + "\t" + status, flush=True)
+        if code != 0:
+            failed ← True
+            print(stdout + stderr)
+    Path(output + "/results.tsv").write_text(ledger)
+    if failed:
+        sys.exit(1)
+
+main()

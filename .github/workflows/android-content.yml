@@ -1,0 +1,51 @@
+name: Android installed content and evidence
+on:
+  pull_request:
+  push:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  synthetic-content:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Acquire the exact Ithon frontend
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: dilapidated-shed/ithon
+          ref: 396d8b7af1417a0a61245db940fdb22ef9fbac51
+          path: _s3-ithon
+          persist-credentials: false
+      - name: Acquire the recorded Grease runtime artifact
+        shell: sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api /repos/dilapidated-shed/grease/actions/artifacts/11419782646/zip > "$RUNNER_TEMP/grease.zip"
+          printf '71e679fef031225716bbb4d6ea140ab17e9d44e7aa6bd4964e7bccbbed6ce323  %s\n' "$RUNNER_TEMP/grease.zip" | sha256sum -c -
+          unzip -p "$RUNNER_TEMP/grease.zip" _bin/cxx-asan/ysh > "$RUNNER_TEMP/grease"
+          printf '7e31cd05b7a9d8fb2a4a9e003a7f3fcb0159138506d17f0fb28da8cbe22aa85c  %s\n' "$RUNNER_TEMP/grease" | sha256sum -c -
+          chmod 0755 "$RUNNER_TEMP/grease"
+      - name: Execute byte, evidence and scope counterparts
+        shell: sh
+        env:
+          ASAN_OPTIONS: detect_leaks=0
+          ITHON_CHECK_RECEIPT: ${{ runner.temp }}/s3-ithon-checks.jsonl
+        run: |
+          _s3-ithon/ithon tests/android-content.pi "$GITHUB_WORKSPACE" "$RUNNER_TEMP/s3-content" "$RUNNER_TEMP/grease"
+          _s3-ithon/ithon tests/android-content-mutations.pi "$GITHUB_WORKSPACE" "$RUNNER_TEMP/s3-mutations" "$RUNNER_TEMP/grease" "$GITHUB_WORKSPACE/_s3-ithon/ithon"
+      - name: Retain results at synthetic host scope
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: s3-synthetic-content-evidence
+          path: |
+            ${{ runner.temp }}/s3-content
+            ${{ runner.temp }}/s3-mutations/*.log
+            ${{ runner.temp }}/s3-mutations/results.tsv
+            ${{ runner.temp }}/s3-ithon-checks.jsonl

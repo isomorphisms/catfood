@@ -40,6 +40,7 @@ android/check-apk-coverage.ysh	grease	ysh	First-class canonical Crystal APK cove
 android/deliver-apk.ysh	grease	ysh	Sealed authenticated APK delivery without installation
 tests/android-producer.ysh	grease	ysh	Real-APK negative public boundary tests
 device-state.sh	stage-zero	sh	Inventory is available before Grease delivery
+android/content.sh	stage-zero	sh	Pinned-content revalidation before Grease itself is delivered
 android/preserve-shizuku.sh	stage-zero	sh	Preserves exports before Android runtime mutation
 tests/device-state.sh	test	sh	Stage-zero inventory regression fixtures
 tests/shizuku-state.sh	test	sh	Stage-zero snapshot corruption and precedence fixtures

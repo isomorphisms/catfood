@@ -49,6 +49,13 @@ Device profiles identify model facts; ABI lanes identify artifacts. Neither esta
 
 ## Evidence boundaries
 
+Current v3 installation receipts bind full installed content, launchers,
+dependencies, plan/profile and procedure bytes. Use `check.sh schema` to inspect
+historical declarations; `check.sh receipt` verifies current installation bytes;
+`check.sh authorize RECEIPT TARGET INSTANCE installation` also re-observes the
+device. Unsigned build/runtime/physical PASS text and imported inventories never
+authorize cells. See [the exact acceptance boundary](qualification/cf-a2-s3.md).
+
 A version 2 package receipt records device target, class, instance ID, observed identity, ABI lane, exact package identity and one result/evidence pair for each of `build`, `package`, `publication`, `installation`, `launch`, `runtime`, `emulator`, and `physical_device`. Results use the shared `PASS`, `FAIL`, `SKIP`, and `NOT_VERIFIED` vocabulary. Every stage is mandatory, `NOT_VERIFIED` carries no invented evidence, and a later stage cannot pass merely because an earlier stage passed. Validate a receipt with `sh android/check.sh receipt RECEIPT`.
 
 The installer can prove a matching package digest and its own completed installation. A fresh successful download also proves that exact package URL was published at install time. It cannot prove the producer build, application launch, runtime behavior, emulator execution, or physical-device execution, so those remain `NOT_VERIFIED` until their own actions produce evidence. A package installed on one Android target does not accept another physical target; in particular, C67 and tablet may share `arm64-v8a` artifacts without sharing physical acceptance.

@@ -139,16 +139,24 @@ promote_fixture() {
 }
 promote_fixture "$receipt" "$tmp/c67-physical.tsv"
 promote_fixture "$tablet_receipt" "$tmp/tablet-physical.tsv"
-sh "$root/android/check.sh" receipt "$tmp/c67-physical.tsv" c67 synthetic-c67 >/dev/null
-sh "$root/android/check.sh" receipt "$tmp/tablet-physical.tsv" tablet synthetic-tablet >/dev/null
+sh "$root/android/check.sh" schema "$tmp/c67-physical.tsv" c67 synthetic-c67 >/dev/null
+sh "$root/android/check.sh" schema "$tmp/tablet-physical.tsv" tablet synthetic-tablet >/dev/null
 reject_receipt() {
     diagnostic=$1; shift
-    if sh "$root/android/check.sh" receipt "$@" >"$tmp/rejected.out" 2>&1; then
+    validator=receipt
+    # Identity negatives exercise the schema boundary itself, so unrelated
+    # execution-evidence rejection cannot conceal a removed identity guard.
+    case $diagnostic in
+        *target*|*instance*|*identity*|*device*|*fingerprint*) validator=schema ;;
+    esac
+    if sh "$root/android/check.sh" "$validator" "$@" >"$tmp/rejected.out" 2>&1; then
         printf '%s\n' 'cross-device or malformed receipt accepted' >&2; exit 1
     fi
     grep -F "$diagnostic" "$tmp/rejected.out" >/dev/null
 }
 reject_receipt 'another target' "$tmp/c67-physical.tsv" tablet
+reject_receipt 'unverified execution claim' "$tmp/c67-physical.tsv" c67 synthetic-c67
+reject_receipt 'unverified execution claim' "$tmp/tablet-physical.tsv" tablet synthetic-tablet
 reject_receipt 'another target' "$tmp/tablet-physical.tsv" c67
 reject_receipt 'another target' "$tmp/c67-physical.tsv" phone
 reject_receipt 'another device instance' "$tmp/c67-physical.tsv" c67 another-c67
@@ -174,7 +182,7 @@ restrictions=$tmp/restrictions.tsv
 printf 'c67-fixture-arm64\ttablet\tMali-only-fixture\tsynthetic\n' > "$restrictions"
 export CATFOOD_ANDROID_RESTRICTIONS="$restrictions"
 reject_receipt 'restricted to another device' "$tmp/c67-physical.tsv"
-sh "$root/android/check.sh" receipt "$tmp/tablet-physical.tsv" tablet synthetic-tablet >/dev/null
+sh "$root/android/check.sh" schema "$tmp/tablet-physical.tsv" tablet synthetic-tablet >/dev/null
 sh "$root/android/check.sh" gaps c67 | grep -F 'gap:package-not-compatible-with-device' >/dev/null
 if sh "$root/android/check.sh" ready c67 >"$tmp/restricted-ready.out" 2>&1; then exit 1; fi
 PATH="$fake_bin:$PATH" CATFOOD_TEST_RELEASE="$release" CATFOOD_TARGET=c67 \
@@ -187,7 +195,7 @@ printf '%s\n' 'Device-specific package restriction passes positive and negative 
 # Producer policy must not silently demote A1 or treat native ARM32 on C67 as A1.
 policy_root=$tmp/policy
 mkdir -p "$policy_root/android"
-cp "$root/android/check.sh" "$root/android/target.sh" "$root/android/application-targets.tsv" \
+cp "$root/android/check.sh" "$root/android/content.sh" "$root/android/target.sh" "$root/android/application-targets.tsv" \
     "$root/android/conversation-targets.tsv" "$root/android/package-restrictions.tsv" "$policy_root/android/"
 sed 's/primary/paired/' "$root/android/application-targets.tsv" > "$policy_root/android/application-targets.tsv"
 if sh "$policy_root/android/check.sh" check >"$tmp/policy.out" 2>&1; then exit 1; fi

@@ -1,0 +1,58 @@
+"""Mutate acceptance boundaries and require semantic corpus failures."""
+import os
+import sys
+import subprocess
+import shutil
+from pathlib import Path
+from builtins import dict, globals, len
+
+def main() → None:
+    arguments ∈ list[str] ← sys.argv
+    root ∈ str ← arguments.__getitem__(1)
+    work ∈ str ← arguments.__getitem__(2)
+    grease ∈ str ← arguments.__getitem__(3)
+    ithon ∈ str ← arguments.__getitem__(4)
+    Path(work).mkdir(parents=True, exist_ok=False)
+    environment ∈ dict[str, str] ← dict(os.environ)
+    environment.__setitem__("ASAN_OPTIONS", "detect_leaks=0")
+    names ∈ list[str] ← ["payload-authorization", "mutable-device-facts", "runner-exit-zero"]
+    ledger ∈ str ← "invariant\texpected\tobserved_exit\tresult\n"
+    for name in names:
+        subject ∈ str ← work + "/" + name
+        shutil.copytree(root, subject, ignore=shutil.ignore_patterns(".git", "_s3-ithon"))
+        path ∈ str ← subject + "/android/check.sh"
+        needle ∈ str ← "        cf_validate_content \"$cf_validated_receipt\" || return"
+        replacement ∈ str ← "        : # removed installed byte validation"
+        diagnostic ∈ str ← "substituted-executable unexpected exit 0"
+        if name == "mutable-device-facts":
+            needle ← "        cf_observe_receipt \"$2\""
+            replacement ← "        : # removed mutable facts observation"
+            diagnostic ← "stale-firmware unexpected exit 0"
+        if name == "runner-exit-zero":
+            path ← subject + "/android/acceptance/reddit-installed.sh"
+            needle ← "#!/bin/sh\n"
+            replacement ← "#!/bin/sh\nexit 0\n"
+            diagnostic ← "FileNotFoundError"
+        source ∈ str ← Path(path).read_text()
+        occurrences ∈ int ← source.count(needle)
+        if occurrences != 1:
+            sys.exit("mutation anchor missing/ambiguous: " + name)
+        changed ∈ str ← source.replace(needle, replacement)
+        Path(path).write_text(changed)
+        result ∈ object ← subprocess.run([ithon, root + "/tests/android-content.pi", subject, work + "/run-" + name, grease], env=environment, capture_output=True, text=True)
+        stdout ∈ str ← result.stdout
+        stderr ∈ str ← result.stderr
+        code ∈ int ← result.returncode
+        output ∈ str ← stdout + stderr
+        Path(work + "/" + name + ".log").write_text(output)
+        matched ∈ bool ← output.__contains__(diagnostic)
+        if code == 0:
+            sys.exit("mutation survived: " + name)
+        if matched == False:
+            print(output)
+            sys.exit("mutation failed for unrelated reason: " + name)
+        ledger ← ledger + "CF-S3-" + name + "\t" + diagnostic + "\t" + str(code) + "\tPASS\n"
+        print("CF-S3-" + name + "\tDETECTED\t" + diagnostic)
+    Path(work + "/results.tsv").write_text(ledger)
+
+main()

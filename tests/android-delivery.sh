@@ -340,8 +340,8 @@ grep -F 'ARGS=-Dapp.library=' "$app_log" >/dev/null
 grep -F 'runtime_result	NOT_VERIFIED' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
 grep -F 'physical_device_result	NOT_VERIFIED' "$workspace/receipts/phone-app-phone.tsv" >/dev/null
 
-# The installed Reddit physical acceptance promotes only launch/runtime/device
-# evidence after executing the stable command and checking the exact install receipt.
+# Substitution of the installed Reddit launcher must reject before executing
+# the command or producing any acceptance evidence.
 reddit_tools=$tmp/reddit-tools.tsv
 reddit_delivery=$tmp/reddit-delivery.tsv
 reddit_packages=$tmp/reddit-packages.tsv
@@ -372,6 +372,7 @@ CATFOOD_ANDROID_DELIVERY="$reddit_delivery" \
 CATFOOD_ANDROID_PACKAGES="$reddit_packages" \
     sh "$root/android/install.sh" >/dev/null
 
+cp "$reddit_workspace/bin/reddit" "$tmp/reddit-original-wrapper"
 cat > "$reddit_workspace/bin/reddit" <<'EOF_REDDIT'
 #!/bin/sh
 case ${1:-} in
@@ -401,25 +402,23 @@ esac
 EOF_GETPROP
 chmod 0755 "$fake_bin/getprop"
 
-CATFOOD_TARGET=phone \
+if CATFOOD_TARGET=phone \
 CATFOOD_ROOT="$reddit_workspace" \
 CATFOOD_GETPROP="$fake_bin/getprop" \
+CATFOOD_APP_PROCESS="$fake_bin/app_process" \
 CATFOOD_REDDIT_EVIDENCE="$tmp/reddit-evidence" \
 CATFOOD_TOOLS="$reddit_tools" \
 CATFOOD_ANDROID_DELIVERY="$reddit_delivery" \
 CATFOOD_ANDROID_PACKAGES="$reddit_packages" \
-    sh "$root/android/acceptance/reddit-installed.sh" >/dev/null
+    sh "$root/android/acceptance/reddit-installed.sh" > "$tmp/reddit-forged.out" 2>&1; then
+    printf '%s\n' 'substituted Reddit launcher was accepted' >&2; exit 1
+fi
+grep -F 'installed launcher changed' "$tmp/reddit-forged.out" >/dev/null
+test ! -e "$tmp/reddit-evidence"
+cp "$tmp/reddit-original-wrapper" "$reddit_workspace/bin/reddit"
 
 reddit_physical_receipt="$tmp/reddit-evidence/phone-reddit-physical.tsv"
-test -f "$reddit_physical_receipt"
-grep -F 'launch_result	PASS' "$reddit_physical_receipt" >/dev/null
-grep -F 'runtime_result	PASS' "$reddit_physical_receipt" >/dev/null
-grep -F 'physical_device_result	PASS' "$reddit_physical_receipt" >/dev/null
-grep -F 'emulator_result	NOT_VERIFIED' "$reddit_physical_receipt" >/dev/null
-CATFOOD_TOOLS="$reddit_tools" \
-CATFOOD_ANDROID_DELIVERY="$reddit_delivery" \
-CATFOOD_ANDROID_PACKAGES="$reddit_packages" \
-    sh "$root/android/check.sh" receipt "$reddit_physical_receipt" >/dev/null
+test ! -f "$reddit_physical_receipt"
 
 # The normal device provisioner must enter the same runtime-only path. It may
 # install manifest-declared commodity Termux packages, but it must not clone

@@ -3,6 +3,7 @@ set -eu
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 . "$root/android/target.sh"
+. "$root/android/content.sh"
 
 workspace=${CATFOOD_ROOT:-"$HOME/opt"}
 receipt=${CATFOOD_C67_RUNTIME_RECEIPT:-"$workspace/receipts/c67-runtime.tsv"}
@@ -14,6 +15,7 @@ abi=$(catfood_android_getprop ro.product.cpu.abi || :)
 model=$(catfood_android_getprop ro.product.model || :)
 product=$(catfood_android_getprop ro.product.device || :)
 fingerprint=$(catfood_android_getprop ro.build.fingerprint || :)
+[ -n "$fingerprint" ] && [ "$fingerprint" != - ] || { printf '%s\n' 'runtime observation requires a nonempty firmware fingerprint' >&2; exit 2; }
 sdk=$(catfood_android_getprop ro.build.version.sdk || :)
 machine=$(uname -m 2>/dev/null || printf '%s\n' unknown)
 
@@ -73,6 +75,9 @@ binary_receipt=$workspace/receipts/runtime-binary-linux-aarch64-jq.tsv
     printf 'MIRO C67 native probe receipt is missing: %s\n' "$binary_receipt" >&2
     exit 3
 }
+awk -F '\t' 'NF!=2 || seen[$1]++ {exit 1}' "$binary_receipt" || {
+    printf '%s\n' 'ambiguous native probe receipt' >&2; exit 3;
+}
 grep -Fqx 'platform	linux-aarch64' "$binary_receipt" || {
     printf '%s\n' 'MIRO C67 jq receipt is not the pinned linux-aarch64 asset' >&2
     exit 3
@@ -80,6 +85,15 @@ grep -Fqx 'platform	linux-aarch64' "$binary_receipt" || {
 grep -Fqx 'runtime_probe_result	PASS' "$binary_receipt" || {
     printf '%s\n' 'MIRO C67 jq receipt does not contain a passing runtime probe' >&2
     exit 3
+}
+
+# Mutable facts and exact probe bytes are observed again after execution.
+[ "$(cf_hash "$native_probe")" = "$probe_sha256" ] &&
+[ "$(catfood_android_getprop ro.build.fingerprint)" = "$fingerprint" ] &&
+[ "$(catfood_android_getprop ro.product.model)" = "$model" ] &&
+[ "$(catfood_android_getprop ro.product.device)" = "$product" ] &&
+[ "$(catfood_android_getprop ro.product.cpu.abi)" = "$abi" ] || {
+    printf '%s\n' 'runtime bytes or device facts changed during execution' >&2; exit 3;
 }
 
 mkdir -p "$(dirname -- "$receipt")"
@@ -100,7 +114,16 @@ mkdir -p "$(dirname -- "$receipt")"
     printf 'native_probe_output\t%s\n' "$probe_output"
     printf 'native_probe_receipt\t%s\n' "$binary_receipt"
     printf 'native_probe_result\tPASS\n'
+    printf 'procedure_sha256\t%s\n' "$(cf_hash "$0")"
+    printf 'binary_manifest_sha256\t%s\n' "$(cf_hash "$binary_manifest")"
+    printf 'native_probe_receipt_sha256\t%s\n' "$(cf_hash "$binary_receipt")"
+    printf 'scope\t%s\n' "$(if [ -n "${CATFOOD_GETPROP:-}${CATFOOD_BINARY_MANIFEST:-}" ] || [ ! -x /system/bin/getprop ]; then printf synthetic; else printf physical-observation; fi)"
+    printf 'acceptance_authorization\tNOT_VERIFIED\n'
 } > "$receipt.tmp.$$"
+if [ -f "$receipt" ]; then
+    mkdir -p "$(dirname -- "$receipt")/history"
+    cp "$receipt" "$(dirname -- "$receipt")/history/$(basename -- "$receipt").$(cf_hash "$receipt")"
+fi
 mv "$receipt.tmp.$$" "$receipt"
 
 printf 'Cat Food C67 runtime receipt: %s\n' "$receipt"

@@ -1,0 +1,283 @@
+"""Synthetic byte/evidence regression corpus; no device acceptance is claimed."""
+import os
+import sys
+import hashlib
+import subprocess
+import shutil
+from pathlib import Path
+from builtins import globals, sorted, range, dict, list, len
+
+def fail(message ∈ str) → None:
+    print(message)
+    sys.exit(1)
+
+def digest(path ∈ str) → str:
+    result ∈ str ← hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    return result
+
+def write(path ∈ str, text ∈ str) → None:
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    Path(path).write_text(text)
+
+def executable(path ∈ str, text ∈ str) → None:
+    write(path, text)
+    Path(path).chmod(493)
+
+def run(argv ∈ list[str], environment ∈ dict[str, str]) → object:
+    result ∈ object ← subprocess.run(argv, env=environment, capture_output=True, text=True)
+    return result
+
+def expect(result ∈ object, accepted ∈ bool, name ∈ str, output ∈ str) → None:
+    stdout ∈ str ← result.stdout
+    stderr ∈ str ← result.stderr
+    code ∈ int ← result.returncode
+    write(output + "/" + name + ".log", stdout + stderr)
+    if (code == 0) != accepted:
+        fail(name + " unexpected exit " + str(code) + ": " + stdout + stderr)
+    print(name + "\tPASS\t" + ("accepted-synthetic" if accepted else "rejected"))
+
+def rewrite(source ∈ str, destination ∈ str, field ∈ str, value ∈ str) → None:
+    text ∈ str ← Path(source).read_text()
+    rows ∈ list[str] ← []
+    lines ∈ list[str] ← text.splitlines()
+    for line in lines:
+        if line.startswith(field + "\t"):
+            line ← field + "\t" + value
+        rows.append(line)
+    joined ∈ str ← "\n".join(rows)
+    write(destination, joined + "\n")
+
+def snapshot(workspace ∈ str) → str:
+    rows ∈ list[str] ← []
+    paths ∈ list[object] ← sorted(Path(workspace).rglob("*"))
+    for path in paths:
+        name ∈ str ← str(path.relative_to(workspace))
+        if path.is_symlink():
+            link ∈ str ← os.readlink(path)
+            rows.append(name + ":link:" + link)
+        elif path.is_file():
+            permissions ∈ int ← path.stat().st_mode
+            rows.append(name + ":" + str(permissions) + ":" + digest(str(path)))
+        elif path.is_dir():
+            directory_permissions ∈ int ← path.stat().st_mode
+            rows.append(name + ":directory:" + str(directory_permissions))
+    joined ∈ str ← "\n".join(rows)
+    return hashlib.sha256(joined.encode()).hexdigest()
+
+def no_effects(workspace ∈ str, before ∈ str, name ∈ str, output ∈ str) → None:
+    after ∈ str ← snapshot(workspace)
+    if after != before:
+        fail(name + " rejection changed installed state")
+    proof ∈ str ← output + "/no-effects.tsv"
+    prior ∈ str ← "case\tbefore_sha256\tafter_sha256\tresult\n"
+    if Path(proof).exists():
+        existing_proof ∈ str ← Path(proof).read_text()
+        prior ← existing_proof
+    write(proof, prior + name + "\t" + before + "\t" + after + "\tUNCHANGED\n")
+
+def corpus(root ∈ str, work ∈ str, grease ∈ str) → None:
+    if Path(work).exists():
+        fail("fresh result directory required")
+    Path(work).mkdir(parents=True)
+    environment ∈ dict[str, str] ← dict(os.environ)
+    environment.__setitem__("ASAN_OPTIONS", "detect_leaks=0")
+    expect(run([grease, "-c", "false ∨ echo canonical-grease"], environment), True, "runtime-grease", work)
+    prefix ∈ str ← work + "/bin"
+    workspace ∈ str ← work + "/workspace"
+    bundle ∈ str ← work + "/bundle"
+    archive ∈ str ← work + "/payload.tar.gz"
+    source_ref ∈ str ← "1".__mul__(40)
+    package_ref ∈ str ← "2".__mul__(40)
+    getprop ∈ str ← "#!" + grease + "\nset -eu\ncase $1 in\nro.product.model) echo \"$[ENV.S3_MODEL]\" ;;\nro.product.device) echo \"$[ENV.S3_PRODUCT]\" ;;\nro.product.cpu.abi) echo armeabi-v7a ;;\nro.build.fingerprint) echo \"$[ENV.S3_FIRMWARE]\" ;;\nro.build.version.sdk) echo 34 ;;\nesac\n"
+    executable(prefix + "/getprop", getprop)
+    executable(prefix + "/curl", "#!" + grease + "\nset -eu\nvar output = ARGV[-1]\n/usr/bin/cp \"$[ENV.S3_ARCHIVE]\" \"$output\"\n")
+    executable(bundle + "/bin/fixture", "#!" + grease + "\necho fixture-original\n")
+    write(bundle + "/data/dependency", "dependency-original\n")
+    expect(run(["tar", "--sort=name", "--mtime=@0", "--owner=0", "--group=0", "--numeric-owner", "-czf", archive, "-C", bundle, "."], environment), True, "package-fixture", work)
+    archive_sha ∈ str ← digest(archive)
+    write(work + "/tools.tsv", "fixture https://github.com/isomorphisms/fixture.git main none\n")
+    write(work + "/delivery.tsv", "grease\treference\tn/a\tn/a\tsynthetic\nfixture\truntime\tpackage:fixture-phone\tgap:unpublished\tsynthetic\n")
+    row ∈ list[str] ← ["fixture-phone", "armeabi-v7a", "armeabi-v7a", "archive", "isomorphisms/fixture", source_ref, package_ref, "https://example.invalid/payload.tar.gz", archive_sha, "fixture", "bin/fixture", "-", "-", "-", "curl,tar", "-", "-", "-"]
+    package_row ∈ str ← "\t".join(row)
+    write(work + "/packages.tsv", package_row + "\n")
+    host_path ∈ str ← environment.get("PATH", "")
+    environment.__setitem__("PATH", prefix + ":" + host_path)
+    environment.__setitem__("CATFOOD_TARGET", "phone")
+    environment.__setitem__("CATFOOD_DEVICE_ID", "synthetic-a1-instance")
+    environment.__setitem__("CATFOOD_GETPROP", prefix + "/getprop")
+    environment.__setitem__("CATFOOD_ROOT", workspace)
+    environment.__setitem__("CATFOOD_CACHE", work + "/cache")
+    environment.__setitem__("CATFOOD_TOOLS", work + "/tools.tsv")
+    environment.__setitem__("CATFOOD_ANDROID_DELIVERY", work + "/delivery.tsv")
+    environment.__setitem__("CATFOOD_ANDROID_PACKAGES", work + "/packages.tsv")
+    environment.__setitem__("S3_ARCHIVE", archive)
+    environment.__setitem__("S3_MODEL", "MIRO A1")
+    environment.__setitem__("S3_PRODUCT", "")
+    environment.__setitem__("S3_FIRMWARE", "synthetic/firmware-1")
+    install ∈ list[str] ← ["sh", root + "/android/install.sh"]
+    receipt ∈ str ← workspace + "/receipts/phone-fixture-phone.tsv"
+    package_dir ∈ str ← workspace + "/packages/fixture-phone/" + package_ref
+    expect(run(install, environment), True, "valid-install", work)
+    expect(run(install, environment), True, "valid-current", work)
+    original_receipt ∈ str ← Path(receipt).read_text()
+    legacy ∈ bool ← original_receipt.__contains__("schema\tcatfood-android-evidence-v2")
+    if legacy:
+        Path(package_dir + "/bin/fixture").write_bytes(b"substituted bytes\n")
+        original_result ∈ object ← run(install, environment)
+        expect(original_result, True, "original-byte-substitution-FALSE-POSITIVE", work)
+        original_output ∈ str ← original_result.stdout
+        reported_current ∈ bool ← original_output.__contains__("current")
+        if reported_current == False:
+            fail("original reproducer did not exercise current/reuse")
+        write(work + "/digests.tsv", "artifact_sha256\t" + archive_sha + "\nreceipt_sha256\t" + digest(receipt) + "\nobserved_defect\tchanged-payload-reported-current\nscope\tsynthetic\n")
+        return
+    authorize ∈ list[str] ← ["sh", root + "/android/check.sh", "authorize", receipt, "phone", "synthetic-a1-instance", "installation"]
+    expect(run(authorize, environment), True, "valid-byte-authorization", work)
+    paths ∈ list[str] ← [package_dir + "/bin/fixture", package_dir + "/data/dependency"]
+    names ∈ list[str] ← ["substituted-executable", "substituted-nonentry-file"]
+    indices ∈ list[int] ← list(range(len(paths)))
+    for index in indices:
+        path ∈ str ← paths.__getitem__(index)
+        name ∈ str ← names.__getitem__(index)
+        original ∈ bytes ← Path(path).read_bytes()
+        Path(path).write_bytes(b"substituted\n")
+        before ∈ str ← snapshot(workspace)
+        expect(run(install, environment), False, name, work)
+        no_effects(workspace, before, name, work)
+        Path(path).write_bytes(original)
+    launcher ∈ str ← workspace + "/bin/fixture"
+    Path(launcher).unlink()
+    executable(launcher, "#!" + grease + "\necho fixture-original\n")
+    before_launcher ∈ str ← snapshot(workspace)
+    expect(run(install, environment), False, "substituted-launcher", work)
+    no_effects(workspace, before_launcher, "substituted-launcher", work)
+    Path(launcher).unlink()
+    Path(launcher).symlink_to(package_dir + "/bin/fixture")
+    firmware_environment ∈ dict[str, str] ← dict(environment)
+    firmware_environment.__setitem__("S3_FIRMWARE", "synthetic/firmware-2")
+    before_firmware ∈ str ← snapshot(workspace)
+    expect(run(install, firmware_environment), False, "stale-firmware", work)
+    no_effects(workspace, before_firmware, "stale-firmware", work)
+    empty_environment ∈ dict[str, str] ← dict(environment)
+    empty_environment.__setitem__("S3_FIRMWARE", "")
+    expect(run(authorize, empty_environment), False, "empty-current-firmware", work)
+    candidate ∈ str ← work + "/candidate.tsv"
+    rewrite(receipt, candidate, "evidence_scope", "physical-observation")
+    expect(run(["sh", root + "/android/check.sh", "authorize", candidate, "phone", "synthetic-a1-instance", "installation"], environment), False, "synthetic-scope-relabeling", work)
+    for field in ["source_ref", "package_ref", "plan_sha256", "profile_sha256"]:
+        replacement ∈ str ← "3".__mul__(40 if field.endswith("ref") else 64)
+        rewrite(receipt, candidate, field, replacement)
+        expect(run(["sh", root + "/android/check.sh", "receipt", candidate], environment), False, "sibling-ancestor-" + field, work)
+    rewrite(receipt, candidate, "device_fingerprint", "")
+    expect(run(["sh", root + "/android/check.sh", "schema", candidate], environment), False, "empty-receipt-firmware", work)
+    write(candidate, original_receipt + "device_model\tTAB_P10\n")
+    expect(run(["sh", root + "/android/check.sh", "schema", candidate], environment), False, "duplicate-identity", work)
+    forged ∈ str ← original_receipt.replace("build_result\tNOT_VERIFIED", "build_result\tPASS").replace("build_evidence\t-", "build_evidence\tinvented-build.log")
+    write(candidate, forged)
+    expect(run(["sh", root + "/android/check.sh", "schema", candidate], environment), True, "schema-valid-forged-build", work)
+    expect(run(["sh", root + "/android/check.sh", "receipt", candidate], environment), False, "forged-build-denied", work)
+    forged_runtime ∈ str ← original_receipt
+    for stage in ["launch", "runtime", "physical_device"]:
+        changed_runtime ∈ str ← forged_runtime.replace(stage + "_result\tNOT_VERIFIED", stage + "_result\tPASS").replace(stage + "_evidence\t-", stage + "_evidence\t" + work + "/nonexistent.log")
+        forged_runtime ← changed_runtime
+    write(candidate, forged_runtime)
+    expect(run(["sh", root + "/android/check.sh", "schema", candidate], environment), True, "schema-valid-forged-physical", work)
+    expect(run(["sh", root + "/android/check.sh", "receipt", candidate], environment), False, "missing-evidence-denied", work)
+    write(work + "/nonexistent.log", "invented expected output\n")
+    expect(run(["sh", root + "/android/check.sh", "receipt", candidate], environment), False, "invented-evidence-denied", work)
+    write(work + "/nonexistent.log", "changed evidence\n")
+    expect(run(["sh", root + "/android/check.sh", "receipt", candidate], environment), False, "modified-evidence-denied", work)
+    runtime_authorize ∈ list[str] ← list(authorize)
+    runtime_authorize.__setitem__(-1, "runtime")
+    expect(run(runtime_authorize, environment), False, "install-runtime-inflation", work)
+    runtime_authorize.__setitem__(-1, "physical_device")
+    expect(run(runtime_authorize, environment), False, "hosted-physical-inflation", work)
+    Path(workspace + "/.android-install.lock").mkdir()
+    before_lock ∈ str ← snapshot(workspace)
+    expect(run(install, environment), False, "interrupted-raced-install", work)
+    no_effects(workspace, before_lock, "interrupted-raced-install", work)
+    Path(workspace + "/.android-install.lock").rmdir()
+    inventory ∈ str ← "# catfood-device-inventory-v1\nmeta\tdevice_id\tsynthetic-a1-instance\tlocal-state\nmeta\tobserved_at\t2026-10-07\tclock\nmeta\ttarget\tphone\tdetected\nmeta\tmodel\tMIRO A1\tgetprop\nmeta\tproduct\t-\tgetprop\nmeta\tabi\tarmeabi-v7a\tgetprop\ncatfood_package\tfixture-phone\t" + package_ref + "\treceipt:PASS\n"
+    write(work + "/inventory.tsv", inventory)
+    comparison ∈ object ← run(["sh", root + "/device-state.sh", "compare", work + "/inventory.tsv"], environment)
+    expect(comparison, True, "imported-inventory-observation", work)
+    comparison_output ∈ str ← comparison.stdout
+    has_current ∈ bool ← comparison_output.__contains__("current\t")
+    has_unconfirmed ∈ bool ← comparison_output.__contains__("unconfirmed\t")
+    if has_current:
+        fail("imported PASS promoted to current")
+    if has_unconfirmed == False:
+        fail("imported PASS promoted to current")
+    write(work + "/inventory.tsv", inventory + "meta\tmodel\tTAB_P10\tgetprop\n")
+    expect(run(["sh", root + "/device-state.sh", "compare", work + "/inventory.tsv"], environment), False, "duplicate-inventory-model", work)
+
+    # Direct DEX/JNI package fixtures prove wrapper/dependency byte boundaries,
+    # not ART/JNI execution. The synthetic app_process returns expected text.
+    dex_bundle ∈ str ← work + "/dex-bundle"
+    dex_archive ∈ str ← work + "/dex.tar.gz"
+    dex_workspace ∈ str ← work + "/dex-workspace"
+    write(dex_bundle + "/classes.dex", "synthetic-dex\n")
+    write(dex_bundle + "/libfixture.so", "synthetic-jni\n")
+    write(dex_bundle + "/catfood-package.tsv", "target\tphone\nabi\tarmeabi-v7a\nsource_ref\t" + source_ref + "\npackage_ref\t" + package_ref + "\n")
+    expect(run(["tar", "--sort=name", "--mtime=@0", "--owner=0", "--group=0", "--numeric-owner", "-czf", dex_archive, "-C", dex_bundle, "."], environment), True, "dex-package-fixture", work)
+    dex_sha ∈ str ← digest(dex_archive)
+    app_process ∈ str ← prefix + "/app_process"
+    executable(app_process, "#!" + grease + "\nset -eu\nvar operation = ARGV[-2]\ncase $operation in\nurl) echo 'https://www.reddit.com/search/?q=computer%20science%20degree%20regret' ;;\nsearch) echo 'reddit: missing REDDIT_ACCESS_TOKEN' >&2; exit 2 ;;\n*) exit 64 ;;\nesac\n")
+    write(work + "/dex-tools.tsv", "reddit https://github.com/isomorphisms/fixture.git main none\n")
+    write(work + "/dex-delivery.tsv", "grease\treference\tn/a\tn/a\tsynthetic\nreddit\truntime\tpackage:reddit-phone\tgap:unpublished\tsynthetic\n")
+    dex_row ∈ list[str] ← ["reddit-phone", "armeabi-v7a", "armeabi-v7a", "dex-jni", "isomorphisms/fixture", source_ref, package_ref, "https://example.invalid/payload.tar.gz", dex_sha, "reddit", "classes.dex", "org.isomorphisms.reddit.RedditCli", "libfixture.so", "reddit.library", "curl,tar", "-", "-", "-"]
+    dex_line ∈ str ← "\t".join(dex_row)
+    write(work + "/dex-packages.tsv", dex_line + "\n")
+    dex_environment ∈ dict[str, str] ← dict(environment)
+    dex_environment.__setitem__("CATFOOD_ROOT", dex_workspace)
+    dex_environment.__setitem__("CATFOOD_TOOLS", work + "/dex-tools.tsv")
+    dex_environment.__setitem__("CATFOOD_ANDROID_DELIVERY", work + "/dex-delivery.tsv")
+    dex_environment.__setitem__("CATFOOD_ANDROID_PACKAGES", work + "/dex-packages.tsv")
+    dex_environment.__setitem__("CATFOOD_APP_PROCESS", app_process)
+    dex_environment.__setitem__("S3_ARCHIVE", dex_archive)
+    dex_environment.__setitem__("CATFOOD_REDDIT_EVIDENCE", work + "/reddit-observation")
+    expect(run(install, dex_environment), True, "valid-dex-install", work)
+    runner ∈ list[str] ← ["sh", root + "/android/acceptance/reddit-installed.sh"]
+    expect(run(runner, dex_environment), True, "valid-synthetic-reddit-observation", work)
+    observation ∈ str ← Path(work + "/reddit-observation/execution.tsv").read_text()
+    is_synthetic ∈ bool ← observation.__contains__("scope\tsynthetic")
+    is_unverified ∈ bool ← observation.__contains__("acceptance_authorization\tNOT_VERIFIED")
+    if is_synthetic == False:
+        fail("host observation was mislabeled physical")
+    if is_unverified == False:
+        fail("unsigned execution was promoted")
+    dex_paths ∈ list[str] ← [dex_workspace + "/bin/reddit", dex_workspace + "/packages/reddit-phone/" + package_ref + "/classes.dex", dex_workspace + "/packages/reddit-phone/" + package_ref + "/libfixture.so", app_process]
+    dex_names ∈ list[str] ← ["changed-reddit-wrapper", "changed-dex", "changed-jni", "changed-execution-dependency"]
+    dex_indices ∈ list[int] ← list(range(len(dex_paths)))
+    for index in dex_indices:
+        dex_path ∈ str ← dex_paths.__getitem__(index)
+        dex_name ∈ str ← dex_names.__getitem__(index)
+        dex_original ∈ bytes ← Path(dex_path).read_bytes()
+        dex_permissions ∈ int ← Path(dex_path).stat().st_mode
+        Path(dex_path).chmod(420)
+        Path(dex_path).write_bytes(b"substituted expected output\n")
+        Path(dex_path).chmod(dex_permissions)
+        dex_environment.__setitem__("CATFOOD_REDDIT_EVIDENCE", work + "/" + dex_name + "-effects")
+        dex_before ∈ str ← snapshot(dex_workspace)
+        expect(run(runner, dex_environment), False, dex_name, work)
+        no_effects(dex_workspace, dex_before, dex_name, work)
+        if Path(work + "/" + dex_name + "-effects").exists():
+            fail(dex_name + " created acceptance evidence")
+        Path(dex_path).chmod(420)
+        Path(dex_path).write_bytes(dex_original)
+        Path(dex_path).chmod(dex_permissions)
+    write(work + "/digests.tsv", "artifact_sha256\t" + archive_sha + "\nreceipt_sha256\t" + digest(receipt) + "\nscope\tsynthetic-host-contract\npublication\tNOT_RUN\nphysical_device\tNOT_RUN\n")
+    print("artifact_sha256\t" + archive_sha)
+    print("receipt_sha256\t" + digest(receipt))
+
+def main() → None:
+    arguments ∈ list[str] ← sys.argv
+    root ∈ str ← arguments.__getitem__(1)
+    work ∈ str ← arguments.__getitem__(2)
+    grease ∈ str ← arguments.__getitem__(3)
+    corpus(root, work, grease)
+
+namespace ∈ dict[str, object] ← globals()
+module_name ∈ str ← namespace.get("__name__", "")
+if module_name == "__main__":
+    main()

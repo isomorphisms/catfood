@@ -62,8 +62,11 @@ results. Validation can bind to an expected target and instance:
 
 C67 and tablet may consume identical compatible ARM64 bytes, but retain separate
 receipt names and identities. Installation, launch, runtime, emulator and
-physical-device PASS remain separate claims. Receipt validation checks schema
-and consistency; it does not attest that a claimed physical run happened.
+physical-device PASS remain separate claims. Schema validation checks declaration
+consistency. Current installation authorization independently checks installed
+bytes, launchers and dependencies against the pinned package and re-observes
+identity/firmware. Unsigned physical claims remain unverified; see
+[the acceptance boundary](android/qualification/cf-a2-s3.md).
 
 ## Producer policy
 
