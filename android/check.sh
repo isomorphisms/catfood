@@ -2,9 +2,37 @@
 set -eu
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
+. "$root/android/target.sh"
 tools=${CATFOOD_TOOLS:-"$root/tools.tsv"}
 delivery=${CATFOOD_ANDROID_DELIVERY:-"$root/android/delivery.tsv"}
 packages=${CATFOOD_ANDROID_PACKAGES:-"$root/android/packages.tsv"}
+restrictions=${CATFOOD_ANDROID_RESTRICTIONS:-"$root/android/package-restrictions.tsv"}
+awk -F '\t' '
+    /^[[:space:]]*($|#)/ {next}
+    NF != 4 || seen[$1]++ || $1 !~ /^[[:alnum:]_.-]+$/ ||
+        $2 !~ /^(phone|c67|tablet)(,(phone|c67|tablet))*$/ || $3 == "" || $4 == "" {exit 1}
+' "$restrictions" || { printf '%s\n' 'invalid Android package restrictions' >&2; exit 1; }
+
+# Producer policy is independent of publication and physical acceptance.
+awk -F '\t' '
+    FNR == 1 {next}
+    FILENAME == ARGV[1] {
+        if (NF != 4 || seen[$1]++) exit 1
+        if (($1 == "phone" && $2 == "MIRO_A1" && $3 == "armeabi-v7a" && $4 == "primary") ||
+            ($1 == "c67" && $2 == "MIRO_C67" && $3 == "arm64-v8a" && $4 == "paired")) {
+            abi[$2]=$3; priority[$2]=$4; count++; next
+        }
+        exit 1
+    }
+    FILENAME == ARGV[2] {
+        if (NF != 7 || !($1 in abi) || abi[$1] != $2 || priority[$1] != $5 || conversation[$1]++) exit 1
+        conversations++
+    }
+    END {if (count != 2 || conversations != 2) exit 1}
+' "$root/android/application-targets.tsv" "$root/android/conversation-targets.tsv" || {
+    printf '%s\n' 'A1-primary/C67-paired producer policy mismatch' >&2
+    exit 1
+}
 
 for file in "$tools" "$delivery" "$packages"; do
     [ -f "$file" ] || {
@@ -61,8 +89,8 @@ FILENAME == packages {
     jni_property=$14; install_requires=$15; termux_packages=$16; runtime_requires=$17; package_requires=$18
 
     if (id !~ /^[[:alnum:]_.-]+$/) fail(packages ":" FNR ": unsafe package id: " id)
-    if (target != "phone" && target != "tablet") fail(packages ":" FNR ": invalid target: " target)
-    if ((target == "phone" && abi != "armeabi-v7a") || (target == "tablet" && abi != "arm64-v8a"))
+    if (target != "armeabi-v7a" && target != "arm64-v8a") fail(packages ":" FNR ": invalid target: " target)
+    if (target != abi)
         fail(packages ":" FNR ": ABI does not match target: " target " / " abi)
     if (mode != "archive" && mode != "file" && mode != "dex-jni") fail(packages ":" FNR ": invalid mode: " mode)
     if (source !~ /^[[:alnum:]_.-]+\/[[:alnum:]_.-]+$/) fail(packages ":" FNR ": source must be owner/repository: " source)
@@ -143,7 +171,7 @@ FILENAME == delivery {
         fail(delivery ":" FNR ": invalid role for " name ": " role)
 
     for (column = 3; column <= 4; column++) {
-        target = (column == 3 ? "phone" : "tablet")
+        target = (column == 3 ? "armeabi-v7a" : "arm64-v8a")
         disposition = $column
         if (role == "host" || role == "reference") {
             if (disposition != "n/a") fail(delivery ":" FNR ": " role " entry " name " must be n/a for " target)
@@ -192,7 +220,7 @@ check_receipt() {
         exit 1
     }
 
-    awk -v packages="$packages" -v receipt="$receipt" '
+    awk -v packages="$packages" -v receipt="$receipt" -v expected_target="${2:-}" -v expected_device="${3:-}" '
     function fail(message) {
         print receipt ": " message > "/dev/stderr"
         failed = 1
@@ -260,14 +288,14 @@ check_receipt() {
     END {
         require_field("schema")
         require_field("package")
-        if (value["schema"] != "catfood-android-evidence-v1")
+        if (value["schema"] != "catfood-android-evidence-v2")
             fail("unsupported schema: " value["schema"])
 
         package = value["package"]
         if (!(package in package_seen)) {
             fail("package is not declared in packages.tsv: " package)
         } else {
-            require_identity("target", package_target[package])
+            require_identity("package_lane", package_target[package])
             require_identity("abi", package_abi[package])
             require_identity("mode", package_mode[package])
             require_identity("source", package_source[package])
@@ -305,8 +333,21 @@ check_receipt() {
             value["runtime_result"] != "PASS")
             fail("emulator/physical-device PASS requires runtime PASS")
 
+        split("target device_target device_class device_id device_product device_model device_fingerprint", device_fields, / /)
+        for (i in device_fields) require_field(device_fields[i])
+        t=value["target"]
+        if (t != "phone" && t != "c67" && t != "tablet") fail("invalid physical target")
+        if (value["device_target"] != t) fail("target/device_target mismatch")
+        if (value["device_class"] != (t == "tablet" ? "tablet" : "phone")) fail("device class mismatch")
+        if (value["abi"] != (t == "phone" ? "armeabi-v7a" : "arm64-v8a")) fail("target/ABI mismatch")
+        if (value["device_id"] !~ /^[[:alnum:]_.-]+$/ || value["device_id"] == "-") fail("invalid device_id")
+        if (expected_target != "" && t != expected_target) fail("receipt belongs to another target")
+        if (expected_device != "" && value["device_id"] != expected_device) fail("receipt belongs to another device instance")
+        if (value["physical_device_result"] == "PASS" && value["device_fingerprint"] == "-")
+            fail("physical acceptance requires a device fingerprint")
+
         allowed["schema"] = allowed["package"] = 1
-        split("target abi mode source source_ref package_ref url sha256 termux_packages runtime_requires package_requires", identity, / /)
+        split("target package_lane device_target device_class device_id device_product device_model device_fingerprint abi mode source source_ref package_ref url sha256 termux_packages runtime_requires package_requires", identity, / /)
         for (i in identity) allowed[identity[i]] = 1
         split("build package publication installation launch runtime emulator physical_device", stages, / /)
         for (i in stages) {
@@ -316,7 +357,21 @@ check_receipt() {
         for (name in value) if (!(name in allowed)) fail("unknown field: " name)
         exit failed
     }
-    ' "$packages" "$receipt"
+    ' "$packages" "$receipt" || return $?
+    receipt_product=$(awk -F '\t' '$1 == "device_product" {print $2}' "$receipt")
+    receipt_model=$(awk -F '\t' '$1 == "device_model" {print $2}' "$receipt")
+    receipt_abi=$(awk -F '\t' '$1 == "abi" {print $2}' "$receipt")
+    receipt_target=$(awk -F '\t' '$1 == "target" {print $2}' "$receipt")
+    receipt_package=$(awk -F '\t' '$1 == "package" {print $2}' "$receipt")
+    catfood_android_package_allowed "$receipt_package" "$receipt_target" || {
+        printf '%s\n' 'package is restricted to another device target' >&2
+        return 1
+    }
+    receipt_observed=$(catfood_android_profile "$receipt_product" "$receipt_model" "$receipt_abi") || return $?
+    [ "$receipt_observed" = "$receipt_target" ] || {
+        printf '%s\n' 'receipt device identity does not match target' >&2
+        return 1
+    }
 }
 
 case "$command" in
@@ -325,13 +380,20 @@ case "$command" in
         ;;
     gaps|ready)
         target=${2:-}
-        case "$target" in phone|tablet) ;; *) printf 'usage: %s %s phone|tablet\n' "$0" "$command" >&2; exit 2 ;; esac
+        case "$target" in phone|c67|tablet) ;; *) printf 'usage: %s %s phone|c67|tablet\n' "$0" "$command" >&2; exit 2 ;; esac
         if [ "$target" = phone ]; then column=3; else column=4; fi
         unresolved=$(
             awk -F '\t' -v column="$column" '
                 /^[[:space:]]*($|#)/ { next }
                 $2 == "review" || $column ~ /^gap:/ { print $1 "\t" $2 "\t" $column "\t" $5 }
             ' "$delivery"
+            lane=$(catfood_android_delivery_target "$target")
+            awk -F '\t' -v lane="$lane" '$2 == lane && !seen[$1]++ {print $1}' "$packages" |
+            while IFS= read -r package; do
+                if ! catfood_android_package_allowed "$package" "$target"; then
+                    printf '%s\truntime\tgap:package-not-compatible-with-device\t%s\n' "$package" "$target"
+                fi
+            done
         )
         if [ -n "$unresolved" ]; then
             printf '%s\n' "$unresolved"
@@ -344,12 +406,12 @@ case "$command" in
         fi
         ;;
     receipt)
-        [ "$#" -eq 2 ] || { printf 'usage: %s receipt RECEIPT\n' "$0" >&2; exit 2; }
-        check_receipt "$2"
+        [ "$#" -ge 2 ] && [ "$#" -le 4 ] || { printf 'usage: %s receipt RECEIPT [TARGET [DEVICE_ID]]\n' "$0" >&2; exit 2; }
+        check_receipt "$2" "${3:-}" "${4:-}"
         printf '%s\n' 'Cat Food Android evidence receipt is valid'
         ;;
     *)
-        printf 'usage: %s [check | gaps phone|tablet | ready phone|tablet | receipt RECEIPT]\n' "$0" >&2
+        printf 'usage: %s [check | gaps phone|c67|tablet | ready phone|c67|tablet | receipt RECEIPT]\n' "$0" >&2
         exit 2
         ;;
 esac

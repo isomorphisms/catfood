@@ -1,0 +1,88 @@
+section	key	value	evidence	notes
+identity	manufacturer	Foxx Development Inc	physical	getprop
+identity	brand	MIRO	physical	getprop
+identity	model	Miro C67	physical	getprop
+identity	device	Miro_C67	physical	getprop
+identity	board	k65v1_64_bsp	physical	getprop
+identity	hardware	mt6765	physical	getprop
+android	release	14	physical	getprop ro.build.version.release
+android	sdk	34	physical	getprop ro.build.version.sdk
+android	security_patch	2024-10-05	physical	getprop ro.build.version.security_patch
+android	build_fingerprint	MIRO/C67/Miro_C67:14/UP1A.231005.007/1727680044:user/release-keys	physical	getprop ro.build.fingerprint
+abi	primary	arm64-v8a	physical	getprop ro.product.cpu.abi
+abi	abilist	arm64-v8a,armeabi-v7a,armeabi	physical	getprop ro.product.cpu.abilist
+abi	abilist32	armeabi-v7a,armeabi	physical	getprop ro.product.cpu.abilist32
+abi	abilist64	arm64-v8a	physical	getprop ro.product.cpu.abilist64
+kernel	machine	aarch64	physical	uname -a
+kernel	version	4.19.191	physical	uname -a
+soc	manufacturer	Mediatek	physical	getprop ro.soc.manufacturer
+soc	model	MT6765	physical	getprop ro.soc.model
+cpu	core_count	8	physical	/proc/cpuinfo
+cpu	microarchitecture	Arm Cortex-A53 (part 0xd03)	physical	/proc/cpuinfo
+cpu	cluster_0_cores	0-3	physical	cpufreq policy0
+cpu	cluster_0_range_khz	900000-2200000	physical	cpufreq policy0
+cpu	cluster_1_cores	4-7	physical	cpufreq policy4
+cpu	cluster_1_range_khz	400000-1600000	physical	cpufreq policy4
+memory	MemTotal_kB	3865468	physical	/proc/meminfo
+memory	SwapTotal_kB	2126000	physical	/proc/meminfo; exact backing/compressor unreadable from shell
+storage	data_size	47G	physical	df
+storage	data_filesystem	ext4	physical	mount
+storage	data_options	inlinecrypt	physical	mount
+storage	block_device	mmcblk0	physical	/sys/block
+storage	transport_class	eMMC-style MMC block device	inference	manufacturer/package unresolved
+gpu	vendor	Imagination Technologies	physical	dumpsys SurfaceFlinger
+gpu	renderer	PowerVR Rogue GE8320	physical	dumpsys SurfaceFlinger
+gpu	gles	OpenGL ES 3.2 build 1.13@5776728	physical	dumpsys SurfaceFlinger
+gpu	egl	1.4 Android META-EGL	physical	dumpsys SurfaceFlinger
+display	physical_size_px	720x1600	physical	wm size / dumpsys display
+display	density	320	physical	wm density
+display	refresh_modes_hz	60,90	physical	dumpsys display
+display	active_mode_hz	90	physical	capture state
+display	hdr	unsupported	physical	dumpsys display
+usb	controller	musb-hdrc	physical	getprop
+usb	framework_features	accessory,host	physical	pm list features
+usb	port_modes	dual	physical	dumpsys usb
+usb	hal_version	1.3	physical	dumpsys usb
+wifi	bands	2.4GHz,5GHz	physical	dumpsys wifi
+wifi	2.4GHz_channels	1-11	physical	dumpsys wifi
+wifi	5GHz_channels	36,40,44,48,149,153,157,161,165	physical	dumpsys wifi
+wifi	6GHz_channels	none reported	physical	dumpsys wifi
+wifi	current_standard	802.11ac (Android Wi-Fi standard 5)	physical	capture state
+wifi	max_link_speed_mbps	433	physical	dumpsys wifi
+sensors	hardware	accelerometer,magnetometer,orientation,gyroscope,light,proximity	physical	dumpsys sensorservice
+sensors	virtual	corrected gyroscope,game rotation vector,geomagnetic rotation vector,gravity,rotation vector,orientation	physical	dumpsys sensorservice
+input	touchscreen	NVTCapacitiveTouchScreen	physical	getevent -pl
+input	multitouch_slots	10	physical	getevent -pl
+input	touch_coordinate_range	X=0..720,Y=0..1600	physical	getevent -pl
+input	touch_pressure_range	0..1000	physical	getevent -pl
+input	headset_detection	mt63xx-accdet Headset	physical	getevent -pl
+bluetooth	state	working	physical	dumpsys bluetooth_manager
+bluetooth	a2dp_source_codecs	AAC,SBC	physical	dumpsys bluetooth_manager
+bluetooth	current_a2dp_codec	AAC 44.1kHz 16-bit stereo	physical	capture state
+bluetooth	a2dp_offload	false	physical	dumpsys bluetooth_manager
+bluetooth	le_advertising_sets	10	physical	dumpsys bluetooth_manager
+camera	entries	back,front,back	physical	dumpsys media.camera; exact IDs/resolutions not yet retained
+camera	orientations_deg	90,270,90	physical	dumpsys media.camera
+camera	flash	at least one rear=true; front=false	physical	dumpsys media.camera
+battery	technology	Li-ion	physical	dumpsys battery
+battery	charge_full_uAh	2946000	physical	/sys/class/power_supply/battery/charge_full
+battery	charge_full_design_uAh	294000	physical	vendor value appears mis-scaled; do not treat as design capacity
+battery	cycle_count	1	physical	/sys/class/power_supply/battery/cycle_count
+battery	capture_voltage_mV	4360	physical	dumpsys battery at 100%
+battery	capture_temperature_C	18.8	physical	dumpsys battery at 100%
+shizuku	rish	working	physical	Shizuku server + rish shell on C67
+shizuku	termux_private_location	$HOME/opt/rish + $HOME/opt/rish_shizuku.dex	physical	current C67 setup; PATH includes $HOME/opt
+shizuku	android14_dex_rule	DEX must be non-writable in private storage	physical/rule	rish reported Android 14 writable-DEX restriction
+abi	zygote_mode	zygote64_32	physical	getprop ro.zygote; 2026-10-06 follow-up
+abi	live_zygotes	zygote64,zygote	physical	ps -A; both 64-bit and 32-bit zygotes live at capture
+abi	native_bridge	0	physical	getprop ro.dalvik.vm.native.bridge; no Android native bridge configured
+abi	arm32_linker	/system/bin/linker -> /apex/com.android.runtime/bin/linker; ELF32	physical	ELF ident + direct execution; 2026-10-06
+abi	arm32_libc	/system/lib/libc.so -> /apex/com.android.runtime/lib/bionic/libc.so; ELF32	physical	ELF ident; 2026-10-06
+abi	app_process32	ELF32,ET_DYN,EM_ARM	physical	ELF header bytes: class=1 type=3 machine=40
+abi	arm32_direct_execution	reached Android runtime; exit 134 after dalvik-cache ownership denied	physical	/system/bin/app_process32; not an ELF exec-format failure
+abi	arm32_linker_execution	reached Android runtime; exit 134 after dalvik-cache ownership denied	physical	/system/bin/linker /system/bin/app_process32; dynamic-loader path exercised
+kernel	runtime_page_size_bytes	4096	physical	getconf PAGESIZE; 2026-10-06
+kernel	kernel_page_size_kB	4	physical	/proc/self/smaps KernelPageSize
+kernel	mmu_page_size_kB	4	physical	/proc/self/smaps MMUPageSize
+kernel	product_cpu_pagesize_max	4096	physical	getprop ro.product.cpu.pagesize.max
+bionic	linker_config	/linkerconfig/ld.config.txt	physical	readable under rish; /data/local/tmp listed as unrestricted

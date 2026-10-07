@@ -1,68 +1,298 @@
-# MIRO C67 Cat Food target note
+# MIRO C67 physical Android profile
 
-This note keeps the C67 visible to Android delivery without pretending its
-physical runtime ABI has already been measured.
+This is the retained Cat Food profile for the physical MIRO C67 measured on
+2026-10-05, with ARM32/Bionic execution followed up on 2026-10-06. The
+machine-readable observation ledger is
+[`docs/observations/miro-c67-hardware-2026-10-05.tsv`](../../docs/observations/miro-c67-hardware-2026-10-05.tsv).
+The raw ARM32/Bionic receipt is
+[`docs/observations/miro-c67-arm32-bionic-2026-10-06.txt`](../../docs/observations/miro-c67-arm32-bionic-2026-10-06.txt).
 
-## Model-level facts
+The profile records observed device facts separately from model/platform claims
+and from build acceptance. It does not claim a package has passed physical C67
+acceptance merely because the device ABI is known.
 
-Current product/platform documentation gives:
-
-```text
-product           MIRO C67
-Android listing   Android 14
-SoC               MediaTek Helio G36
-CPU               8 x Arm Cortex-A53, up to 2.2 GHz
-CPU capability    64-bit
-GPU               IMG PowerVR GE8320
-physical RAM      4 GB
-internal storage  64 GB
-display           1600 x 720, 90 Hz
-```
-
-Sources:
-
-- https://www.mediatek.com/products/smartphones/mediatek-helio-g36
-- https://www.newegg.com/miro-c67-6-75-black/p/23B-00MN-00005
-- FCC identity: https://fccid.io/2AQRMC67
-
-## Cat Food mapping is intentionally unresolved
-
-The existing concrete Android targets are currently:
-
-- `phone`: 32-bit `armeabi-v7a`;
-- `tablet`: `arm64-v8a`.
-
-The Helio G36 being 64-bit does not establish which ABI the physical C67 Android
-userspace exposes. Do not route C67 packages through either target merely from
-the SoC specification.
-
-Before assigning it, retain a physical receipt containing:
+## Identity and Android
 
 ```text
-Android build fingerprint
-SDK level
-ro.product.cpu.abi
-ro.product.cpu.abilist
-ro.product.cpu.abilist32
-ro.product.cpu.abilist64
-uname -m
-kernel version
-runtime page size
+manufacturer       Foxx Development Inc
+brand              MIRO
+model              Miro C67
+device             Miro_C67
+board              k65v1_64_bsp
+hardware           mt6765
+Android            14
+SDK                34
+security patch     2024-10-05
+build fingerprint  MIRO/C67/Miro_C67:14/UP1A.231005.007/1727680044:user/release-keys
+kernel             Linux 4.19.191 aarch64
 ```
 
-Then execute a tiny native artifact for every ABI Cat Food intends to publish
-for the C67.
+## Runtime ABI
 
-## Optimization handoff
+Physical properties:
 
-After the ABI receipt exists:
+```text
+primary ABI         arm64-v8a
+ABI list            arm64-v8a,armeabi-v7a,armeabi
+32-bit ABI list     armeabi-v7a,armeabi
+64-bit ABI list     arm64-v8a
+kernel machine      aarch64
+```
 
-1. map packaging to the existing ABI lane rather than inventing a C67 ABI;
-2. keep Cortex-A53 tuning separate from the generic ABI baseline;
-3. send CPU/codegen evidence to ICK and the Idriç native ARM line;
-4. send GE8320 physical shader/driver evidence to the shader/GPU work;
-5. send physical RAM/zram/storage evidence to the memory/zram work;
-6. keep package installation, launch, runtime behavior and physical-device
-   execution as separate receipts.
+This resolves the previous model-only uncertainty: the C67 is an
+`arm64-v8a` Android runtime with native 32-bit ARM compatibility.
 
-Canonical shared hardware notes live in `isomorphisms/android-NDK/hardware/`.
+Runtime page size and native execution are captured by
+`android/record-c67-runtime.sh` during normal `c67` provisioning. The
+result is retained at `$CATFOOD_ROOT/receipts/c67-runtime.tsv`; application-level
+physical acceptance remains separate for each APK.
+
+A 2026-10-06 physical `rish` receipt closes the previous ARM32, Bionic, and
+page-size uncertainties:
+
+```text
+zygote mode          zygote64_32
+live zygotes         zygote64, zygote
+native bridge        0 (disabled)
+runtime page size    4096 bytes
+kernel page size     4 kB
+MMU page size        4 kB
+max product page     4096 bytes
+32-bit linker        /system/bin/linker -> runtime APEX linker, ELF32
+32-bit libc          /system/lib/libc.so -> runtime APEX Bionic libc, ELF32
+app_process32        ELF32, ET_DYN, EM_ARM
+```
+
+Direct execution of the ELF32 `/system/bin/linker` reached its own argument
+parser. Direct execution of `/system/bin/app_process32`, and execution of that
+same binary through the 32-bit linker, both reached the Android runtime and
+then aborted with exit 134 after:
+
+```text
+Error changing dalvik-cache ownership : Permission denied
+Aborted
+```
+
+That is a shell-UID runtime permission failure after ELF admission and dynamic
+loading, not an `Exec format error`. Together with
+`ro.dalvik.vm.native.bridge=0`, the receipt demonstrates native AArch32
+execution on the AArch64 kernel and an operational 32-bit Bionic dynamic-loader
+path. Both 32-bit and 64-bit zygotes were live at capture.
+
+## CPU
+
+Physical CPU evidence:
+
+```text
+SoC                MediaTek MT6765
+cores              8
+microarchitecture  Arm Cortex-A53
+CPU part           0xd03
+CPUs 0-3           900 MHz .. 2.2 GHz
+CPUs 4-7           400 MHz .. 1.6 GHz
+```
+
+The silicon is homogeneous Cortex-A53, while cpufreq exposes two four-core
+frequency policies.
+
+## Memory and storage
+
+Physical evidence:
+
+```text
+MemTotal            3865468 kB
+SwapTotal           2126000 kB
+/data               ~47 GiB formatted
+/data filesystem    ext4
+/data encryption    inlinecrypt
+internal block      mmcblk0
+```
+
+`mmcblk0` establishes an MMC/eMMC-style block path. The exact flash package,
+manufacturer, geometry, and zram compressor remain unresolved because Android
+shell authority could not read the needed nodes. Do not promote the vendor
+`charge_full_design`-style oddities or product marketing into storage facts.
+
+## GPU and display
+
+Physical SurfaceFlinger/display evidence:
+
+```text
+GPU vendor          Imagination Technologies
+GPU renderer        PowerVR Rogue GE8320
+EGL                 1.4 Android META-EGL
+OpenGL ES           3.2 build 1.13@5776728
+display             720 x 1600
+density             320
+refresh modes       60 Hz, 90 Hz
+active/default      90 Hz at capture
+HDR                 not supported
+```
+
+The C67 therefore has a physically observed GLES 3.2 GE8320 path. Application
+requirements must still be driven by each consumer; do not raise a generic
+minimum GLES requirement merely because this device supports 3.2.
+
+## USB
+
+Physical/framework evidence:
+
+```text
+controller          musb-hdrc
+framework features  android.hardware.usb.accessory
+                    android.hardware.usb.host
+port modes          dual
+USB HAL             1.3
+```
+
+The phone is therefore a valid USB host/accessory experimentation target.
+Actual host-mode peripheral behavior remains device acceptance work.
+
+## Wi-Fi and Bluetooth
+
+Physical Wi-Fi evidence:
+
+```text
+bands               2.4 GHz, 5 GHz
+2.4 GHz channels    1-11
+5 GHz channels      36,40,44,48,149,153,157,161,165
+6 GHz               none reported
+observed standard   Android Wi-Fi standard 5 / 802.11ac
+max link speed      433 Mbps
+```
+
+Historical connection records included AP-side Wi-Fi-6 metadata; that is not
+proof that the phone itself is Wi-Fi 6.
+
+Physical Bluetooth evidence includes working A2DP source operation, selectable
+AAC and SBC, AAC 44.1 kHz / 16-bit / stereo during capture, A2DP offload
+disabled, and ten reported LE advertising sets. Do not infer a Bluetooth
+marketing version solely from raw HCI/LMP numeric version fields.
+
+## Sensors and input
+
+Physical Android sensor service exposes:
+
+- accelerometer;
+- magnetometer;
+- orientation;
+- gyroscope;
+- light;
+- proximity.
+
+AOSP virtual/fused sensors include corrected gyroscope, game rotation vector,
+geomagnetic rotation vector, gravity, rotation vector, and orientation.
+
+Input evidence:
+
+```text
+touchscreen          NVTCapacitiveTouchScreen
+multitouch slots     10
+touch coordinates    X 0..720, Y 0..1600
+touch pressure       0..1000
+wired headset path   mt63xx-accdet Headset
+```
+
+The headset input device exposes headphone, microphone, line-out, and physical
+jack insertion switches.
+
+## Cameras
+
+The retained camera-service excerpt exposes three entries:
+
+```text
+back   orientation 90 degrees
+front  orientation 270 degrees
+back   orientation 90 degrees
+```
+
+At least one rear camera reports a flash unit; the front entry reports no flash.
+Exact camera IDs, pixel-array dimensions, focal lengths, and sensor models have
+not yet been retained, so they remain unresolved.
+
+## Battery
+
+Physical capture at 100%:
+
+```text
+technology           Li-ion
+charge_full          2946000 uAh
+voltage              4360 mV
+temperature          18.8 C
+cycle_count          1
+```
+
+The vendor node reported `charge_full_design=294000` uAh. That conflicts with
+the rest of the device evidence and is retained only as a suspect/mis-scaled
+vendor value, not as the battery design capacity.
+
+## Shizuku / rish on this C67
+
+Shizuku and `rish` were physically exercised successfully. Current Termux
+private placement is:
+
+```text
+$HOME/opt/rish
+$HOME/opt/rish_shizuku.dex
+```
+
+with `$HOME/opt` on `PATH`.
+
+Android 14 rejected a writable DEX path and `rish` removed write permission
+before loading. Shizuku supplies Android shell authority, not root; reads such
+as `/proc/swaps` and some sysfs details can still be denied.
+
+## C67 APK producer baseline
+
+There is now enough physical information to begin C67-native APK work.
+
+Use these target facts:
+
+```text
+application ABI      arm64-v8a
+Android runtime      14 / API 34
+native architecture  AArch64
+GPU                  PowerVR Rogue GE8320 / GLES 3.2
+window               720 x 1600
+refresh              60/90 Hz
+```
+
+Build rules:
+
+1. Prefer an `arm64-v8a` native payload for a C67-specific APK.
+2. Keep the application's existing minimum SDK as the NDK API level unless the
+   application actually requires a newer Android symbol. Do not mechanically
+   turn physical API 34 into `minSdk=34`.
+3. Under the Android NDK route, the native compiler target is
+   `aarch64-linux-android<minSdk>`; package the resulting shared object under
+   `lib/arm64-v8a/`.
+4. Use the organization's canonical `isomorphisms/android-NDK` NativeActivity
+   / direct-DEX packaging substrate rather than inventing a new Gradle/Java
+   wrapper.
+5. Preserve the AICI build rule: maintained compile/link stages use qualified
+   ICK when that exact surface is proven, otherwise Android NDK with the exact
+   ICK capability gap recorded.
+6. A shared A1+C67 package may contain both `armeabi-v7a` and `arm64-v8a`
+   libraries, but physical acceptance remains per device and per artifact.
+7. Do not hard-code 90 Hz. Render against the actual Android window/display
+   mode and treat 60/90 Hz as runtime state.
+8. GLES 3.2 is available on this C67; require only the GLES level the
+   application needs.
+9. Strip release native payloads, sign with the application's declared stable
+   signer, then separately record package, install, launch, runtime, and
+   physical-device evidence.
+
+## Cat Food target selection
+
+The `c67` profile is a phone consuming the `arm64-v8a` lane, independently
+of the `tablet` profile. Identity comes from observed product/model, not
+architecture. Unknown ARM64 Termux remains generic. Conflicting identity or ABI
+facts fail closed. See [TARGETS.md](../../TARGETS.md).
+
+Compatible ARM64 artifacts may be shared; acceptance remains per target,
+instance and artifact. The current Mali-G57-specific acceptance runner is
+excluded from C67 and remains an explicit package gap.
+
+Canonical generic Android-native architecture remains in
+`isomorphisms/android-NDK`; this Cat Food file owns the concrete C67
+runtime/delivery facts.

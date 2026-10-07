@@ -3,6 +3,7 @@ set -eu
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 . "$root/ci/repositories.sh"
+. "$root/android/target.sh"
 
 usage() {
     cat <<'EOF'
@@ -12,12 +13,14 @@ usage: ./catfood [--target]
        ./catfood register TOOL ROLE PATH
        ./catfood check-apk DECISION APK SOURCE_COMMIT TARGET
        ./catfood deliver-apk DECISION APK SOURCE_COMMIT TARGET NEW_DIRECTORY
+       ./catfood inspect|record|compare|packages|report
 
 Feed the selected Cat Food target.
 
 The target is detected automatically when possible:
-  phone      Termux on ARMv7; install verified runtime packages only
-  tablet     Termux on AArch64; install verified runtime packages only
+  phone      observed MIRO A1; install verified runtime packages only
+  c67        physical MIRO C67 on AArch64; install arm64-v8a runtime packages only
+  tablet     observed TAB_P10 Android tablet; install arm64-v8a runtime packages only
   container  disposable Debian/Ubuntu workbench; select explicitly
   cloud      persistent Debian/Ubuntu/Hetzner workbench
 
@@ -38,7 +41,7 @@ Local checkout lookup:
   roles: workbench, acceptance, test, cache, control, other
 
 Overrides:
-  CATFOOD_TARGET=phone|tablet|container|cloud|termux|hetzner
+  CATFOOD_TARGET=phone|c67|tablet|container|cloud|termux|hetzner
   CATFOOD_ROOT=/path/to/workspace
   CATFOOD_BUILD_TOOLS=0|1
   CATFOOD_INSTALL_YSH=0|1
@@ -115,17 +118,7 @@ show_help_page() {
 }
 
 detect_target() {
-    case ${PREFIX:-}:${TERMUX_VERSION:-} in
-        /data/data/com.termux/*:*|*:*?*)
-            machine=$(uname -m 2>/dev/null || printf '%s\n' unknown)
-            case $machine in
-                armv7*|armv8l|arm) printf '%s\n' phone ;;
-                aarch64|arm64) printf '%s\n' tablet ;;
-                *) printf '%s\n' termux ;;
-            esac
-            ;;
-        *) printf '%s\n' cloud ;;
-    esac
+    catfood_detect_target
 }
 
 normalize_repository_url() {
@@ -190,11 +183,11 @@ lookup_workspace() {
                 printf '%s\n' "$HOME/opt"
             fi
             ;;
-        phone|tablet|termux)
+        phone|c67|tablet|termux)
             printf '%s\n' "$HOME/opt"
             ;;
         *)
-            printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, or hetzner; found: %s\n' "$lookup_target" >&2
+            printf 'CATFOOD_TARGET must be phone, c67, tablet, container, cloud, termux, or hetzner; found: %s\n' "$lookup_target" >&2
             return 2
             ;;
     esac
@@ -454,6 +447,9 @@ case ${1:-} in
         register_checkout "$2" "$3" "$4"
         exit $?
         ;;
+    inspect|record|compare|packages|report)
+        exec sh "$root/device-state.sh" "$@"
+        ;;
     *) usage >&2; exit 2 ;;
 esac
 
@@ -464,11 +460,16 @@ fi
 
 case $target in
     hetzner) target=cloud ;;
-    phone|tablet|container|cloud|termux) ;;
+    phone|c67|tablet|container|cloud|termux) ;;
     *)
-        printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, or hetzner; found: %s\n' "$target" >&2
+        printf 'CATFOOD_TARGET must be phone, c67, tablet, container, cloud, termux, or hetzner; found: %s\n' "$target" >&2
         exit 2
         ;;
+esac
+
+case $target in
+    phone|c67|tablet) catfood_android_verify_device_target "$target" ;;
+    cloud|container) catfood_verify_workbench_target ;;
 esac
 
 if [ "$show_target" -eq 1 ]; then
@@ -491,7 +492,7 @@ case $target in
         CATFOOD_DEPTH=${CATFOOD_DEPTH:-1}
         export CATFOOD_NO_PROFILE CATFOOD_DEPTH
         ;;
-    phone|tablet|termux)
+    phone|c67|tablet|termux)
         CATFOOD_ROOT=${CATFOOD_ROOT:-$HOME/opt}
         CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-0}
         CATFOOD_INSTALL_YSH=${CATFOOD_INSTALL_YSH:-0}

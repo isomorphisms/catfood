@@ -1,15 +1,15 @@
 # Android delivery
 
-Phone and tablet are runtime targets, not build hosts.
+Phone, C67, and tablet are runtime targets, not build hosts.
 
 The device path is intentionally short:
 
 1. `delivery.tsv` accounts for every row of the workbench inventory plus the separately bootstrapped Grease entry. A repository that exposes several independently packaged commands may use `packages:<id>,<id>` for a target.
 2. `packages.tsv` names only artifacts that actually exist, with exact source commit, packaging commit, target ABI, URL, SHA-256, commands, and dependency declarations.
-3. `check.sh` rejects inventory drift and invalid package/disposition relationships. `check.sh ready phone|tablet` is the manifest-level readiness gate; current gaps make it fail.
+3. `check.sh` rejects inventory drift and invalid package/disposition relationships. `check.sh ready phone|c67|tablet` is the manifest-level readiness gate; `c67` evaluates the existing arm64-v8a/tablet package lane while retaining C67 device identity separately. Current gaps still make whole-distribution readiness fail.
 4. `install.sh` installs explicitly declared commodity Termux dependencies, downloads and verifies published Cat Food packages, installs their runtime files, and reports unresolved inventory. It never clones sources, bootstraps a compiler/toolchain, or repairs a missing package by building locally.
 
-`runtime`, `host`, `reference`, and `review` are distinct inventory roles. `review` means the role is not settled yet; it is explicit debt and blocks readiness. Runtime entries must be `package:<id>`, `packages:<id>,<id>`, or `gap:<reason>` independently for phone and tablet. Host/reference entries are `n/a`; this is classification, not evidence that an intended application was successfully delivered.
+`runtime`, `host`, `reference`, and `review` are distinct inventory roles. `review` means the role is not settled yet; it is explicit debt and blocks readiness. Runtime entries must be `package:<id>`, `packages:<id>,<id>`, or `gap:<reason>` independently for the ARMv7 `phone` and AArch64 `tablet` package lanes. The physical `c67` target consumes the AArch64 lane without being relabeled as a tablet. Host/reference entries are `n/a`; this is classification, not evidence that an intended application was successfully delivered.
 
 ## Termux packages
 
@@ -41,17 +41,17 @@ Cat Food may expose a control-plane helper from its own checked-out version afte
 
 ## Device profiles
 
-Device-specific facts do not redefine Cat Food's ABI targets. They document how
-a physical product maps onto those targets after an actual runtime receipt.
+Device profiles identify model facts; ABI lanes identify artifacts. Neither establishes a physical-instance run. `package-restrictions.tsv` retains package-specific device requirements (currently the Mali-G57 acceptance runner).
 
-- [MIRO C67 target note](devices/miro-c67.md) — Helio G36/Cortex-A53/GE8320
-  model facts are known; physical Android ABI mapping remains unverified.
+- [MIRO C67 physical profile](devices/miro-c67.md) — physical Android 14 /
+  API 34, arm64-v8a with 32-bit compatibility, MT6765/Cortex-A53, PowerVR
+  GE8320, 720x1600 at 60/90 Hz, and retained peripheral observations.
 
 ## Evidence boundaries
 
-A package receipt records exact package identity and one result/evidence pair for each of `build`, `package`, `publication`, `installation`, `launch`, `runtime`, `emulator`, and `physical_device`. Results use the shared `PASS`, `FAIL`, `SKIP`, and `NOT_VERIFIED` vocabulary. Every stage is mandatory, `NOT_VERIFIED` carries no invented evidence, and a later stage cannot pass merely because an earlier stage passed. Validate a receipt with `sh android/check.sh receipt RECEIPT`.
+A version 2 package receipt records device target, class, instance ID, observed identity, ABI lane, exact package identity and one result/evidence pair for each of `build`, `package`, `publication`, `installation`, `launch`, `runtime`, `emulator`, and `physical_device`. Results use the shared `PASS`, `FAIL`, `SKIP`, and `NOT_VERIFIED` vocabulary. Every stage is mandatory, `NOT_VERIFIED` carries no invented evidence, and a later stage cannot pass merely because an earlier stage passed. Validate a receipt with `sh android/check.sh receipt RECEIPT`.
 
-The installer can prove a matching package digest and its own completed installation. A fresh successful download also proves that exact package URL was published at install time. It cannot prove the producer build, application launch, runtime behavior, emulator execution, or physical-device execution, so those remain `NOT_VERIFIED` until their own actions produce evidence. A package installed on one Android target does not accept the other target.
+The installer can prove a matching package digest and its own completed installation. A fresh successful download also proves that exact package URL was published at install time. It cannot prove the producer build, application launch, runtime behavior, emulator execution, or physical-device execution, so those remain `NOT_VERIFIED` until their own actions produce evidence. A package installed on one Android target does not accept another physical target; in particular, C67 and tablet may share `arm64-v8a` artifacts without sharing physical acceptance.
 
 Known gaps remain visible. Installing all currently published packages is not a whole-distribution readiness claim while `check.sh ready <target>` still fails.
 
@@ -79,3 +79,12 @@ public test signer proves no compatibility with original differently signed
 installs. No uninstall, package-ID workaround or migration is performed.
 Negative public tests use real canonical APK bytes; positive authenticated
 delivery is blocked by the unavailable independent producer deployment.
+## Reconciled generations
+
+The current target/delivery branch carries the exact PowerVR and Reddit packages, Grease multicall commands, an explicit missing-artifact Ish obligation, device inventory commands and Shizuku export snapshots. See [the retirement record](../docs/android-generation-retirement.md) for exact prior heads, content comparisons, one successor per retired PR and outstanding acceptance. Inventory inspection/comparison never removes packages; preserving an export does not provision or start Shizuku. C67 retains its physical identity while sharing the AArch64 package lane.
+
+Maintained applications normally produce paired A1+C67 builds using
+`application-targets.tsv`, with A1 primary. `conversation-targets.tsv` retains
+program-specific build details and is mechanically checked against that policy.
+Old v1 receipts remain historical; reinstall to produce current v2 installation
+evidence. No launch/runtime/physical result is carried forward implicitly.

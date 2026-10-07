@@ -1,0 +1,9 @@
+# RHS evaluation host profile
+
+This bounded profile positively checks GitHub Actions, Ubuntu and x86_64 before provisioning. The workflow pins ICK e3c2a40b4edafc4d9caca55d1f7c094e6aab9589 and Ithon owner PR #14 at d6e83969f82512e920fb17b44326cb54f31d015c. The Ithon checkout's maintained frontend checks every new .pi command before execution; its inherited foreign Python substrate is not consumer source.
+
+ICK is bootstrapped on the build host using the owner's materializer and C-only AArch64 configure route. Bootstrap tool packages and foreign CRT/libgcc support are recorded separately. Every maintained RHS compile and link invokes the pinned, hashed ICK driver and cc1. There is no stock consumer fallback. Runtime acceptance uses QEMU AArch64 on Linux, not Android or physical-device evidence. The actual corpus supplies current bounded qualification for this C/libc surface at O0/O2.
+
+The packaged Grease runtime is acquired from successful owner run https://github.com/dilapidated-shed/grease/actions/runs/37476471876, source 9a874c4e082d26f21b2cc807b5553e7e19d5f590, inherited source 5651cf97a1b5042f24f14112a7ade9a1518eb0bc, artifact 11419782646, exact archive SHA-256 71e679fef031225716bbb4d6ea140ab17e9d44e7aa6bd4964e7bccbbed6ce323. Acquisition verifies bytes, retains provenance and smoke-executes the consumer-facing `grease` entrypoint. The inherited executable's filename is confined to this runtime/provenance boundary. This artifact expires 2026-10-13; after expiry acquisition fails closed until a reviewed owner artifact is pinned. No silent alternative is selected.
+
+The foreign model runtime uses binary torch 2.5.1+cpu and transformers 4.46.3 in an isolated venv. Full installed dependencies, apt packages, host facts, commands, stdout/stderr and exit statuses are retained. Flexible Pipes owns the model invocation command; RHS owns semantic claims and grading.

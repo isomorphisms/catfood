@@ -98,7 +98,17 @@ Before changing phone/tablet delivery, read [`android/README.md`](android/README
 - `gopeed`, `gdl`, and `go_down_load` on phone/tablet are Cat Food control-plane helpers installed after YSH is delivered; their presence does not claim that Cat Food delivered or accepted the Gopeed Android app. Ordinary unprivileged Termux must use Gopeed's TCP loopback API for cross-app control; do not assume an app-private Unix socket is reachable and do not rewrite Gopeed's private settings on the user's behalf.
 - When a phone/tablet command block is meant to produce output the human will paste back, use ANSI-colored section/action/PASS/FAIL markers when supported so the requested result is easy to find. Keep receipt fields and other machine-readable evidence plain, and never make color the only signal.
 
-Run `sh tests/android-delivery.sh` for repository-side contract changes. `sh android/check.sh ready phone|tablet` is intentionally allowed to remain red while declared runtime gaps exist.
+Device selectors (`phone` = MIRO A1, `c67` = MIRO C67, `tablet` = TAB_P10)
+are distinct from ABI package lanes. Unknown Termux remains generic and must
+not provision a source workbench. Read `TARGETS.md` and the producer policy in
+`android/application-targets.tsv`; normal maintained application builds pair
+A1+C67, with A1 primary. A model is not a unique handset; retain device instance
+identity in receipts. The A1 storage convention above is not a C67 fact.
+
+Run `sh tests/android-delivery.sh`, `sh tests/targets.sh`,
+`sh tests/c67-delivery.sh` and `sh tests/target-mutations.sh` for target/receipt
+changes. `sh android/check.sh ready phone|c67|tablet` stays red while declared
+runtime or device-specific package gaps remain.
 
 ## Mobile leader and follower rule
 

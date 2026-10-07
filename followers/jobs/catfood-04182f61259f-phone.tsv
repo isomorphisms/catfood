@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-04182f61259f-phone
+repository	isomorphisms/catfood
+branch	android/powervr-runners
+pr	41
+trigger_commit	04182f61259ff22d930ebcebadd0d175203942ba
+leader_platform	tablet
+leader_arch	aarch64
+leader_evidence	-
+artifact	powervr-runner-phone-armeabi-v7a.tar.gz
+artifact_sha256	714e5f706a05224ff4f43188a6fb043e7fa39f6a7f7f6ea7b0ef0dcb424502de
+follower_platform	phone
+follower_arch	armv7
+required	yes
+action	Reconcile the unchanged phone package against the current Android delivery source state; preserve the existing physical PowerVR evidence boundary and do not infer a new physical phone receipt from the tablet repin.
+acceptance_kind	physical-device
+acceptance_action	CATFOOD_TARGET=phone ./catfood; sh android/check.sh gaps phone; if new physical acceptance is later required, run the exact packaged PowerVR phone runner with package hash 714e5f706a05224ff4f43188a6fb043e7fa39f6a7f7f6ea7b0ef0dcb424502de.
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	conservative android impact rule after tablet-only package repin; phone package bytes unchanged
+superseded_by	-
+follow_policy	exact
