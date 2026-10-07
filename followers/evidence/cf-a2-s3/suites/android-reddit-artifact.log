@@ -1,0 +1,61 @@
+/tmp/tmp.1l3buRo4gk/SHA256SUMS: OK
+reddit-phone             fetch fuego-ironworks/idric-arm-thumb@45b8b5e1e3919816f8818602784acefc7f3b7ca6
+/tmp/tmp.1l3buRo4gk/workspace-phone/downloads/reddit-phone-063fd4dcc04409c09caef34d2295d93361e2ba441d87dac8476f81d71530662c.tmp.6549: OK
+reddit-phone             command /tmp/tmp.1l3buRo4gk/workspace-phone/bin/reddit
+
+Cat Food phone installed all currently published packages.
+No manifest-level Android delivery gaps remain; runtime/device acceptance is still separate.
+reddit-tablet            fetch fuego-ironworks/idric-arm-thumb@45b8b5e1e3919816f8818602784acefc7f3b7ca6
+/tmp/tmp.1l3buRo4gk/workspace-tablet/downloads/reddit-tablet-4bcd1e3a95342f58e6ba399455110476104d88507c9b3b2bfc856f39478f84e9.tmp.7158: OK
+reddit-tablet            command /tmp/tmp.1l3buRo4gk/workspace-tablet/bin/reddit
+
+Cat Food tablet installed all currently published packages.
+No manifest-level Android delivery gaps remain; runtime/device acceptance is still separate.
+exact published Reddit phone/tablet artifacts satisfy the Cat Food package/install contract; no launch or device execution was claimed
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:03 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:04 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:04 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:04 --:--:--     0
+
+  0     0    0     0    0     0      0      0 --:--:--  0:00:05 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:06 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:07 --:--:--     0
+  0   173    0     0    0     0      0      0 --:--:--  0:00:08 --:--:--     0
+100   173  100   173    0     0     20      0  0:00:08  0:00:08 --:--:--    56
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:03 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:04 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:04 --:--:--     0
+
+  0     0    0     0    0     0      0      0 --:--:--  0:00:05 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:06 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:07 --:--:--     0
+  0  7507    0     0    0     0      0      0 --:--:--  0:00:07 --:--:--     0
+100  7507  100  7507    0     0    949      0  0:00:07  0:00:07 --:--:--  2668
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:03 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:04 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:04 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:05 --:--:--     0
+
+  0     0    0     0    0     0      0      0 --:--:--  0:00:06 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:07 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:08 --:--:--     0
+  0     0    0     0    0     0      0      0 --:--:--  0:00:08 --:--:--     0
+100  6960  100  6960    0     0    769      0  0:00:09  0:00:09 --:--:--  2377

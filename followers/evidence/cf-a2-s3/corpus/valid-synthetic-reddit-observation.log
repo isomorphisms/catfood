@@ -1,0 +1,66 @@
+
+== Device identity ==
+target	phone
+expected_abi	armeabi-v7a
+device_abi	armeabi-v7a
+sdk	34
+model	MIRO A1
+fingerprint	synthetic/firmware-1
+PASS observed target identity matches phone
+
+== Reddit DEX/JNI launch ==
+Run the installed stable reddit command through app_process
+https://www.reddit.com/search/?q=computer%20science%20degree%20regret
+PASS installed Reddit DEX/JNI command launched and returned the expected URL
+
+== Reddit runtime boundary ==
+Verify the native search boundary rejects a missing access token
+reddit: missing REDDIT_ACCESS_TOKEN
+PASS installed command returned the expected runtime-boundary diagnostic
+
+== Receipt ==
+schema	catfood-android-evidence-v3
+package	reddit-phone
+target	phone
+package_lane	armeabi-v7a
+device_id	synthetic-a1-instance
+device_class	phone
+device_target	phone
+device_product	-
+device_model	MIRO A1
+device_fingerprint	synthetic/firmware-1
+abi	armeabi-v7a
+mode	dex-jni
+source	isomorphisms/fixture
+source_ref	1111111111111111111111111111111111111111
+package_ref	2222222222222222222222222222222222222222
+url	https://example.invalid/payload.tar.gz
+sha256	7867a03d5317f27426369797096607d6fb27d22c90518c8dafe37574642d036f
+termux_packages	-
+runtime_requires	-
+package_requires	-
+build_result	NOT_VERIFIED
+build_evidence	-
+package_result	PASS
+package_evidence	sha256:7867a03d5317f27426369797096607d6fb27d22c90518c8dafe37574642d036f
+publication_result	PASS
+publication_evidence	https://example.invalid/payload.tar.gz
+installation_result	PASS
+installation_evidence	/workspace/scratch/193077a5bfe3/s3-committed-corpus/dex-workspace/packages/reddit-phone/2222222222222222222222222222222222222222
+launch_result	NOT_VERIFIED
+launch_evidence	-
+runtime_result	NOT_VERIFIED
+runtime_evidence	-
+emulator_result	NOT_VERIFIED
+emulator_evidence	-
+physical_device_result	NOT_VERIFIED
+physical_device_evidence	-
+executor_path	/workspace/scratch/193077a5bfe3/s3-committed-corpus/bin/app_process
+content_sha256	62e9958da99bc9d181830a4bb6ba8e054e461939aa741241553001e2baa8de09
+launcher_sha256	0d39c0b8185153127b9ff7507df27dfe2b3e4a753733ae7712c96716565da14c
+dependency_sha256	4dc1c6cd4465b7118947087edbe46f429ef2ad94d5f06234357ee7d7a7dc3470
+plan_sha256	51de6d88972fc5f841e08401b15918d9058fff8806552b3779a4f81648a9eebd
+profile_sha256	f132b3e965b1142f7ab176e05efa8c80b6ed514064cf4354732140388aad3f0c
+installation_procedure_sha256	ad6444122dc2fb89b93cba83571093a854097efdeca35a4ee039b0f94c08e370
+evidence_scope	synthetic
+PASS fresh Reddit observation (synthetic): /workspace/scratch/193077a5bfe3/s3-committed-corpus/reddit-observation/execution.tsv; acceptance NOT_VERIFIED

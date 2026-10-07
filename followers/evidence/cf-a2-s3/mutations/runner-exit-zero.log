@@ -1,0 +1,54 @@
+runtime-grease	PASS	accepted-synthetic
+package-fixture	PASS	accepted-synthetic
+valid-install	PASS	accepted-synthetic
+valid-current	PASS	accepted-synthetic
+valid-byte-authorization	PASS	accepted-synthetic
+substituted-executable	PASS	rejected
+substituted-nonentry-file	PASS	rejected
+substituted-launcher	PASS	rejected
+stale-firmware	PASS	rejected
+empty-current-firmware	PASS	rejected
+synthetic-scope-relabeling	PASS	rejected
+sibling-ancestor-source_ref	PASS	rejected
+sibling-ancestor-package_ref	PASS	rejected
+sibling-ancestor-plan_sha256	PASS	rejected
+sibling-ancestor-profile_sha256	PASS	rejected
+empty-receipt-firmware	PASS	rejected
+duplicate-identity	PASS	rejected
+schema-valid-forged-build	PASS	accepted-synthetic
+forged-build-denied	PASS	rejected
+schema-valid-forged-physical	PASS	accepted-synthetic
+missing-evidence-denied	PASS	rejected
+invented-evidence-denied	PASS	rejected
+modified-evidence-denied	PASS	rejected
+install-runtime-inflation	PASS	rejected
+hosted-physical-inflation	PASS	rejected
+interrupted-raced-install	PASS	rejected
+imported-inventory-observation	PASS	accepted-synthetic
+duplicate-inventory-model	PASS	rejected
+dex-package-fixture	PASS	accepted-synthetic
+valid-dex-install	PASS	accepted-synthetic
+valid-synthetic-reddit-observation	PASS	accepted-synthetic
+Traceback (most recent call last):
+  File "/workspace/scratch/193077a5bfe3/runtime/ithon/ithon_host.py", line 39, in <module>
+    main()
+  File "/workspace/scratch/193077a5bfe3/runtime/ithon/ithon_host.py", line 32, in main
+    runner.main()
+  File "/workspace/scratch/193077a5bfe3/runtime/ithon/Lib/ithon_run.py", line 117, in main
+    _run_source(source, path, [path, *args[1:]])
+  File "/workspace/scratch/193077a5bfe3/runtime/ithon/Lib/ithon_run.py", line 97, in _run_source
+    exec(code, namespace, namespace)
+  File "/workspace/scratch/193077a5bfe3/catfood/tests/android-content.pi", line 283, in <module>
+    main()
+  File "/workspace/scratch/193077a5bfe3/catfood/tests/android-content.pi", line 278, in main
+    corpus(root, work, grease)
+  File "/workspace/scratch/193077a5bfe3/catfood/tests/android-content.pi", line 242, in corpus
+    observation ∈ str ← Path(work + "/reddit-observation/execution.tsv").read_text()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/workspace/scratch/193077a5bfe3/s3-committed-mutations/run-runner-exit-zero/reddit-observation/execution.tsv'

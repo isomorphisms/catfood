@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-e4ed19cea57b-container-x86_64
+repository	isomorphisms/catfood
+branch	aici-android-producer-receipt
+pr	112
+trigger_commit	e4ed19cea57b4a410374a6af812735b618524d9d
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	container-x86_64
+follower_arch	x86_64
+required	yes
+action	leader target for Cat Food commit e4ed19cea57b4a410374a6af812735b618524d9d on container-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh container
+state	blocked
+last_attempt_commit	-
+blocker	Full target runtime provision and acceptance not executed; local contract tests are not follower runtime receipts
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	-
+follow_policy	exact

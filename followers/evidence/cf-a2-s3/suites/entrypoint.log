@@ -1,0 +1,13 @@
+cat food cloud, generic Termux, inventory help, and verified checkout location entrypoints pass
+Cloning into '/tmp/tmp.bBIUSyYcSx/termux-home/opt/grease'...
+Submodule 'source' (https://github.com/dilapidated-shed/oils.git) registered for path 'source'
+Cloning into '/tmp/tmp.bBIUSyYcSx/termux-home/opt/grease/source'...
+From https://github.com/dilapidated-shed/oils
+ * branch            5651cf97a1b5042f24f14112a7ade9a1518eb0bc -> FETCH_HEAD
+Cloning into '/tmp/tmp.bBIUSyYcSx/termux-home/opt/catfood-fixture'...
+From https://github.com/dilapidated-shed/grease
+ * branch            main       -> FETCH_HEAD
+Already on 'main'
+From https://github.com/isomorphisms/catfood
+ * branch            main       -> FETCH_HEAD
+Already on 'main'

@@ -1,0 +1,4 @@
+# device	synthetic-a1-instance
+# observed_at	2026-10-07
+# state	item	observed	expected	evidence
+unconfirmed	fixture-phone	2222222222222222222222222222222222222222	2222222222222222222222222222222222222222	receipt:PASS

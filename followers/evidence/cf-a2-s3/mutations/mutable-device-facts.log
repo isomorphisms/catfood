@@ -1,0 +1,14 @@
+runtime-grease	PASS	accepted-synthetic
+package-fixture	PASS	accepted-synthetic
+valid-install	PASS	accepted-synthetic
+valid-current	PASS	accepted-synthetic
+valid-byte-authorization	PASS	accepted-synthetic
+substituted-executable	PASS	rejected
+substituted-nonentry-file	PASS	rejected
+substituted-launcher	PASS	rejected
+stale-firmware unexpected exit 0: fixture-phone            current 2222222222222222222222222222222222222222
+fixture-phone            command /workspace/scratch/193077a5bfe3/s3-committed-mutations/run-mutable-device-facts/workspace/bin/fixture
+
+Cat Food phone installed all currently published packages.
+No manifest-level Android delivery gaps remain; runtime/device acceptance is still separate.
+

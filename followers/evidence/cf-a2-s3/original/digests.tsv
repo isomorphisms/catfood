@@ -1,0 +1,4 @@
+artifact_sha256	4b2b565c8e058b9544550d1168b98f032bfdc61b3943fd2bbdad92257f0f48ef
+receipt_sha256	6e7e8bf6ae8cd6b31a46618ead81fcaf191c1aebd2052e0fdd6214fbc225b9ae
+observed_defect	changed-payload-reported-current
+scope	synthetic

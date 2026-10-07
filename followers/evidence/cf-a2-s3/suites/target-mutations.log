@@ -1,0 +1,2 @@
+mutation rejected: unknown-as-tablet (expected termux, found tablet)
+mutation rejected: cross-receipt (cross-device or malformed receipt accepted)

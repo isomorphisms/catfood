@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-e4ed19cea57b-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	aici-android-producer-receipt
+pr	112
+trigger_commit	e4ed19cea57b4a410374a6af812735b618524d9d
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit e4ed19cea57b4a410374a6af812735b618524d9d on github-x86_64-artifact; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	blocked
+last_attempt_commit	-
+blocker	Independent S4 producer deployment unavailable; local real-APK denial is not authenticated publication
+evidence	-
+depends_on	-
+reason	android-artifact-and-device
+superseded_by	-
+follow_policy	exact
