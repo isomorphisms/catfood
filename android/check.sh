@@ -41,14 +41,14 @@ done
 
 awk -F '\t' '
     FNR == 1 {
-        if ($0 != "package_id\tmin_sdk\ttarget_sdk\tnative_library\tactivity\tno_dex") exit 1
+        if ($0 != "package_id\tmin_sdk\ttarget_sdk\tnative_library\tactivity\tno_dex\twebview_debuggable") exit 1
         next
     }
-    NF != 6 || rows++ {exit 1}
+    NF != 7 || rows++ {exit 1}
     $1 !~ /^[A-Za-z][A-Za-z0-9_.]*$/ ||
     $2 !~ /^[0-9]+$/ || $3 !~ /^[0-9]+$/ || ($2 + 0) > ($3 + 0) ||
     $4 !~ /^[A-Za-z][A-Za-z0-9_]*$/ ||
-    $5 != "android.app.NativeActivity" || $6 != "true" {exit 1}
+    $5 != "android.app.NativeActivity" || $6 != "true" || $7 != "true" {exit 1}
     END {if (rows != 1) exit 1}
 ' "$root/android/chatgpt-web-probe-build.tsv" || {
     printf '%s\n' 'invalid ChatGPT Web Probe packaging contract' >&2
