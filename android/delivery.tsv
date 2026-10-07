@@ -17,6 +17,8 @@ idric-cli	runtime	gap:android-package-missing	gap:android-package-missing	comman
 issh	runtime	gap:android-package-missing	gap:android-package-missing	libssh2-runtime-library-not-shell-command
 crawlspace	runtime	package:crawlspace-phone	package:crawlspace-tablet	shell-identity-bridge-runtime
 fieldmouse	runtime	gap:android-package-missing	gap:android-package-missing	stable-runtime-command
+micropython	runtime	gap:android-package-missing	gap:android-package-missing	compact-python-runtime-candidate
+mujs	reference	n/a	n/a	compact-javascript-reference-for-fieldmouse-footprint-work
 idris-arm-backend	host	n/a	n/a	experimental-compiler-backend-not-delivery-prerequisite
 idris-shader-backend	host	n/a	n/a	experimental-compiler-backend-not-delivery-prerequisite
 sent.idr	runtime	gap:android-package-missing	gap:android-package-missing	presentation-application
