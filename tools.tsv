@@ -17,6 +17,8 @@ idric-cli https://github.com/dilapidated-shed/idric-cli.git cli none
 issh https://github.com/dilapidated-shed/issh.git master none
 crawlspace https://github.com/isomorphisms/crawlspace.git main none
 fieldmouse https://github.com/dilapidated-shed/fieldmouse.git edric-rewrite none
+micropython https://github.com/dilapidated-shed/micropython.git master none
+mujs https://github.com/ArtifexSoftware/mujs.git master none
 idris-arm-backend https://github.com/dilapidated-shed/idris-arm-backend.git main none
 idris-shader-backend https://github.com/dilapidated-shed/idris-shader-backend.git main none
 sent.idr https://github.com/dilapidated-shed/sent.idr.git main none
