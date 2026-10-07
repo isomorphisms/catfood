@@ -1,0 +1,4 @@
+invariant	expected	observed_exit	result
+CF-S3-payload-authorization	substituted-executable unexpected exit 0	1	PASS
+CF-S3-mutable-device-facts	stale-firmware unexpected exit 0	1	PASS
+CF-S3-runner-exit-zero	FileNotFoundError	1	PASS

@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-e43278d36616-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	aici-android-producer-receipt
+pr	112
+trigger_commit	e43278d3661699d86c29c867bd90a5163cea702f
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit e43278d3661699d86c29c867bd90a5163cea702f on github-x86_64-artifact; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	blocked
+last_attempt_commit	-
+blocker	Independent S4 authenticated producer deployment unavailable; hosted synthetic contracts are not artifact publication acceptance
+evidence	-
+depends_on	-
+reason	android-artifact-ci
+superseded_by	-
+follow_policy	exact
