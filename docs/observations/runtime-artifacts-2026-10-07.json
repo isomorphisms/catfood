@@ -1,0 +1,1631 @@
+{
+  "observed_at": "2026-10-07",
+  "scope": "37 runtime rows classified as missing in Cat Food main 5c0fbc010437ed776b620a9d4965fd4225ba1bf4. First five release records and first five recent workflow runs, with artifacts for up to three distinct successful workflows. This is a bounded discovery snapshot, not an exhaustive historic artifact search or producer/physical acceptance.",
+  "runtimes": [
+    {
+      "name": "ish",
+      "repo": "dilapidated-shed/grease",
+      "inventory_branch": "ish",
+      "releases": [
+        {
+          "tag": "ish-tablet-aarch64-0e6ba10f8edd",
+          "commitish": "0e6ba10f8edde26e940685ac386ad4279afbe259",
+          "published": "2026-10-06T14:06:08Z",
+          "body": "Maintained Ish runtime for Android/Termux.\n\nIsh/Grease source commit: 0e6ba10f8edde26e940685ac386ad4279afbe259\nIdriç source commit: 0a67392e7f615508e464793b2d18e9784f836696\nChez Scheme source commit: 8d105909c0afe899b6983e3371e5a7163c7e1826\nABI: arm64-v8a\nAndroid API floor: 28\nArtifact SHA-256: 1a15060ffc201f15c679f432c2237bdddb6cf3a2a90bf7b81d21381c7c4ddac2\n\nThe package contains bin/ish plus its private Chez runtime and the\ncross-compiled maintained Ish program. It does not alias ish to Grease,\nysh, osh, or oils-for-unix.\n\nCloud cross-build evidence only. Physical-tablet execution\nremains pending until Cat Food installs and exercises this exact artifact.\n",
+          "assets": [
+            {
+              "name": "ish-aarch64-termux.tar.gz",
+              "size": 3108703,
+              "url": "https://github.com/dilapidated-shed/grease/releases/download/ish-tablet-aarch64-0e6ba10f8edd/ish-aarch64-termux.tar.gz",
+              "digest": "sha256:1a15060ffc201f15c679f432c2237bdddb6cf3a2a90bf7b81d21381c7c4ddac2"
+            },
+            {
+              "name": "ish-aarch64-termux.tar.gz.sha256",
+              "size": 92,
+              "url": "https://github.com/dilapidated-shed/grease/releases/download/ish-tablet-aarch64-0e6ba10f8edd/ish-aarch64-termux.tar.gz.sha256",
+              "digest": "sha256:43b2f5e7dff0305f06e79447799f3c18308a9bd21dd0a41085d51f780a74027b"
+            }
+          ]
+        },
+        {
+          "tag": "ish-phone-armv7-0e6ba10f8edd",
+          "commitish": "0e6ba10f8edde26e940685ac386ad4279afbe259",
+          "published": "2026-10-06T14:02:27Z",
+          "body": "Maintained Ish runtime for Android/Termux.\n\nIsh/Grease source commit: 0e6ba10f8edde26e940685ac386ad4279afbe259\nIdriç source commit: 0a67392e7f615508e464793b2d18e9784f836696\nChez Scheme source commit: 8d105909c0afe899b6983e3371e5a7163c7e1826\nABI: armeabi-v7a\nAndroid API floor: 28\nArtifact SHA-256: 72ab71f63cfc6a970bb01bc1a30a686fa2550e0f0a881b89395e0c1335304582\n\nThe package contains bin/ish plus its private Chez runtime and the\ncross-compiled maintained Ish program. It does not alias ish to Grease,\nysh, osh, or oils-for-unix.\n\nCloud cross-build evidence only. Physical-phone execution\nremains pending until Cat Food installs and exercises this exact artifact.\n",
+          "assets": [
+            {
+              "name": "ish-armv7-termux.tar.gz",
+              "size": 3044868,
+              "url": "https://github.com/dilapidated-shed/grease/releases/download/ish-phone-armv7-0e6ba10f8edd/ish-armv7-termux.tar.gz",
+              "digest": "sha256:72ab71f63cfc6a970bb01bc1a30a686fa2550e0f0a881b89395e0c1335304582"
+            },
+            {
+              "name": "ish-armv7-termux.tar.gz.sha256",
+              "size": 90,
+              "url": "https://github.com/dilapidated-shed/grease/releases/download/ish-phone-armv7-0e6ba10f8edd/ish-armv7-termux.tar.gz.sha256",
+              "digest": "sha256:fcff312373370e773e18c6ba967b3db57c471a16e9fd93e454c2da96ec67aec0"
+            }
+          ]
+        },
+        {
+          "tag": "netbsd-9.3-amd64-60641ddd9984",
+          "commitish": "60641ddd99844655c0788f790cd3a8a14c7166fd",
+          "published": "2026-09-29T18:53:49Z",
+          "body": "NetBSD 9.3 amd64 Grease runtime for SDF-style unprivileged installs.\n\nThis artifact contains the C++ implementation as `greasecpp`.\n`grease` is a symlink to the currently preferred implementation;\nin this artifact it points to `greasecpp`. A D implementation will\nbe named `greased` and should replace that default only after it\npasses the same acceptance checks.\n\nGrease repository commit: 60641ddd99844655c0788f790cd3a8a14c7166fd\nPinned Oils-derived Grease source: 6d29702a10ea9eb72a43950554dbcd4174d07a89\nTarget: NetBSD 9.3 amd64\nArtifact SHA-256: a7f5e35feebd1a222e2ae724bbbf4a2c1fe28c5683ac3aa6561ed770a9bb3136\n\nThe binary was compiled and smoke-tested inside the NetBSD 9.3 VM job above.\n",
+          "assets": [
+            {
+              "name": "grease-netbsd-9.3-amd64.tar.gz",
+              "size": 4684219,
+              "url": "https://github.com/dilapidated-shed/grease/releases/download/netbsd-9.3-amd64-60641ddd9984/grease-netbsd-9.3-amd64.tar.gz",
+              "digest": "sha256:a7f5e35feebd1a222e2ae724bbbf4a2c1fe28c5683ac3aa6561ed770a9bb3136"
+            },
+            {
+              "name": "grease-netbsd-9.3-amd64.tar.gz.sha256",
+              "size": 99,
+              "url": "https://github.com/dilapidated-shed/grease/releases/download/netbsd-9.3-amd64-60641ddd9984/grease-netbsd-9.3-amd64.tar.gz.sha256",
+              "digest": "sha256:8c8d0cdfdbbae50cc87a7ee2cf74876131ed38c708f988ccdb4de9003225f63c"
+            }
+          ]
+        },
+        {
+          "tag": "netbsd-9.3-amd64-3af742a82a96",
+          "commitish": "3af742a82a96983f92e13155f9b4787940c32d8e",
+          "published": "2026-09-29T18:01:49Z",
+          "body": "NetBSD 9.3 amd64 Grease runtime for SDF-style unprivileged installs.\n\nThis artifact contains the C++ implementation as .\n is a symlink to the currently preferred implementation;\nin this artifact it points to .  A D implementation will\nbe named  and should replace that default only after it\npasses the same acceptance checks.\n\nGrease repository commit: 3af742a82a96983f92e13155f9b4787940c32d8e\nPinned Oils-derived Grease source: 6d29702a10ea9eb72a43950554dbcd4174d07a89\nTarget: NetBSD 9.3 amd64\nArtifact SHA-256: b70d3d222458512dbf67424a33fe463ae79b2c61dc41915424f810cc66d4f8ea\n\nThe binary was compiled and smoke-tested inside the NetBSD 9.3 VM job above.\n",
+          "assets": [
+            {
+              "name": "grease-netbsd-9.3-amd64.tar.gz",
+              "size": 4684205,
+              "url": "https://github.com/dilapidated-shed/grease/releases/download/netbsd-9.3-amd64-3af742a82a96/grease-netbsd-9.3-amd64.tar.gz",
+              "digest": "sha256:b70d3d222458512dbf67424a33fe463ae79b2c61dc41915424f810cc66d4f8ea"
+            },
+            {
+              "name": "grease-netbsd-9.3-amd64.tar.gz.sha256",
+              "size": 99,
+              "url": "https://github.com/dilapidated-shed/grease/releases/download/netbsd-9.3-amd64-3af742a82a96/grease-netbsd-9.3-amd64.tar.gz.sha256",
+              "digest": "sha256:1574525a153674fb0b66e5b7ec911700c5de314f858c494ee5ddae793460911a"
+            }
+          ]
+        },
+        {
+          "tag": "netbsd-11-amd64-e119fcf24037",
+          "commitish": "e119fcf240374f02793dc3bbbc00e19d247ed6a7",
+          "published": "2026-09-29T15:35:15Z",
+          "body": "NetBSD 11 amd64 Grease runtime for SDF-style unprivileged installs.\n\nThis artifact contains the C++ implementation as .\n is a symlink to the currently preferred implementation;\nin this artifact it points to .  A D implementation will\nbe named  and should replace that default only after it\npasses the same acceptance checks.\n\nGrease repository commit: e119fcf240374f02793dc3bbbc00e19d247ed6a7\nPinned Oils-derived Grease source: 6d29702a10ea9eb72a43950554dbcd4174d07a89\nTarget: NetBSD 11 amd64\nArtifact SHA-256: 07133f77e1e0ee49c52019b5a48b741916f6a078b7a796493bebad230defc695\n\nThe binary was compiled and smoke-tested inside the NetBSD 11 VM job above.\n",
+          "assets": [
+            {
+              "name": "grease-netbsd-11-amd64.tar.gz",
+              "size": 5978277,
+              "url": "https://github.com/dilapidated-shed/grease/releases/download/netbsd-11-amd64-e119fcf24037/grease-netbsd-11-amd64.tar.gz",
+              "digest": "sha256:07133f77e1e0ee49c52019b5a48b741916f6a078b7a796493bebad230defc695"
+            },
+            {
+              "name": "grease-netbsd-11-amd64.tar.gz.sha256",
+              "size": 98,
+              "url": "https://github.com/dilapidated-shed/grease/releases/download/netbsd-11-amd64-e119fcf24037/grease-netbsd-11-amd64.tar.gz.sha256",
+              "digest": "sha256:33816f8670c6e2337c80b3900ef054bf7f6de9161832b5c9933683c83a2c123f"
+            }
+          ]
+        }
+      ],
+      "workflows": []
+    },
+    {
+      "name": "ir",
+      "repo": "isomorphisms/ir",
+      "inventory_branch": "ir",
+      "releases": [
+        {
+          "tag": "ir-4.7.0-devel-armv7.1",
+          "commitish": "84564b69c1bcad789f0f3be686660c226071e184",
+          "published": "2026-08-26T04:04:40Z",
+          "body": "Native 32-bit ARMv7 Android/Termux build from PR #2.\n\nThe package installs ir and irscript under an isolated runtime and does not replace ordinary R. CI verified Architecture: arm, ELF32/ARM, and execution of the Unicode expression x ← 8 ÷ 2.\n\nPackage SHA-256: 36874b459e15ae781789ab4dba8834a50a97ee48970306424a71ff3ae3049de1\n\nActual-phone installation remains the final acceptance test.",
+          "assets": [
+            {
+              "name": "build-environment-packages.txt",
+              "size": 3382,
+              "url": "https://github.com/isomorphisms/ir/releases/download/ir-4.7.0-devel-armv7.1/build-environment-packages.txt",
+              "digest": "sha256:f5677612db9d90cee47e5ec024dafec25d6fc8ce52c7d22bf14c5e12e80d5250"
+            },
+            {
+              "name": "build-record.txt",
+              "size": 397,
+              "url": "https://github.com/isomorphisms/ir/releases/download/ir-4.7.0-devel-armv7.1/build-record.txt",
+              "digest": "sha256:fce545c828f36ffd61b24a66f6518ee86fdbda6fedef5e0961e8a831af7382c0"
+            },
+            {
+              "name": "ir_4.7.0.devel+git84564b69c1bc_arm.deb",
+              "size": 26731000,
+              "url": "https://github.com/isomorphisms/ir/releases/download/ir-4.7.0-devel-armv7.1/ir_4.7.0.devel%2Bgit84564b69c1bc_arm.deb",
+              "digest": "sha256:36874b459e15ae781789ab4dba8834a50a97ee48970306424a71ff3ae3049de1"
+            },
+            {
+              "name": "SHA256SUMS",
+              "size": 105,
+              "url": "https://github.com/isomorphisms/ir/releases/download/ir-4.7.0-devel-armv7.1/SHA256SUMS",
+              "digest": "sha256:4efaa0a87528e3df9ee712eb7e7e0e865db83b90ec61d3475b155ba9994948dd"
+            }
+          ]
+        }
+      ],
+      "workflows": [
+        {
+          "run": 35386368573,
+          "name": "Unicode lexer",
+          "source_commit": "f14844940823e09e850963475c5130da86ab4ccd",
+          "url": "https://github.com/isomorphisms/ir/actions/runs/35386368573",
+          "artifacts": []
+        },
+        {
+          "run": 35356244658,
+          "name": "ARMv7 Termux binary",
+          "source_commit": "e67e3ca826995650524dbb9d1e8682a212b5f768",
+          "url": "https://github.com/isomorphisms/ir/actions/runs/35356244658",
+          "artifacts": [
+            {
+              "id": 10553175409,
+              "name": "ir-termux-armv7-e67e3ca826995650524dbb9d1e8682a212b5f768",
+              "digest": "sha256:455be9b2618383ae81e823df8c22b5023d80073872151d9bc29fdda22e2f6e68",
+              "expired": false,
+              "expires_at": "2026-10-18T14:38:44Z",
+              "size": 26733015
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ithon",
+      "repo": "dilapidated-shed/ithon",
+      "inventory_branch": "main",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 37573168262,
+          "name": "Manimi dogfood",
+          "source_commit": "ea45fc09b0764fcf1e29577a3ac9647882b68146",
+          "url": "https://github.com/dilapidated-shed/ithon/actions/runs/37573168262",
+          "artifacts": []
+        }
+      ]
+    },
+    {
+      "name": "Idric",
+      "repo": "isomorphisms/Idric",
+      "inventory_branch": "Idriç",
+      "releases": [
+        {
+          "tag": "termux-armv7-115b6ea4a195",
+          "commitish": "115b6ea4a1950e93c477b2d394319a2885c19566",
+          "assets": [
+            {
+              "name": "idric-termux-armv7-115b6ea4a195.tar.gz",
+              "digest": "sha256:ee154fce3d717305b737749737d87264ee03c08f14f28529053d862e6fc5caf2",
+              "url": "https://github.com/isomorphisms/Idric/releases/download/termux-armv7-115b6ea4a195/idric-termux-armv7-115b6ea4a195.tar.gz",
+              "size": 20452413
+            },
+            {
+              "name": "idric-termux-armv7-115b6ea4a195.tar.gz.sha256",
+              "digest": "sha256:e4aa3b151260dd950f52ad4ef490f07643dbcbe1b1d03953e7919b4e8759f20b",
+              "url": "https://github.com/isomorphisms/Idric/releases/download/termux-armv7-115b6ea4a195/idric-termux-armv7-115b6ea4a195.tar.gz.sha256",
+              "size": 105
+            }
+          ]
+        },
+        {
+          "tag": "termux-armv7-bfe5caac589b",
+          "commitish": "bfe5caac589bc0dfbcaf211a1fae29cefcdca957",
+          "assets": [
+            {
+              "name": "idric-termux-armv7-bfe5caac589b.tar.gz",
+              "digest": "sha256:1d53070c703f58e546f54c6168920083f3e5deb96ca07913f12a1033e4da22b0",
+              "url": "https://github.com/isomorphisms/Idric/releases/download/termux-armv7-bfe5caac589b/idric-termux-armv7-bfe5caac589b.tar.gz",
+              "size": 20452082
+            },
+            {
+              "name": "idric-termux-armv7-bfe5caac589b.tar.gz.sha256",
+              "digest": "sha256:253e35b26b49b05e3357fd63c719d19eb68a05b59c38aedc8716307d79073d7f",
+              "url": "https://github.com/isomorphisms/Idric/releases/download/termux-armv7-bfe5caac589b/idric-termux-armv7-bfe5caac589b.tar.gz.sha256",
+              "size": 105
+            }
+          ]
+        }
+      ],
+      "workflows": [
+        {
+          "run": 37522594993,
+          "name": "Idriç build",
+          "source_commit": "ff4d852862a3942592f8ade9afde8d409d9803be",
+          "url": "https://github.com/isomorphisms/Idric/actions/runs/37522594993",
+          "artifacts": [
+            {
+              "id": 11441251551,
+              "name": "xbrl-acceptance-ff4d852862a3942592f8ade9afde8d409d9803be-37522594993",
+              "digest": "sha256:23768defc0c0953141d8d58941ef111bafb7cbc0915ffa915ae425450ab3ac10",
+              "expired": false,
+              "expires_at": "2026-10-20T20:05:53Z",
+              "size": 383886
+            }
+          ]
+        },
+        {
+          "run": 37522594854,
+          "name": "Idriç source-layout check",
+          "source_commit": "ff4d852862a3942592f8ade9afde8d409d9803be",
+          "url": "https://github.com/isomorphisms/Idric/actions/runs/37522594854",
+          "artifacts": []
+        },
+        {
+          "run": 37522594766,
+          "name": "Device action target matrix",
+          "source_commit": "ff4d852862a3942592f8ade9afde8d409d9803be",
+          "url": "https://github.com/isomorphisms/Idric/actions/runs/37522594766",
+          "artifacts": []
+        }
+      ]
+    },
+    {
+      "name": "idric-cli",
+      "repo": "dilapidated-shed/idric-cli",
+      "inventory_branch": "cli",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 34057380327,
+          "name": "test",
+          "source_commit": "70c24e3c0a31e29eca7e2f88be0de3943b910bea",
+          "url": "https://github.com/dilapidated-shed/idric-cli/actions/runs/34057380327",
+          "artifacts": []
+        }
+      ]
+    },
+    {
+      "name": "issh",
+      "repo": "dilapidated-shed/issh",
+      "inventory_branch": "master",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 36445932678,
+          "name": "Idric SSH mail boundary typecheck",
+          "source_commit": "8d392b1355f02e5e07e11af30cba1bd0a2602aee",
+          "url": "https://github.com/dilapidated-shed/issh/actions/runs/36445932678",
+          "artifacts": []
+        }
+      ]
+    },
+    {
+      "name": "fieldmouse",
+      "repo": "dilapidated-shed/fieldmouse",
+      "inventory_branch": "edric-rewrite",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 37561704223,
+          "name": "Field Mouse contract",
+          "source_commit": "7ebef96b31b013b086bab8abb683741451d08f32",
+          "url": "https://github.com/dilapidated-shed/fieldmouse/actions/runs/37561704223",
+          "artifacts": []
+        }
+      ]
+    },
+    {
+      "name": "sent.idr",
+      "repo": "dilapidated-shed/sent.idr",
+      "inventory_branch": "main",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 31669645741,
+          "name": "test",
+          "source_commit": "d83ac5a051904950e9159a4c62d9847c21239d5c",
+          "url": "https://github.com/dilapidated-shed/sent.idr/actions/runs/31669645741",
+          "artifacts": []
+        }
+      ]
+    },
+    {
+      "name": "programmers-keyboard",
+      "repo": "isomorphisms/programmers-keyboard",
+      "inventory_branch": "main",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 36925061204,
+          "name": "Render keypads",
+          "source_commit": "e37ceffaf2e4e23ff60eda25e5eecbd211942e5e",
+          "url": "https://github.com/isomorphisms/programmers-keyboard/actions/runs/36925061204",
+          "artifacts": [
+            {
+              "id": 11193272295,
+              "name": "keypad-pictures",
+              "digest": "sha256:d8e4150f4fb534eb327904552c5074344d015d8e17a3535622ed40b9ef7640fd",
+              "expired": false,
+              "expires_at": "2026-12-30T20:55:04Z",
+              "size": 400031
+            }
+          ]
+        },
+        {
+          "run": 36925061110,
+          "name": "Build remaining RP2040 keypad samples",
+          "source_commit": "e37ceffaf2e4e23ff60eda25e5eecbd211942e5e",
+          "url": "https://github.com/isomorphisms/programmers-keyboard/actions/runs/36925061110",
+          "artifacts": [
+            {
+              "id": 11193950952,
+              "name": "keypad-samples-rp2040-uf2",
+              "digest": "sha256:45e438897eb281c0f844a9cfb3f6e0ba38a7c009728ea9b1ff3f79dc53006016",
+              "expired": false,
+              "expires_at": "2026-12-30T20:55:04Z",
+              "size": 93696
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "icu",
+      "repo": "dilapidated-shed/icu",
+      "inventory_branch": "icu",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 36448815598,
+          "name": "Idric end to end",
+          "source_commit": "daf10ee4f89933653cfef62000877e685c11dd26",
+          "url": "https://github.com/dilapidated-shed/icu/actions/runs/36448815598",
+          "artifacts": []
+        },
+        {
+          "run": 36448815146,
+          "name": "Idric mail type sketches",
+          "source_commit": "daf10ee4f89933653cfef62000877e685c11dd26",
+          "url": "https://github.com/dilapidated-shed/icu/actions/runs/36448815146",
+          "artifacts": []
+        }
+      ]
+    },
+    {
+      "name": "ib",
+      "repo": "isomorphisms/ib",
+      "inventory_branch": "main",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 37503515651,
+          "name": "IB browser foundation",
+          "source_commit": "b4d93c47327f112433b90c0a77a00b3ddcba0af4",
+          "url": "https://github.com/isomorphisms/ib/actions/runs/37503515651",
+          "artifacts": []
+        },
+        {
+          "run": 37503515638,
+          "name": "ib 0.2 shell smoke",
+          "source_commit": "b4d93c47327f112433b90c0a77a00b3ddcba0af4",
+          "url": "https://github.com/isomorphisms/ib/actions/runs/37503515638",
+          "artifacts": []
+        },
+        {
+          "run": 37503515595,
+          "name": "IB Pensieve body hyperplane",
+          "source_commit": "b4d93c47327f112433b90c0a77a00b3ddcba0af4",
+          "url": "https://github.com/isomorphisms/ib/actions/runs/37503515595",
+          "artifacts": [
+            {
+              "id": 11431021370,
+              "name": "ib-pensieve-real-body-hyperplane",
+              "digest": "sha256:993dff1c30ef389f74f5cdfbd1e7907de002331460f1a6a5e92485b260cde63b",
+              "expired": false,
+              "expires_at": "2027-01-04T17:26:08Z",
+              "size": 34985
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "internetarchive",
+      "repo": "dilapidated-shed/internetarchive",
+      "inventory_branch": "master",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 32927251183,
+          "name": "pre-commit",
+          "source_commit": "0ea2e7243bcbf78cf2002ebbaea4a735731784ba",
+          "url": "https://github.com/dilapidated-shed/internetarchive/actions/runs/32927251183",
+          "artifacts": []
+        },
+        {
+          "run": 32927251168,
+          "name": "tox",
+          "source_commit": "0ea2e7243bcbf78cf2002ebbaea4a735731784ba",
+          "url": "https://github.com/dilapidated-shed/internetarchive/actions/runs/32927251168",
+          "artifacts": []
+        },
+        {
+          "run": 32927251166,
+          "name": "lint_python",
+          "source_commit": "0ea2e7243bcbf78cf2002ebbaea4a735731784ba",
+          "url": "https://github.com/dilapidated-shed/internetarchive/actions/runs/32927251166",
+          "artifacts": []
+        }
+      ]
+    },
+    {
+      "name": "bookreader",
+      "repo": "dilapidated-shed/bookreader",
+      "inventory_branch": "master",
+      "releases": [],
+      "workflows": []
+    },
+    {
+      "name": "ddg",
+      "repo": "dilapidated-shed/ddg",
+      "inventory_branch": "develop",
+      "releases": [],
+      "workflows": []
+    },
+    {
+      "name": "chawan",
+      "repo": "dilapidated-shed/chawan",
+      "inventory_branch": "master",
+      "releases": [],
+      "workflows": []
+    },
+    {
+      "name": "gopeed",
+      "repo": "dilapidated-shed/gopeed",
+      "inventory_branch": "main",
+      "releases": [
+        {
+          "tag": "termux-869a35e44a8b",
+          "commitish": "869a35e44a8bae490a18f3ccf8c845353003bc75",
+          "published": "2026-09-20T04:19:59Z",
+          "body": "Static ARMv7 and AArch64 Gopeed REST services built from exact main commit 869a35e44a8bae490a18f3ccf8c845353003bc75. QEMU /api/v1/info smoke passed in this workflow; physical Android/Termux execution remains separate.",
+          "assets": [
+            {
+              "name": "gopeed-api-phone-armv7",
+              "size": 40304824,
+              "url": "https://github.com/dilapidated-shed/gopeed/releases/download/termux-869a35e44a8b/gopeed-api-phone-armv7",
+              "digest": "sha256:7b7e039317fdc2c1b9beb9f76515ec66fb98c8bb052702ab11d355d167f83659"
+            },
+            {
+              "name": "gopeed-api-phone-armv7.sha256",
+              "size": 94,
+              "url": "https://github.com/dilapidated-shed/gopeed/releases/download/termux-869a35e44a8b/gopeed-api-phone-armv7.sha256",
+              "digest": "sha256:b39bf2a97ec1cbae7d3a273c756fe4bcb04450995dffc9d7535a4a6b6ab1dc94"
+            },
+            {
+              "name": "gopeed-api-tablet-aarch64",
+              "size": 40239288,
+              "url": "https://github.com/dilapidated-shed/gopeed/releases/download/termux-869a35e44a8b/gopeed-api-tablet-aarch64",
+              "digest": "sha256:86bbcabfad83ee03eeb6a60ee12797e603798da229229757a823215cd6ed1422"
+            },
+            {
+              "name": "gopeed-api-tablet-aarch64.sha256",
+              "size": 97,
+              "url": "https://github.com/dilapidated-shed/gopeed/releases/download/termux-869a35e44a8b/gopeed-api-tablet-aarch64.sha256",
+              "digest": "sha256:be4ca2a32f47383308d07d86b9428e904e474b0b271b65d2a547e8f9bbd6380b"
+            },
+            {
+              "name": "SOURCE.tsv",
+              "size": 173,
+              "url": "https://github.com/dilapidated-shed/gopeed/releases/download/termux-869a35e44a8b/SOURCE.tsv",
+              "digest": "sha256:66fd1b0182434f1c398628f3fb7923ca57ca85d72deb39ae1e4a921d95ce9ca5"
+            }
+          ]
+        }
+      ],
+      "workflows": [
+        {
+          "run": 35488808681,
+          "name": "android-headless-api",
+          "source_commit": "869a35e44a8bae490a18f3ccf8c845353003bc75",
+          "url": "https://github.com/dilapidated-shed/gopeed/actions/runs/35488808681",
+          "artifacts": [
+            {
+              "id": 10597854464,
+              "name": "gopeed-api-phone-armv7",
+              "digest": "sha256:44dcd3439d2adfdc7314f280d16831305caf76f438d0e7751a0013e5459dc2ef",
+              "expired": false,
+              "expires_at": "2026-12-19T04:18:27Z",
+              "size": 15321199
+            },
+            {
+              "id": 10597819384,
+              "name": "gopeed-api-tablet-aarch64",
+              "digest": "sha256:c0f0fc61e5850e6d764385879ac8eefed55616aafff7baacfdce60ab8c176924",
+              "expired": false,
+              "expires_at": "2026-12-19T04:18:27Z",
+              "size": 14845919
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "wegert",
+      "repo": "isomorphismes/wegert",
+      "inventory_branch": "main",
+      "releases": [
+        {
+          "tag": "v0.1.50",
+          "commitish": "f8104344da2efd57a4ea0b59c4f420a86e534ecc",
+          "published": "2026-08-21T18:47:57Z",
+          "body": "Installable test APK produced by Android CI run 32514600662 from commit f8104344da2efd57a4ea0b59c4f420a86e534ecc.\n\nThe build and its phone/tablet emulator checks passed before publication. This APK is signed with the repository's public test-only debug key; it is not a Google Play production build. The remaining check is touch and rendering behavior on real ARM hardware.",
+          "assets": [
+            {
+              "name": "wegert-0.1.50.apk",
+              "size": 1055503,
+              "url": "https://github.com/isomorphismes/wegert/releases/download/v0.1.50/wegert-0.1.50.apk",
+              "digest": "sha256:897490843da536259c3701c1f6e7f1c43e1c7411a91ce5a2c82b6ff2490ef28b"
+            },
+            {
+              "name": "wegert-0.1.50.apk.sha256",
+              "size": 84,
+              "url": "https://github.com/isomorphismes/wegert/releases/download/v0.1.50/wegert-0.1.50.apk.sha256",
+              "digest": "sha256:67ee545f3a2b4208cc84fd1e6e89e3521a3847a97199add15915a6194e6fbb5f"
+            }
+          ]
+        }
+      ],
+      "workflows": [
+        {
+          "run": 37511245603,
+          "name": "F-Droid publication status",
+          "source_commit": "dfa3751f0282cdf6a2083c97063b0e8e996d0d92",
+          "url": "https://github.com/isomorphismes/wegert/actions/runs/37511245603",
+          "artifacts": []
+        },
+        {
+          "run": 37469488169,
+          "name": "ICK leaf / NDK application Wegert boundary",
+          "source_commit": "d1f3282a0e447c16b7e4f9d1966a5954dabf6bc3",
+          "url": "https://github.com/isomorphismes/wegert/actions/runs/37469488169",
+          "artifacts": [
+            {
+              "id": 11417896117,
+              "name": "wegert-source-built-ick",
+              "digest": "sha256:67413fa052e08ee7c8813a69b27cc40b826e45b4ecf645ce0124aaa9e8a6a4f8",
+              "expired": false,
+              "expires_at": "2027-01-04T13:16:20Z",
+              "size": 1408662
+            }
+          ]
+        },
+        {
+          "run": 37469488158,
+          "name": "Android native build and device emulation",
+          "source_commit": "d1f3282a0e447c16b7e4f9d1966a5954dabf6bc3",
+          "url": "https://github.com/isomorphismes/wegert/actions/runs/37469488158",
+          "artifacts": [
+            {
+              "id": 11417465097,
+              "name": "wegert-miro-a1-emulator-evidence",
+              "digest": "sha256:a92d323222b50c0c0239c5f245bbd999b75b5fedadcbc3f37a949093ace304b7",
+              "expired": false,
+              "expires_at": "2027-01-04T13:16:20Z",
+              "size": 379924
+            },
+            {
+              "id": 11417100190,
+              "name": "wegert-tab-p10-emulator-evidence",
+              "digest": "sha256:6d58e2e30033dcad332696d82980af9c12d0c806fb9928726c35856b6309b470",
+              "expired": false,
+              "expires_at": "2027-01-04T13:16:20Z",
+              "size": 441119
+            },
+            {
+              "id": 11416032337,
+              "name": "wegert-debug-apk",
+              "digest": "sha256:d6c87d194c86047b20ea66a32e09095a7d72d2f5707b8f4fdb1b6e1c75ddc49d",
+              "expired": false,
+              "expires_at": "2027-01-04T13:16:20Z",
+              "size": 1407759
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "utilities-android-phone-user",
+      "repo": "Ashtray-Archer/utilities-android-phone-user",
+      "inventory_branch": "main",
+      "releases": [
+        {
+          "tag": "accelerometer-native-v0.2.0",
+          "commitish": "340381176f8f7c89427bd1e41286a1e0ae1cf0d1",
+          "published": "2026-09-22T05:37:25Z",
+          "body": "Stable native accelerometer release after PR #58, “Supersample whole accelerometer glyphs,” merged as `bf44102c1cec8b27498fc98410a418be8e2a66c8`.\n\nRelease source is the exact physical-phone-tested PR head `340381176f8f7c89427bd1e41286a1e0ae1cf0d1`. The attached APK is the retained output from successful Actions run `35690545955`, artifact `10677804951`; it was not rebuilt for publication.\n\nPhysical MIRO A1 evidence for this exact APK:\n- installed and launched successfully on the real ARMv7 phone;\n- percentage-based vertical layout from PR #57 remains visually accepted;\n- full-glyph 4×4 grayscale supersampling substantially improves X and other diagonal strokes;\n- the resulting display was accepted for release, with a few glyphs still somewhat bubbly.\n\nKnown measurement issue:\n- one observed stationary frame showed approximately X +1.2, Y +7.8, Z +0.1 m/s², whose Euclidean magnitude is about 7.9 m/s² rather than approximately 9.8 m/s²;\n- this release therefore does not claim calibrated acceleration magnitude. The under-reading remains a separate measurement-path issue.\n\nProvenance:\n- PR #58: Supersample whole accelerometer glyphs\n- PR head: `340381176f8f7c89427bd1e41286a1e0ae1cf0d1`\n- merge commit: `bf44102c1cec8b27498fc98410a418be8e2a66c8`\n- Actions run: `35690545955`\n- retained artifact: `10677804951`\n- APK SHA-256: `61885896fb66ec14b8325b2559ce3d784996dd9cbf74fe418e924eb48fd8632b`\n- native package includes ARMv7, AArch64, and x86_64 libraries and no `classes.dex`.\n\n\n## Recorded sensor replay\n\n[![Recorded accelerometer replay](https://github.com/Ashtray-Archer/utilities-android-phone-user/releases/download/accelerometer-native-v0.2.0/accelerometer-native-v0.2.0-replay.gif)](https://github.com/Ashtray-Archer/utilities-android-phone-user/releases/download/accelerometer-native-v0.2.0/accelerometer-native-v0.2.0-replay.mp4)\n\n[Watch the MP4 replay](https://github.com/Ashtray-Archer/utilities-android-phone-user/releases/download/accelerometer-native-v0.2.0/accelerometer-native-v0.2.0-replay.mp4)\n\nThis is a visualization reconstructed from a recorded retained-Float16 X/Y/Z sample sequence, not a screen recording.\n",
+          "assets": [
+            {
+              "name": "accelerometer-native-v0.2.0-replay-poster.png",
+              "size": 21337,
+              "url": "https://github.com/Ashtray-Archer/utilities-android-phone-user/releases/download/accelerometer-native-v0.2.0/accelerometer-native-v0.2.0-replay-poster.png",
+              "digest": "sha256:124b3adfd3d1d99597094df298155e0b5be579868e876b5c0471fd78d3ab74bc"
+            },
+            {
+              "name": "accelerometer-native-v0.2.0-replay.gif",
+              "size": 105240,
+              "url": "https://github.com/Ashtray-Archer/utilities-android-phone-user/releases/download/accelerometer-native-v0.2.0/accelerometer-native-v0.2.0-replay.gif",
+              "digest": "sha256:ee476140b094aae9d12b49c7ad919714138b194ba39acb0997983a819d6c9f3e"
+            },
+            {
+              "name": "accelerometer-native-v0.2.0-replay.mp4",
+              "size": 78959,
+              "url": "https://github.com/Ashtray-Archer/utilities-android-phone-user/releases/download/accelerometer-native-v0.2.0/accelerometer-native-v0.2.0-replay.mp4",
+              "digest": "sha256:c7df599b682820dd6ea93d36a67da2e75a6a0fa1cd2b6361c6260d4752ae2670"
+            },
+            {
+              "name": "accelerometer-native-v0.2.0.apk",
+              "size": 373474,
+              "url": "https://github.com/Ashtray-Archer/utilities-android-phone-user/releases/download/accelerometer-native-v0.2.0/accelerometer-native-v0.2.0.apk",
+              "digest": "sha256:61885896fb66ec14b8325b2559ce3d784996dd9cbf74fe418e924eb48fd8632b"
+            }
+          ]
+        },
+        {
+          "tag": "accelerometer-native-v0.1.0",
+          "commitish": "96693a1f341bf9190a2d583c635f230f6c73ebdb",
+          "published": "2026-09-17T09:06:16Z",
+          "body": "Stable native accelerometer release after PR #48 merged as `e554d54da8f2956ac3533d9a87d8bf078896fc09`.\n\nRelease source is the exact phone-tested PR head `96693a1f341bf9190a2d583c635f230f6c73ebdb`. The attached APK is the retained output built from that source; it was not rebuilt for publication.\n\nFinal physical-phone evidence observed for this exact APK:\n- installed and displayed on the real ARMv7 phone;\n- centered mid-screen layout;\n- larger X/Y/Z text;\n- lowercase SI unit rendered as `m/s²`;\n- nearly full-width tracks;\n- substantially thicker active bars;\n- increased vertical spacing between axis rows.\n\nThe supplied final screenshot is evidence of the visual presentation. It is not, by itself, a new dynamic-redraw test. Continuous accelerometer redraw and gravity shifting between axes were observed earlier on the same sensor path; PR #48 changes presentation only and does not change sensor sampling or values.\n\nProvenance:\n- PR head: `96693a1f341bf9190a2d583c635f230f6c73ebdb`\n- merge commit: `e554d54da8f2956ac3533d9a87d8bf078896fc09`\n- retained Actions artifact: `10487996607`\n- artifact ZIP SHA-256: `cedd0f3e43ac07b3c5be123241b098106d038e0f804393f8e3fd16bcfb9b29cb`\n- APK SHA-256: `17837672b101c86a02013e27548e828715666e63cf18e4458c1665505f4b9510`\n- native package includes ARMv7 and no `classes.dex`.\n",
+          "assets": [
+            {
+              "name": "accelerometer-native-v0.1.0.apk",
+              "size": 397966,
+              "url": "https://github.com/Ashtray-Archer/utilities-android-phone-user/releases/download/accelerometer-native-v0.1.0/accelerometer-native-v0.1.0.apk",
+              "digest": "sha256:17837672b101c86a02013e27548e828715666e63cf18e4458c1665505f4b9510"
+            }
+          ]
+        },
+        {
+          "tag": "accelerometer-native-a763d62-phone-tested",
+          "commitish": "a763d62b5ebcf9a69240ab0705e518b315eec325",
+          "published": "2026-09-12T13:43:56Z",
+          "body": "Physical-phone-tested prerelease for PR #45 at exact head `a763d62b5ebcf9a69240ab0705e518b315eec325`.\n\nThis APK is the retained output from successful Actions run `34671598418`, artifact `10290223596`; it was not rebuilt for this release.\n\nBuild provenance:\n- retained artifact SHA-256: `c26977211b30b8b8793a60d242dbb42ee52084b55e8e1e7fdecdc4c8927b4723`\n- APK SHA-256: `61e4526f79ebf87dd6d6efc18e14d59d0370275b45241b7fe5303ad676f41a0d`\n- package includes the ARMv7 build and no `classes.dex`\n\nPhysical-device evidence actually observed:\n- the APK installed and launched as the Accelerometer application;\n- live X/Y/Z values and axis bars were visible;\n- one captured frame showed `X -0.325 m/s²`, `Y +2.936 m/s²`, `Z +9.224 m/s²`;\n- while the phone was rotated, the displayed values redrew continuously and the gravity component moved between device axes.\n\nThis is not a calibrated sensor test and is not evidence that Idriç generated the current C/NDK application core.\n",
+          "assets": [
+            {
+              "name": "accelerometer-native-a763d62-phone-tested.apk",
+              "size": 340622,
+              "url": "https://github.com/Ashtray-Archer/utilities-android-phone-user/releases/download/accelerometer-native-a763d62-phone-tested/accelerometer-native-a763d62-phone-tested.apk",
+              "digest": "sha256:61e4526f79ebf87dd6d6efc18e14d59d0370275b45241b7fe5303ad676f41a0d"
+            }
+          ]
+        },
+        {
+          "tag": "accelerometer-native-a763d62",
+          "commitish": "a763d62b5ebcf9a69240ab0705e518b315eec325",
+          "published": "2026-09-12T13:40:14Z",
+          "body": "Pre-release candidate for PR #45 at exact head `a763d62b5ebcf9a69240ab0705e518b315eec325`.\n\nThis APK is the retained output from successful Actions run `34671598418`, artifact `10290223596`; it was not rebuilt for this release.\n\n- retained artifact digest: `sha256:c26977211b30b8b8793a60d242dbb42ee52084b55e8e1e7fdecdc4c8927b4723`\n- APK SHA-256: `61e4526f79ebf87dd6d6efc18e14d59d0370275b45241b7fe5303ad676f41a0d`\n- package includes the ARMv7 build and no `classes.dex`\n\nPhysical ARMv7-phone acceptance is intentionally not claimed here. This prerelease exists so the exact retained build can be installed and exercised on the real device; only observations actually made on that device should be recorded as physical-device evidence.\n",
+          "assets": [
+            {
+              "name": "accelerometer-native-a763d62.apk",
+              "size": 340622,
+              "url": "https://github.com/Ashtray-Archer/utilities-android-phone-user/releases/download/accelerometer-native-a763d62/accelerometer-native-a763d62.apk",
+              "digest": "sha256:61e4526f79ebf87dd6d6efc18e14d59d0370275b45241b7fe5303ad676f41a0d"
+            }
+          ]
+        },
+        {
+          "tag": "programmers-unicode-picker-v0.3.0-pre.1",
+          "commitish": "43d2bcc824b238fbe22fa3e82e9d7d47f0df9628",
+          "published": "2026-08-29T21:01:15Z",
+          "body": "# Programmer's Unicode Picker 0.3.0 prerelease\n\nThis is the standalone Unicode-pad-style picker, not the Android keyboard/IME.\n\nOpen the app, tap characters into its text buffer, tap **COPY**, then paste into the target app. It does not ask to enable or select a keyboard and does not alter the system keyboard configuration.\n\n## Included pages\n\n- Unicode\n- Math\n- Punctuation\n- Programming\n- Regular Expressions\n- Concept Separation\n- Incantation Assistance\n- Several Pastebins\n\nThe picker includes the current heavy programming assignment arrow `⟵`, while ordinary `←` remains available on the Unicode and Math pages.\n\n## Android/runtime boundary\n\n- native C APK using Android's platform `NativeActivity`\n- no app Java or Kotlin\n- no `classes.dex`\n- no requested Android permissions\n- arm64-v8a, armeabi-v7a, and x86_64 native libraries\n- versionName 0.3.0 / versionCode 3\n\nThe Idriç source defines the picker pages and allowed key actions and generates the checked-in C layout snapshot; the mutable editing state and Android boundary remain C in this release.\n\n## Verification\n\nThe release workflow checks the Idriç layout contract, runs the host C behavior/touch tests, builds and inspects the APK, and exercises the picker in an Android emulator before publishing the release.\n\nThe attached APK is debug-signed for sideload testing. It is not a Google Play production-signed artifact.\n",
+          "assets": [
+            {
+              "name": "programmers-unicode-picker-0.3.0-pre.1-debug.apk",
+              "size": 610952,
+              "url": "https://github.com/Ashtray-Archer/utilities-android-phone-user/releases/download/programmers-unicode-picker-v0.3.0-pre.1/programmers-unicode-picker-0.3.0-pre.1-debug.apk",
+              "digest": "sha256:cc78b6a90fd614c175522419bbf6875837c3da62c734f09a96e454082f5f5c1c"
+            },
+            {
+              "name": "SHA256SUMS.txt",
+              "size": 115,
+              "url": "https://github.com/Ashtray-Archer/utilities-android-phone-user/releases/download/programmers-unicode-picker-v0.3.0-pre.1/SHA256SUMS.txt",
+              "digest": "sha256:5523f9659356173ed7645268da0c40b42fcd7d6192934500aff178f2558a5b99"
+            }
+          ]
+        }
+      ],
+      "workflows": [
+        {
+          "run": 36508517417,
+          "name": "accelerometer native packages",
+          "source_commit": "52f72194e190fe8881ae1993e27433fdb6609e02",
+          "url": "https://github.com/Ashtray-Archer/utilities-android-phone-user/actions/runs/36508517417",
+          "artifacts": [
+            {
+              "id": 11008461006,
+              "name": "accelerometer-distribution-apks",
+              "digest": "sha256:ed5f87de34bdd9326244de8840407899e7041c8e7800ac4c079b946fe445d1ab",
+              "expired": false,
+              "expires_at": "2026-12-28T01:34:06Z",
+              "size": 103565
+            },
+            {
+              "id": 11008221417,
+              "name": "accelerometer-native-apk",
+              "digest": "sha256:69e79c9ba8e560bf1df106c1c641371748c3c25705fbece950266cb77ddbb109",
+              "expired": false,
+              "expires_at": "2026-12-28T01:34:06Z",
+              "size": 175378
+            },
+            {
+              "id": 11008181358,
+              "name": "accelerometer-app-bundle",
+              "digest": "sha256:0278ef681b96cf0252b40d78ee3c5d9e0ae7acefbe3710cbc1ae62a323658a24",
+              "expired": false,
+              "expires_at": "2026-12-28T01:34:06Z",
+              "size": 44238
+            }
+          ]
+        },
+        {
+          "run": 36508517405,
+          "name": "merge-gate",
+          "source_commit": "52f72194e190fe8881ae1993e27433fdb6609e02",
+          "url": "https://github.com/Ashtray-Archer/utilities-android-phone-user/actions/runs/36508517405",
+          "artifacts": []
+        },
+        {
+          "run": 36368963626,
+          "name": "Programmer's Unicode Picker Android",
+          "source_commit": "7631099114dd2e39d6a00c6f9dd720ffd3b2bc63",
+          "url": "https://github.com/Ashtray-Archer/utilities-android-phone-user/actions/runs/36368963626",
+          "artifacts": [
+            {
+              "id": 11410436873,
+              "name": "programmers-unicode-pad-smoke-screen",
+              "digest": "sha256:3d5d637ef1952c4fb93a159cbe94b7e380ff3eca5c23f75db627467f8805bd30",
+              "expired": false,
+              "expires_at": "2027-01-04T11:38:15Z",
+              "size": 44142
+            },
+            {
+              "id": 11043668541,
+              "name": "programmers-unicode-pad-smoke-screen",
+              "digest": "sha256:a475e3f3d7b48e4f646b8849866429c89c8978a412cd73403cb3de9fc5f36de3",
+              "expired": false,
+              "expires_at": "2026-12-28T15:32:14Z",
+              "size": 64890
+            },
+            {
+              "id": 11018842067,
+              "name": "programmers-unicode-pad-smoke-screen",
+              "digest": "sha256:351993cfc787fcc9a0ebe74eefb5d74b8a12da355d8192672898b6d3900b21f7",
+              "expired": false,
+              "expires_at": "2026-12-28T07:25:33Z",
+              "size": 64486
+            },
+            {
+              "id": 10948795848,
+              "name": "programmers-unicode-pad-debug-apk",
+              "digest": "sha256:738030b30c03f919a0b19f88c4e5fc94cf2470bda403bd7eee9f09a034633336",
+              "expired": false,
+              "expires_at": "2026-12-27T02:13:05Z",
+              "size": 222012
+            },
+            {
+              "id": 10948756534,
+              "name": "programmers-unicode-pad-smoke-screen",
+              "digest": "sha256:aaf9630cdbc8a9e9df29995d78419309e242ec02dd2e5879a5e2426023ca031c",
+              "expired": false,
+              "expires_at": "2026-12-27T02:13:05Z",
+              "size": 64685
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "algebraic-variety-explorer-mobile",
+      "repo": "isomorphismes/algebraic-variety-explorer-mobile",
+      "inventory_branch": "surfer",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 36609702864,
+          "name": "F-Droid release build",
+          "source_commit": "3928dcd1d023baab7c44bb4fc34f0ebe331f6237",
+          "url": "https://github.com/isomorphismes/algebraic-variety-explorer-mobile/actions/runs/36609702864",
+          "artifacts": [
+            {
+              "id": 11053325986,
+              "name": "algebraic-variety-explorer-fdroiddata",
+              "digest": "sha256:ced761d1a67bb0c00c25a6fae9914690ce40267bb17b25532c778369a5e1d23d",
+              "expired": false,
+              "expires_at": "2026-10-13T18:10:06Z",
+              "size": 109221
+            },
+            {
+              "id": 11052426998,
+              "name": "algebraic-variety-explorer-fdroid-unsigned",
+              "digest": "sha256:2f90a933ea543845d3ec2c56f2bd016249579e40516431fad8c73392f73bc3ef",
+              "expired": false,
+              "expires_at": "2026-10-13T18:07:15Z",
+              "size": 327347
+            }
+          ]
+        },
+        {
+          "run": 36609702847,
+          "name": "CI",
+          "source_commit": "3928dcd1d023baab7c44bb4fc34f0ebe331f6237",
+          "url": "https://github.com/isomorphismes/algebraic-variety-explorer-mobile/actions/runs/36609702847",
+          "artifacts": [
+            {
+              "id": 11053445473,
+              "name": "algebraic-variety-target-sdk-phone-evidence",
+              "digest": "sha256:295096c198b076e8c7581cd6d6a79e2d3dae29edc6cd5c5560e631bf07e4cbcc",
+              "expired": false,
+              "expires_at": "2026-10-13T18:09:22Z",
+              "size": 238268
+            },
+            {
+              "id": 11053275959,
+              "name": "algebraic-variety-min-sdk-phone-evidence",
+              "digest": "sha256:fbfeae752e3d42537cbcbc8e5529edf052340920a37680ee47e6dd059b87ff9c",
+              "expired": false,
+              "expires_at": "2026-10-13T18:08:58Z",
+              "size": 752698
+            },
+            {
+              "id": 11052317080,
+              "name": "algebraic-variety-signed-smoke-apk",
+              "digest": "sha256:9fa7a6d758ffd4210b901557584548e271b2c04f8da6b11659709729f2e62f60",
+              "expired": false,
+              "expires_at": "2026-10-13T18:07:07Z",
+              "size": 112670
+            },
+            {
+              "id": 11052282100,
+              "name": "algebraic-variety-renderer-evidence",
+              "digest": "sha256:624ff48ddd71d718050e9b928fb17af74fdb08a1a054a44f2b33e38221c0c860",
+              "expired": false,
+              "expires_at": "2026-10-13T18:06:52Z",
+              "size": 36292
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "learn-toki-pona",
+      "repo": "place-of-honor/learn-toki-pona",
+      "inventory_branch": "main",
+      "releases": [
+        {
+          "tag": "v1.0.1",
+          "commitish": "2aa3d2a858e6b11b8cdc93523cda215272fd6365",
+          "published": "2026-08-21T05:16:54Z",
+          "body": "# Toki Pona Drills v1.0.1\n\nAn offline Android trainer for quick Toki Pona practice.\n\nVersion 1 includes:\n\n- seven lessons, from the core sentence pattern through simplifying adult ideas;\n- multiple-choice and matching drills, with no keyboard entry;\n- UCSUR sitelen pona characters beside displayed Latin-script Toki Pona;\n- a daily queue that prioritizes due mistakes and weak material;\n- local mistake counts, spaced-review dates, practice history, time, and a 35-day calendar;\n- no account, ads, scores, streak pressure, network permission, or analytics.\n\nInstall `Toki-Pona-Drills-v1.0.1.apk` on Android 6.0 or later.\n\nSHA-256: `43e9571fbfcc66b190fbea2988bfc0fd09d70c177d540e0925a894bfcda8deb6`\n\nThe APK was verified by a clean installation, a same-signature reinstall, and an app launch on Android 14. This file replaces the initial v1.0.1 upload, whose uncompressed resource table was not correctly aligned.\n",
+          "assets": [
+            {
+              "name": "Toki-Pona-Drills-v1.0.1.apk",
+              "size": 1422545,
+              "url": "https://github.com/place-of-honor/learn-toki-pona/releases/download/v1.0.1/Toki-Pona-Drills-v1.0.1.apk",
+              "digest": "sha256:43e9571fbfcc66b190fbea2988bfc0fd09d70c177d540e0925a894bfcda8deb6"
+            },
+            {
+              "name": "Toki-Pona-Drills-v1.0.1.apk.sha256",
+              "size": 94,
+              "url": "https://github.com/place-of-honor/learn-toki-pona/releases/download/v1.0.1/Toki-Pona-Drills-v1.0.1.apk.sha256",
+              "digest": "sha256:9a357295f4f0280b4b308a1865d38e3c612e2a934d4dceb1385c695dccfc1130"
+            }
+          ]
+        }
+      ],
+      "workflows": [
+        {
+          "run": 36935197290,
+          "name": "CI",
+          "source_commit": "ef55a23acd94cc501e7a0d5e44ab01296b881c30",
+          "url": "https://github.com/place-of-honor/learn-toki-pona/actions/runs/36935197290",
+          "artifacts": [
+            {
+              "id": 11197901015,
+              "name": "toki-pona-native-debug-apk",
+              "digest": "sha256:7c11311da9d8fb3a0fda9fb40157331c96920075f631f6e070e22a0784c8a7cf",
+              "expired": false,
+              "expires_at": "2026-12-30T22:27:45Z",
+              "size": 952848
+            },
+            {
+              "id": 11197567184,
+              "name": "toki-pona-native-emulator-smoke",
+              "digest": "sha256:7c09cfc28143faab4f12f257001209a197bd259ecc17cfe188741535ac1a1f78",
+              "expired": false,
+              "expires_at": "2026-12-30T22:27:45Z",
+              "size": 87978
+            },
+            {
+              "id": 11197369445,
+              "name": "toki-pona-native-aab",
+              "digest": "sha256:1a4a996a421f660fc8e68bacae90a1384c45e33744d53dd8315887a0dbab39ed",
+              "expired": false,
+              "expires_at": "2026-12-30T22:27:45Z",
+              "size": 817876
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "game",
+      "repo": "place-of-honor/game",
+      "inventory_branch": "main",
+      "releases": [
+        {
+          "tag": "salon-preview-v0.2.3",
+          "commitish": "a68b4edc5b1d7a8444a39d6d854848d6a67b6232",
+          "published": "2026-08-18T13:22:08Z",
+          "body": "Scrolling revision: swipes that begin on tappable pictures now remain scroll gestures, large up/down controls make long choice lists easier to navigate, and the wings are larger with stronger color and outlines. Existing back, exit, picture-tap, and salon state behavior remains intact.",
+          "assets": [
+            {
+              "name": "dress-the-unicorn-salon-preview-v0.2.3.apk",
+              "size": 52647468,
+              "url": "https://github.com/place-of-honor/game/releases/download/salon-preview-v0.2.3/dress-the-unicorn-salon-preview-v0.2.3.apk",
+              "digest": "sha256:6d1971b8f4decdfc11c3e6a26bc7e06f77206284dcee8cb507b6f08687ddf862"
+            }
+          ]
+        },
+        {
+          "tag": "salon-preview-v0.2.2",
+          "commitish": "18b7940c7fb7a193b97421cd24dfc5cffc80b52d",
+          "published": "2026-08-18T04:22:19Z",
+          "body": "Touch/navigation revision: tapping the pictures performs the same actions as tapping their labels, interior screens have a large star back control, and every screen has a clear exit control. The graphical salon content from v0.2.1 remains intact.",
+          "assets": [
+            {
+              "name": "dress-the-unicorn-salon-preview-v0.2.2.apk",
+              "size": 52393091,
+              "url": "https://github.com/place-of-honor/game/releases/download/salon-preview-v0.2.2/dress-the-unicorn-salon-preview-v0.2.2.apk",
+              "digest": "sha256:98fefd4582ff40949bfd4e70407e40a1a75ba881de537d8ebd883225aabadae0"
+            }
+          ]
+        },
+        {
+          "tag": "salon-preview-v0.2.1",
+          "commitish": "40046b7895e6f7e3997115d0560a64d8685ecbce",
+          "published": "2026-08-17T16:59:29Z",
+          "body": "Checked graphical salon preview: all four waiting-room animals render, zebra/horse/both unicorns remain visible throughout the salon, dresses cover the body, outfit/hair/makeup/accessory choices use pictures, the full snack-and-drink menu is illustrated, and the photo room is visual. Text-only state remains available only behind the disabled DEBUG_UI flag.",
+          "assets": [
+            {
+              "name": "dress-the-unicorn-salon-preview-v0.2.1.apk",
+              "size": 52388832,
+              "url": "https://github.com/place-of-honor/game/releases/download/salon-preview-v0.2.1/dress-the-unicorn-salon-preview-v0.2.1.apk",
+              "digest": "sha256:ed40ee7eaa85ea3ecf9c1380415b2c2f317e1093c32600f4a382bcba8e8a5a35"
+            }
+          ]
+        },
+        {
+          "tag": "salon-preview-v0.2.0",
+          "commitish": "3ded6662d476a1704e6bfa634fa50a93861d450e",
+          "published": "2026-08-17T16:56:02Z",
+          "body": "Graphical salon preview: the waiting room now shows all four animals, zebra/horse/both unicorns render throughout the salon, dresses cover the character body, outfit/hair/makeup/accessory choices have pictures, the snack-and-drink shop has illustrated items, and the photo room is visual. Text-only state is retained only behind the disabled DEBUG_UI flag.",
+          "assets": [
+            {
+              "name": "dress-the-unicorn-salon-preview-v0.2.0.apk",
+              "size": 52388832,
+              "url": "https://github.com/place-of-honor/game/releases/download/salon-preview-v0.2.0/dress-the-unicorn-salon-preview-v0.2.0.apk",
+              "digest": "sha256:d4fc57bf9ba6a109273c06f08dc7ec61b40a3a050d4681576b72803e09e5f0b5"
+            }
+          ]
+        },
+        {
+          "tag": "salon-preview-v0.1.0",
+          "commitish": "d90cafe4dd9497402b8ac351472452e2dd79863e",
+          "published": "2026-08-17T16:22:48Z",
+          "body": "First playable Godot salon preview. Choose the zebra, watch it blink, tap Dress up, and switch between two explicitly temporary prototype outfits. Zebra unicorn costume, wings, horn controls, snacks/drinks, and photo flow remain available.",
+          "assets": [
+            {
+              "name": "dress-the-unicorn-salon-preview-v0.1.0.apk",
+              "size": 52351352,
+              "url": "https://github.com/place-of-honor/game/releases/download/salon-preview-v0.1.0/dress-the-unicorn-salon-preview-v0.1.0.apk",
+              "digest": "sha256:37878d3f26189d058f4fe0c42565eb3df8288620870519f258c258be6ee4a359"
+            }
+          ]
+        }
+      ],
+      "workflows": [
+        {
+          "run": 32501367803,
+          "name": "Google Play app bundles",
+          "source_commit": "fcb2d8cb7788cbe11722d58ce97aaff9afd3f614",
+          "url": "https://github.com/place-of-honor/game/actions/runs/32501367803",
+          "artifacts": [
+            {
+              "id": 9454143906,
+              "name": "cheetah-validation-aab",
+              "digest": "sha256:2f85dbd6eb314186427c67b6b286fcda76ac93df756f63557b7cf9d01bd6d7d8",
+              "expired": false,
+              "expires_at": "2026-11-19T16:08:23Z",
+              "size": 121506466
+            },
+            {
+              "id": 9453699793,
+              "name": "salon-validation-aab",
+              "digest": "sha256:5686e78e08e4fe664f2b174e32e80847f3fd34061f36788b8bfb25dea495e81f",
+              "expired": false,
+              "expires_at": "2026-11-19T16:08:23Z",
+              "size": 52280992
+            }
+          ]
+        },
+        {
+          "run": 32271302896,
+          "name": "Check Godot project",
+          "source_commit": "02986c5ab8ab7ad273a08487a0c00a150fdda7d7",
+          "url": "https://github.com/place-of-honor/game/actions/runs/32271302896",
+          "artifacts": []
+        }
+      ]
+    },
+    {
+      "name": "hegel",
+      "repo": "walnut-burgundy/hegel",
+      "inventory_branch": "main",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 32328345461,
+          "name": "Verify Rocq trusted metatheory",
+          "source_commit": "c9cfc85852b6481b4c0ce90ca153b2c2cd6055e9",
+          "url": "https://github.com/walnut-burgundy/hegel/actions/runs/32328345461",
+          "artifacts": []
+        }
+      ]
+    },
+    {
+      "name": "geofence",
+      "repo": "dilapidated-shed/geofence",
+      "inventory_branch": "main",
+      "releases": [],
+      "workflows": []
+    },
+    {
+      "name": "analytic-continuation",
+      "repo": "isomorphismes/holomorphic",
+      "inventory_branch": "main",
+      "releases": [
+        {
+          "tag": "holomorphic",
+          "commitish": "e0c5e779268eedea341f56ede07c1d1559e9d864",
+          "published": "2026-09-09T01:46:34Z",
+          "body": "Phone-approved canonical smooth-orbit explorer built from e0c5e779268eedea341f56ede07c1d1559e9d864.\n\nTwenty-four remote pole singularities stay outside the visible region and follow independent smooth clockwise or counterclockwise circuits with gentle radial bending and slight ellipticity. The holomorphic field continues to evolve independently, preserving the approved whole-field motion while removing Brownian steering from the outer wanderers.\n\nThe APK was rebuilt and signature-verified from the merged main commit.",
+          "assets": [
+            {
+              "name": "holomorphic.apk",
+              "size": 157190,
+              "url": "https://github.com/isomorphismes/holomorphic/releases/download/holomorphic/holomorphic.apk",
+              "digest": "sha256:f0283d53aefc0a134186ae5f8ac1b8f0b0ac4bf923393e43edcbc25a71c39c1a"
+            },
+            {
+              "name": "holomorphic.apk.sha256",
+              "size": 82,
+              "url": "https://github.com/isomorphismes/holomorphic/releases/download/holomorphic/holomorphic.apk.sha256",
+              "digest": "sha256:875b7ef5a23f5ebff77d99b5d36986d1b8c3739332c927240289571a0d135a29"
+            }
+          ]
+        },
+        {
+          "tag": "v0.2.1",
+          "commitish": "db36e2d5fa936019a3239de4fcb190b4b324611e",
+          "published": "2026-08-22T01:32:14Z",
+          "body": "Corrected Android test APK from commit db36e2d5fa936019a3239de4fcb190b4b324611e.\n\nThe launcher opens directly into the live native EGL/OpenGL ES convergence explorer with editable zero and infinity controls. Both guided movies are packaged as Android-compatible H.264 Constrained Baseline, and CI played and captured each movie, rendered the explorer, and accepted an explorer touch on this exact APK before publication.\n\nIt uses the same repository test-only signing key as earlier GitHub APKs, so it installs as an update. It is not the separately signed Google Play production build.",
+          "assets": [
+            {
+              "name": "analytic-continuation-0.2.1.apk",
+              "size": 2300711,
+              "url": "https://github.com/isomorphismes/holomorphic/releases/download/v0.2.1/analytic-continuation-0.2.1.apk",
+              "digest": "sha256:e1ee0dfb76e29d2eab7ba6db736fceea38c5c0459edfa46924bcf27fc3d112de"
+            },
+            {
+              "name": "analytic-continuation-0.2.1.apk.sha256",
+              "size": 98,
+              "url": "https://github.com/isomorphismes/holomorphic/releases/download/v0.2.1/analytic-continuation-0.2.1.apk.sha256",
+              "digest": "sha256:cdb7b065d742b0a90f3d97c25b336d29a54f262219a1eadf3ba1d95c32a8952b"
+            }
+          ]
+        },
+        {
+          "tag": "v0.2.0",
+          "commitish": "723882a9bf72bc8e21615d044d3d9afb323b587e",
+          "published": "2026-08-22T00:51:10Z",
+          "body": "This prerelease is tied to an older pre-rebase commit. Use v0.2.1, which is gated on guided-content playback and a live explorer touch.",
+          "assets": [
+            {
+              "name": "analytic-continuation-0.2.0.apk",
+              "size": 197092,
+              "url": "https://github.com/isomorphismes/holomorphic/releases/download/v0.2.0/analytic-continuation-0.2.0.apk",
+              "digest": "sha256:a63a10a7f379ab27940f30820c5cc897d431d1a014c30b6f9f2d5d563fa7df03"
+            },
+            {
+              "name": "analytic-continuation-0.2.0.apk.sha256",
+              "size": 98,
+              "url": "https://github.com/isomorphismes/holomorphic/releases/download/v0.2.0/analytic-continuation-0.2.0.apk.sha256",
+              "digest": "sha256:2e6e1f9ca30932cc715f596bf705b5b3425ac1a4f98c96d3b6cb0cd0e84e777f"
+            }
+          ]
+        },
+        {
+          "tag": "v0.1.0",
+          "commitish": "55365599a57367d22302f3e38f3698cd66171188",
+          "published": "2026-08-22T00:10:04Z",
+          "body": "This build has a known blank-movie playback problem on some Android devices. Use v0.2.1 instead.",
+          "assets": [
+            {
+              "name": "analytic-continuation-0.1.0.apk",
+              "size": 1513933,
+              "url": "https://github.com/isomorphismes/holomorphic/releases/download/v0.1.0/analytic-continuation-0.1.0.apk",
+              "digest": "sha256:2df0e68d5fe7b35c8419546c654cfc99782e129eb5b6447740c11e3cd0a6f415"
+            },
+            {
+              "name": "analytic-continuation-0.1.0.apk.sha256",
+              "size": 98,
+              "url": "https://github.com/isomorphismes/holomorphic/releases/download/v0.1.0/analytic-continuation-0.1.0.apk.sha256",
+              "digest": "sha256:e377d8ecfeab6a3120a837ab14cfa8f0d4945f0396b626e3d3c361265847f52e"
+            }
+          ]
+        },
+        {
+          "tag": "lasso-dev-v0.1.1",
+          "commitish": "f2e428e5807ddf39b284a79177346d02e4247f37",
+          "published": "2026-08-22T12:36:52Z",
+          "body": "Color-corrected public sideload build of the analytic-continuation lasso experiment from lasso commit f2e428e5807ddf39b284a79177346d02e4247f37.\n\nRestores the original CIELUV/HCL domain-coloring palette while retaining the cheaper Blaschke phase/modulus accumulation. Package: org.isomorphisms.analyticcontinuation.lasso.dev. Android version code: 2.\n\nThis APK uses the same permanent non-production sideload signing key as Lasso Dev v0.1.0, so it updates that installation in place.",
+          "assets": [
+            {
+              "name": "analytic-continuation-lasso-dev.apk",
+              "size": 151064,
+              "url": "https://github.com/isomorphismes/holomorphic/releases/download/lasso-dev-v0.1.1/analytic-continuation-lasso-dev.apk",
+              "digest": "sha256:27f3d79629a90aea2473c7b36b0c74abe57c6235a74682a4936a526f8775445d"
+            },
+            {
+              "name": "analytic-continuation-lasso-dev.apk.sha256",
+              "size": 102,
+              "url": "https://github.com/isomorphismes/holomorphic/releases/download/lasso-dev-v0.1.1/analytic-continuation-lasso-dev.apk.sha256",
+              "digest": "sha256:96d6d3e9f1e93d02d423c2817477a23cdc4e12aa6290a1618412491c47dffc97"
+            }
+          ]
+        }
+      ],
+      "workflows": [
+        {
+          "run": 36955372645,
+          "name": "tests",
+          "source_commit": "d506bfe70ff362aa9cb0091f96ba1a900ef27676",
+          "url": "https://github.com/isomorphismes/holomorphic/actions/runs/36955372645",
+          "artifacts": []
+        },
+        {
+          "run": 36955372544,
+          "name": "Build, test, and publish holomorphic-random APK",
+          "source_commit": "d506bfe70ff362aa9cb0091f96ba1a900ef27676",
+          "url": "https://github.com/isomorphismes/holomorphic/actions/runs/36955372544",
+          "artifacts": [
+            {
+              "id": 11205841745,
+              "name": "analytic-continuation-0.2.1-apk",
+              "digest": "sha256:c06f13d0b623cef0d598b49f7f87e45dc4ba08c4f857522ca1f961086336c332",
+              "expired": false,
+              "expires_at": "2026-12-31T02:23:04Z",
+              "size": 63771
+            },
+            {
+              "id": 11205397767,
+              "name": "analytic-continuation-0.2.1-emulator-evidence",
+              "digest": "sha256:a52c722d4cdfdb06eeb2c9194687677489217d868e0353b55bd08e92d87edab4",
+              "expired": false,
+              "expires_at": "2026-12-31T02:23:04Z",
+              "size": 545427
+            }
+          ]
+        },
+        {
+          "run": 36955372540,
+          "name": "Holomorphic Random Explorer APK",
+          "source_commit": "d506bfe70ff362aa9cb0091f96ba1a900ef27676",
+          "url": "https://github.com/isomorphismes/holomorphic/actions/runs/36955372540",
+          "artifacts": [
+            {
+              "id": 11206295102,
+              "name": "analytic-continuation-holomorphic-emulator-evidence",
+              "digest": "sha256:a1535c797d490e7217a9cf49f93147f6ca6f51f94bf559df3f1a92f167560d2a",
+              "expired": false,
+              "expires_at": "2026-12-31T02:23:04Z",
+              "size": 1200968
+            },
+            {
+              "id": 11205094531,
+              "name": "analytic-continuation-holomorphic-apk",
+              "digest": "sha256:e5380f49e5dcfa3092bce8b7a58c3e211bee660620db68709832716a507f3361",
+              "expired": false,
+              "expires_at": "2026-12-31T02:23:04Z",
+              "size": 63479
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "non-poly",
+      "repo": "isomorphismes/non-poly",
+      "inventory_branch": "main",
+      "releases": [],
+      "workflows": []
+    },
+    {
+      "name": "coefficient-root-dance",
+      "repo": "isomorphismes/coefficient-root-dance",
+      "inventory_branch": "main",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 33016190947,
+          "name": "Android native prototype",
+          "source_commit": "4cb4a1f0af2b72c63a52c37dfaad11157d0b734a",
+          "url": "https://github.com/isomorphismes/coefficient-root-dance/actions/runs/33016190947",
+          "artifacts": [
+            {
+              "id": 9624695654,
+              "name": "emulator-evidence",
+              "digest": "sha256:3d6577a01a517bae230ba27464de4abff92d50dc24b98b574ef5f5668c617c56",
+              "expired": false,
+              "expires_at": "2026-11-24T21:36:59Z",
+              "size": 113845
+            },
+            {
+              "id": 9624620820,
+              "name": "coefficient-root-dance-debug-apk",
+              "digest": "sha256:947fe73ce94a2dd0916ff37a8f73cefa25c98b870d507a65f957c3f436b473b4",
+              "expired": false,
+              "expires_at": "2026-11-24T21:36:59Z",
+              "size": 901233
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cayley",
+      "repo": "isomorphismes/Cayley",
+      "inventory_branch": "cayley",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 35906805645,
+          "name": "F-Droid release build",
+          "source_commit": "61f5937498b4dbe5e4d26f31fd8c9cb7da607235",
+          "url": "https://github.com/isomorphismes/Cayley/actions/runs/35906805645",
+          "artifacts": [
+            {
+              "id": 10771213538,
+              "name": "cayley-fdroid-unsigned",
+              "digest": "sha256:cc41c0ba520b556ffe6c02e2fcb37755c930bff275275bc600da81c6fafd1aa8",
+              "expired": false,
+              "expires_at": "2026-10-23T19:05:12Z",
+              "size": 15067585
+            }
+          ]
+        },
+        {
+          "run": 35906805547,
+          "name": "Pattern tests",
+          "source_commit": "61f5937498b4dbe5e4d26f31fd8c9cb7da607235",
+          "url": "https://github.com/isomorphismes/Cayley/actions/runs/35906805547",
+          "artifacts": []
+        }
+      ]
+    },
+    {
+      "name": "tablature",
+      "repo": "dilapidated-shed/tablature",
+      "inventory_branch": "master",
+      "releases": [],
+      "workflows": []
+    },
+    {
+      "name": "zoneedit",
+      "repo": "Ashtray-Archer/zoneedit",
+      "inventory_branch": "main",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 32604002688,
+          "name": "Android",
+          "source_commit": "3e0ffce87b1a0747f63a2f665b59fe178db4d477",
+          "url": "https://github.com/Ashtray-Archer/zoneedit/actions/runs/32604002688",
+          "artifacts": [
+            {
+              "id": 9483656467,
+              "name": "zoneedit-mobile-debug-apk",
+              "digest": "sha256:02f885dcec177f42ed6161e03f9ec0a66ac341e19c31530d3db01f0bf8d4bd30",
+              "expired": false,
+              "expires_at": "2026-11-20T22:59:57Z",
+              "size": 6084
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "L",
+      "repo": "isomorphismes/L",
+      "inventory_branch": "main",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 32696057716,
+          "name": "F-Droid release build",
+          "source_commit": "fa3b5beab4b2c31b44fc9a3845b59d359d51f883",
+          "url": "https://github.com/isomorphismes/L/actions/runs/32696057716",
+          "artifacts": [
+            {
+              "id": 9508873395,
+              "name": "l-fdroid-unsigned",
+              "digest": "sha256:3472bd602f7428061cf2b3029babfa1bee115a5ebd140a145f1d42a2216234c5",
+              "expired": false,
+              "expires_at": "2026-11-22T06:08:08Z",
+              "size": 665809
+            }
+          ]
+        },
+        {
+          "run": 32696057672,
+          "name": "L Android Wegert",
+          "source_commit": "fa3b5beab4b2c31b44fc9a3845b59d359d51f883",
+          "url": "https://github.com/isomorphismes/L/actions/runs/32696057672",
+          "artifacts": [
+            {
+              "id": 9508919130,
+              "name": "l-phone-emulator-evidence",
+              "digest": "sha256:184e3fe2501f3fd3332b3aae90fcbd08675a458e55eccb90b904e4371d361b62",
+              "expired": false,
+              "expires_at": "2026-11-22T06:08:08Z",
+              "size": 309349
+            },
+            {
+              "id": 9508879416,
+              "name": "l-debug-apk",
+              "digest": "sha256:99ac6cc5f03246a84be52408e7a2dbce3c020bba10b04d5c1fc26fe50b93849c",
+              "expired": false,
+              "expires_at": "2026-11-22T06:08:08Z",
+              "size": 899673
+            },
+            {
+              "id": 9508879003,
+              "name": "l-android-build-log",
+              "digest": "sha256:c6670939358a85a897f6e9a81e8c3fd2553402449e677e66b99df7eb5a8be688",
+              "expired": false,
+              "expires_at": "2026-11-22T06:08:08Z",
+              "size": 1313
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "soap",
+      "repo": "isomorphismes/soap",
+      "inventory_branch": "main",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 37315624609,
+          "name": "F-Droid release build",
+          "source_commit": "510f75e064f4aaac3624877d9ccbe8b1d78de16d",
+          "url": "https://github.com/isomorphismes/soap/actions/runs/37315624609",
+          "artifacts": [
+            {
+              "id": 11347444638,
+              "name": "soap-fdroid-unsigned",
+              "digest": "sha256:7fc62c79fc4ec32ad72f0955e7f32f839b28fa1033c77cb4086887e464b8ac83",
+              "expired": false,
+              "expires_at": "2027-01-03T13:17:14Z",
+              "size": 676503
+            }
+          ]
+        },
+        {
+          "run": 37315624596,
+          "name": "Edric surface player",
+          "source_commit": "510f75e064f4aaac3624877d9ccbe8b1d78de16d",
+          "url": "https://github.com/isomorphismes/soap/actions/runs/37315624596",
+          "artifacts": [
+            {
+              "id": 11349495154,
+              "name": "soap-debug-apk",
+              "digest": "sha256:6699eca5a40f4200d62af43d70674b4fe72a3810fad60f096da634194444de82",
+              "expired": false,
+              "expires_at": "2027-01-03T13:17:14Z",
+              "size": 912101
+            },
+            {
+              "id": 11348197931,
+              "name": "soap-emulator-evidence",
+              "digest": "sha256:7cabebfbd7b77af595101880419e54cffc1e29bf23becdb1749e89a6a0692276",
+              "expired": false,
+              "expires_at": "2027-01-03T13:17:14Z",
+              "size": 240449
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "klein-quartic",
+      "repo": "isomorphismes/klein-quartic",
+      "inventory_branch": "master",
+      "releases": [],
+      "workflows": []
+    },
+    {
+      "name": "hopf_fibration",
+      "repo": "isomorphismes/hopf_fibration",
+      "inventory_branch": "master",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 34647401563,
+          "name": "Android native Hopf",
+          "source_commit": "f2fdb7e6d626d66df8af820d3acd0cba641fcc41",
+          "url": "https://github.com/isomorphismes/hopf_fibration/actions/runs/34647401563",
+          "artifacts": [
+            {
+              "id": 10283191406,
+              "name": "hopf-debug-apk",
+              "digest": "sha256:257d59ea0128d99fcb8873f96507efb34885fd4ff1d1d2ba01a239f35d6be18d",
+              "expired": false,
+              "expires_at": "2026-12-10T21:03:08Z",
+              "size": 907235
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ortho",
+      "repo": "isomorphismes/ortho",
+      "inventory_branch": "main",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 34551490361,
+          "name": "Android native orthant",
+          "source_commit": "b7128acbfd22bc69c91d3dd4a1d0a686c01cfdb3",
+          "url": "https://github.com/isomorphismes/ortho/actions/runs/34551490361",
+          "artifacts": [
+            {
+              "id": 10181009537,
+              "name": "ortho-debug-apk",
+              "digest": "sha256:0132e5f148603909ea9dcb14828a245de7e94fe098dc6b64fd8e9f058805a8e1",
+              "expired": false,
+              "expires_at": "2026-12-10T01:38:40Z",
+              "size": 36021
+            }
+          ]
+        },
+        {
+          "run": 32695787319,
+          "name": "F-Droid release build",
+          "source_commit": "35c901b51a25326078503c096c83ca191263a6ea",
+          "url": "https://github.com/isomorphismes/ortho/actions/runs/32695787319",
+          "artifacts": [
+            {
+              "id": 9508792222,
+              "name": "ortho-fdroid-unsigned",
+              "digest": "sha256:3d69fc9a729966c9b28e93678ef3cd4648f0636434cfcacc69a6320dce799fcd",
+              "expired": false,
+              "expires_at": "2026-11-22T06:04:03Z",
+              "size": 30950
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "kleinian-groups",
+      "repo": "isomorphismes/kleinian-groups",
+      "inventory_branch": "master",
+      "releases": [],
+      "workflows": []
+    },
+    {
+      "name": "theta",
+      "repo": "isomorphismes/theta",
+      "inventory_branch": "main",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 32778369675,
+          "name": "renderer bakeoff",
+          "source_commit": "946ab4e13690c65cf812844144345f61a803978a",
+          "url": "https://github.com/isomorphismes/theta/actions/runs/32778369675",
+          "artifacts": [
+            {
+              "id": 9539492068,
+              "name": "theta-renderer-bakeoff-apk",
+              "digest": "sha256:7650b602ca4d9f70a42b461988ff856032997b8e6061090bb52d786096d5d500",
+              "expired": false,
+              "expires_at": "2026-11-22T21:14:00Z",
+              "size": 5227597
+            },
+            {
+              "id": 9539349841,
+              "name": "theta-bakeoff-edric-runtime",
+              "digest": "sha256:46b899084fc7b2cb0e9afeaac2adb6062def4e4caa55e6de601618e88549b7d9",
+              "expired": false,
+              "expires_at": "2026-11-22T21:14:00Z",
+              "size": 6437
+            },
+            {
+              "id": 9538992859,
+              "name": "theta-bakeoff-web-assets",
+              "digest": "sha256:2242ae01cfbae54e6e0a097deb49fdb58bab7bbe9bf1e4efd59d3510918e304a",
+              "expired": false,
+              "expires_at": "2026-11-22T21:14:00Z",
+              "size": 3665620
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "indras-pearls",
+      "repo": "isomorphismes/indras-pearls",
+      "inventory_branch": "main",
+      "releases": [],
+      "workflows": [
+        {
+          "run": 37178057821,
+          "name": "Android native Indra's Pearls stub",
+          "source_commit": "e6c80fb390209a848308041cc643b2d73c21d9ca",
+          "url": "https://github.com/isomorphismes/indras-pearls/actions/runs/37178057821",
+          "artifacts": [
+            {
+              "id": 11295090439,
+              "name": "indras-pearls-ick-armv7-e6c80fb390209a848308041cc643b2d73c21d9ca",
+              "digest": "sha256:5fb224d1cf3cac4850b842749c9d17b723f0429e1706d08826a5c5461717cd9c",
+              "expired": false,
+              "expires_at": "2027-01-02T04:48:26Z",
+              "size": 29986
+            },
+            {
+              "id": 11294680085,
+              "name": "indras-pearls-qemu-traces-37178057821",
+              "digest": "sha256:72cccaffc6ad2f54eeb8ed605ca6712395dd136b8d143df6bbbf01a9b0849a3b",
+              "expired": false,
+              "expires_at": "2027-01-02T04:48:26Z",
+              "size": 590781
+            },
+            {
+              "id": 11294101463,
+              "name": "indras-pearls-emulator-accepted",
+              "digest": "sha256:1346f7c42df41fef7518d850a4389ddfc42d6aa8dc292dfbb9608095c2997f47",
+              "expired": false,
+              "expires_at": "2027-01-02T04:48:26Z",
+              "size": 75071
+            },
+            {
+              "id": 11294047606,
+              "name": "indras-pearls-qemu-original-37178057821",
+              "digest": "sha256:1bb3119c65e6fcc2364dfbcadd6260072bccb4c0521080baf249c186c834b7ed",
+              "expired": false,
+              "expires_at": "2027-01-02T04:48:26Z",
+              "size": 154428
+            },
+            {
+              "id": 11293199289,
+              "name": "indras-pearls-restored-candidate",
+              "digest": "sha256:6f4ad1d3fefdc9dbb395648b3c2c27ef464af0ec020fb908667c7dc121dc05b5",
+              "expired": false,
+              "expires_at": "2027-01-02T04:48:26Z",
+              "size": 74214
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

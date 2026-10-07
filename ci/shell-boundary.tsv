@@ -39,3 +39,9 @@ tests/device-state.sh	test	sh	Stage-zero inventory regression fixtures
 tests/shizuku-state.sh	test	sh	Stage-zero snapshot corruption and precedence fixtures
 android/acceptance/reddit-installed.sh	test	sh	Inherited installed-runtime acceptance procedure pending Kitchen migration
 tests/android-reddit-artifact.sh	test	sh	Published-artifact verifier inherited from retired generation
+tests/android-ish-artifact.sh	test	sh	Stage-zero installer with real paired artifacts and synthetic device identities
+tests/android-target-cli.sh	test	sh	Cross-language stage-zero identity command boundary fixtures
+android/acceptance/ish-installed.grease	grease	grease	Post-bootstrap physical-runtime action through canonical stage-zero identity CLI
+tests/ish-acceptance-fixtures.grease	test	grease	Host orchestration fixtures never submitted as physical evidence
+tests/fixtures/ish-runtime/fixture-ish.grease	test	grease	Synthetic process oracle for acceptance refusal and receipt sequencing
+tests/fixtures/ish-runtime/fixture-chez.grease	test	grease	Synthetic runtime oracle for acceptance sequencing

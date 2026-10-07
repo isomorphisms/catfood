@@ -51,6 +51,12 @@ jobs:
       - name: Verify exact published Reddit archives without launching Android
         shell: sh
         run: sh tests/android-reddit-artifact.sh
+      - name: Verify exact paired Ish archives without launching Android
+        shell: sh
+        run: sh tests/android-ish-artifact.sh
+      - name: Exercise cross-language target identity command boundary
+        shell: sh
+        run: sh tests/android-target-cli.sh
       - name: Exercise Crawl Space Android runtime contract
         shell: sh
         run: sh tests/android-crawlspace.sh

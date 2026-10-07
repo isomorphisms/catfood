@@ -1,0 +1,142 @@
+#!/usr/bin/env grease
+# Physical runtime execution, after stage-zero Cat Food installation.
+set -eu
+var cyan = ''
+var yellow = ''
+var green = ''
+var red = ''
+var reset = ''
+if test -t 1 {
+    setvar cyan = r'\033[36m'
+    setvar yellow = r'\033[33m'
+    setvar green = r'\033[32m'
+    setvar red = r'\033[31m'
+    setvar reset = r'\033[0m'
+}
+proc fail(message) {
+    printf r'%bFAIL%b %s\n' $red $reset $message >&2
+    exit 1
+}
+proc pass(message) { printf r'%bPASS%b %s\n' $green $reset $message }
+proc section(message) { printf r'\n%b== %s ==%b\n' $cyan $message $reset }
+test "$#" -eq 2 || fail 'usage: grease ish-installed.grease phone|c67|tablet ABSOLUTE_INSTALLED_WORKSPACE'
+var target = $1
+var workspace = $2
+if (not workspace.startsWith('/')) { fail 'installed workspace must be an absolute observed path' }
+var own_dir = $(dirname -- "$0")
+var root = $(cd -- "$own_dir/../.." && pwd)
+# Invoke the existing stage-zero identity oracle through its command boundary.
+# Grease intentionally does not parse the inherited POSIX helper implementation.
+for override in CATFOOD_GETPROP CATFOOD_DEVICE_ID CATFOOD_DEVICE_ABI CATFOOD_TOOLS CATFOOD_ANDROID_PACKAGES CATFOOD_ANDROID_DELIVERY {
+    var observed = $(printenv $override || true)
+    test -z "$observed" || fail "physical acceptance refuses synthetic/manifest override $override"
+}
+test -x /system/bin/getprop || fail 'requires direct Android Termux execution'
+test -x /system/bin/toybox || fail 'Android toybox is unavailable'
+var prefix = $(printenv PREFIX || true)
+test "$prefix" = /data/data/com.termux/files/usr || fail 'requires ordinary private Termux'
+var device_id = $(CATFOOD_GETPROP=/system/bin/getprop sh "$root/android/target.sh" device-id $target)
+var abi = $(sh "$root/android/target.sh" expected-abi $target)
+var sdk = $(/system/bin/getprop ro.build.version.sdk)
+test "$sdk" -ge 28 || fail 'Ish package requires Android API 28 or later'
+var package = "ish-$abi"
+var install_receipt = "$workspace/receipts/$target-$package.tsv"
+sh "$root/android/check.sh" receipt $install_receipt $target $device_id > /dev/null
+var package_dir = $(awk -F r'\t' '$1 == "installation_evidence" {print $2}' $install_receipt)
+test -d "$package_dir" || fail 'installed package directory is missing'
+var archive_sha = $(awk -F r'\t' '$1 == "sha256" {print $2}' $install_receipt)
+var archive = "$workspace/downloads/$package-$archive_sha"
+printf r'%s  %s\n' $archive_sha $archive | sha256sum -c - > /dev/null
+var sealed_digests = $(mktemp)
+tar -xzOf $archive ./receipts/files.sha256 > $sealed_digests
+cmp $sealed_digests "$package_dir/receipts/files.sha256" || fail 'private runtime digest record differs from the pinned published archive'
+rm $sealed_digests
+var resolved = $(readlink -f "$workspace/bin/ish")
+test "$resolved" = "$package_dir/bin/ish" || fail 'stable Ish command does not resolve to the accepted package'
+test ! -L "$package_dir/bin/ish" || fail 'Ish package aliases another executable'
+for alias in grease ysh osh oils-for-unix { test ! -e "$package_dir/bin/$alias" || fail "Ish package exposes alias $alias" }
+var tab = $(printf r'\t')
+grep -Fqx "installation_result${tab}PASS" $install_receipt || fail 'no successful installation receipt'
+grep -Fqx "abi${tab}$abi" "$package_dir/receipts/build.tsv" || fail 'embedded package ABI mismatch'
+grep -Fqx "source_sha${tab}0e6ba10f8edde26e940685ac386ad4279afbe259" "$package_dir/receipts/build.tsv" || fail 'embedded package source mismatch'
+var payload_count = $(wc -l < "$package_dir/receipts/files.sha256")
+test "$payload_count" -eq 6 || fail 'incomplete private runtime digest record'
+while read -r digest recorded_path {
+    var relative = "${recorded_path#*/build/package/}"
+    case $relative in
+        bin/ish | libexec/ish/scheme | libexec/ish/petite.boot | libexec/ish/scheme.boot | libexec/ish/ish-backend.so | libexec/ish/libish_runtime.so) ;;
+        *) fail "unexpected packaged digest path $relative" ;;
+    esac
+    printf r'%s  %s\n' $digest "$package_dir/$relative" | sha256sum -c - > /dev/null
+} < "$package_dir/receipts/files.sha256"
+section "Ish $target / $abi"
+printf r'device_id\t%s\npackage\t%s\n' $device_id $package
+pass 'physical identity, instance, install receipt and all private payload digests'
+var evidence = $(mktemp -d "$workspace/receipts/ish-$target-runtime.XXXXXX")
+var source_file = "$evidence/probe.ish"
+var executable = "$workspace/bin/ish"
+var runtime = "$package_dir/libexec/ish"
+printf r'%bACTION%b Execute bundled Chez and compiled Ish; retain logs at %s\n' $yellow $reset $evidence
+env "LD_LIBRARY_PATH=$runtime" "$runtime/scheme" -B "$runtime/petite.boot" -B "$runtime/scheme.boot" --version > "$evidence/chez.log" 2>&1
+printf r'%s\n' '(display "CHEZ-EVAL-PASS") (newline) (exit 0)' |
+    env "LD_LIBRARY_PATH=$runtime" "$runtime/scheme" -B "$runtime/petite.boot" -B "$runtime/scheme.boot" -q > "$evidence/chez-eval.log" 2> "$evidence/chez-eval.stderr"
+grep -Fx 'CHEZ-EVAL-PASS' "$evidence/chez-eval.log"
+test ! -s "$evidence/chez-eval.stderr" || fail 'ordinary Chez evaluation emitted diagnostics'
+printf r'%s\n' '/system/bin/toybox echo café $HOME;*' > $source_file
+$executable $source_file > "$evidence/literal.log" 2> "$evidence/literal.stderr"
+grep -Fx 'café $HOME;*' "$evidence/literal.log"
+test ! -s "$evidence/literal.stderr" || fail 'ordinary Ish execution emitted diagnostics'
+printf r'%s\n' '/system/bin/toybox env' > $source_file
+env ISH_ACCEPTANCE_VALUE=preserved $executable $source_file > "$evidence/environment.log"
+grep -Fx 'ISH_ACCEPTANCE_VALUE=preserved' "$evidence/environment.log"
+printf r'%s\n' '/system/bin/toybox cat' > $source_file
+printf r'\000\377Z' > "$evidence/stdin.bin"
+$executable $source_file < "$evidence/stdin.bin" > "$evidence/stdout.bin"
+cmp "$evidence/stdin.bin" "$evidence/stdout.bin"
+proc expect-status(expected, name, diagnostic) {
+    try { $executable $source_file > "$evidence/$name.stdout" 2> "$evidence/$name.stderr" }
+    var status = _error.code
+    test "$status" -eq "$expected" || fail "$name returned $status, expected $expected"
+    test ! -s "$evidence/$name.stdout" || fail "$name unexpectedly produced output"
+    if test -n "$diagnostic" {
+        grep -F "$diagnostic" "$evidence/$name.stderr" > /dev/null
+    } else {
+        test ! -s "$evidence/$name.stderr" || fail "$name unexpectedly produced diagnostics"
+    }
+    printf r'status\t%s\n' $status > "$evidence/$name.status"
+}
+printf r'%s\n' '/system/bin/toybox false' > $source_file
+expect-status 1 requested-false ''
+printf r'%s\n' 'toybox echo must-not-search-PATH' > $source_file
+expect-status 126 no-path 'could not replace ish with executable "toybox"'
+printf r'%s\n' '/definitely/not/present/ish-probe alpha beta' > $source_file
+expect-status 126 missing 'could not replace ish with executable "/definitely/not/present/ish-probe"'
+printf r'bad\000name input\n' > $source_file
+expect-status 2 nul 'source contains NUL text'
+printf r'\377\n' > $source_file
+expect-status 2 utf8 'source is not UTF-8 near byte 0'
+write -n '' > $source_file
+expect-status 2 empty 'incomplete incantation: expected a name at [0,0)'
+pass 'Chez and Ish behavior, inheritance, process status and negative semantics'
+{
+    printf r'target\t%s\ndevice_id\t%s\nabi\t%s\n' $target $device_id $abi
+    printf r'model\t%s\n' "$(/system/bin/getprop ro.product.model)"
+    printf r'product\t%s\n' "$(/system/bin/getprop ro.product.device)"
+    printf r'fingerprint\t%s\n' "$(/system/bin/getprop ro.build.fingerprint)"
+} > "$evidence/device.tsv"
+var hashes = $(mktemp "$workspace/receipts/.ish-hashes.XXXXXX")
+find $evidence -type f -exec sha256sum '{}' '+' > $hashes
+mv $hashes "$evidence/SHA256SUMS"
+var physical_receipt = "$evidence/$target-ish-physical.tsv"
+awk -F r'\t' -v r'OFS=\t' -v evidence="$evidence" '
+    $1 == "launch_result" || $1 == "runtime_result" || $1 == "physical_device_result" {$2="PASS"}
+    $1 == "launch_evidence" {$2=evidence "/literal.log"}
+    $1 == "runtime_evidence" {$2=evidence "/SHA256SUMS"}
+    $1 == "physical_device_evidence" {$2=evidence "/device.tsv"}
+    {print}
+' $install_receipt > "$physical_receipt.tmp"
+sh "$root/android/check.sh" receipt "$physical_receipt.tmp" $target $device_id > /dev/null
+mv "$physical_receipt.tmp" $physical_receipt
+section 'Receipt'
+cat $physical_receipt
+pass "physical Ish acceptance receipt: $physical_receipt"
