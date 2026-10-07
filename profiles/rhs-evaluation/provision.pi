@@ -53,33 +53,10 @@ def provision(work ∈ str) → None:
         raise ValueError("This profile requires observed Ubuntu")
     verify_source(work, "ick", ICK)
     verify_source(work, "ithon", ITHON)
-    write(work + "/provision/host.txt", release + "\n" + platform.platform() + "\n")
+    description ∈ str ← platform.platform()
+    write(work + "/provision/host.txt", release + "\n" + description + "\n")
     run(["sudo", "apt-get", "update"], work, work + "/provision/apt-update")
     run(["sudo", "apt-get", "install", "-y", "build-essential", "flex", "bison", "texinfo", "libgmp-dev", "libmpfr-dev", "libmpc-dev", "libisl-dev", "libzstd-dev", "binutils-aarch64-linux-gnu", "gcc-aarch64-linux-gnu", "libc6-dev-arm64-cross", "qemu-user", "python3-venv"], work, work + "/provision/apt-install")
-    # Existing owner materializer is inherited bootstrap source.
-    run(["sh", work + "/ick/ick/materialize.sh", work + "/ick/gcc", work + "/ick-source"], work, work + "/provision/materialize")
-    build ∈ str ← work + "/ick-build"
-    Path(build).mkdir(parents=True, exist_ok=True)
-    run([work + "/ick-source/configure", "--target=aarch64-linux-gnu", "--prefix=" + work + "/ick-stage", "--with-as=/usr/bin/aarch64-linux-gnu-as", "--with-ld=/usr/bin/aarch64-linux-gnu-ld", "--enable-languages=c", "--disable-bootstrap", "--disable-multilib", "--disable-nls", "--disable-shared", "--disable-threads", "--without-headers", "--disable-libatomic", "--disable-libgomp", "--disable-libquadmath", "--disable-libssp", "--disable-libvtv"], build, work + "/provision/configure")
-    print("Building pinned ICK C compiler")
-    run(["make", "-j2", "all-gcc"], build, work + "/provision/build")
-    run(["make", "install-gcc"], build, work + "/provision/install")
-    compiler ∈ str ← work + "/ick-stage/bin/aarch64-linux-gnu-gcc"
-    cc1 ∈ str ← run([compiler, "-print-prog-name=cc1"], work, work + "/provision/cc1").strip()
-    target ∈ str ← run([compiler, "-dumpmachine"], work, work + "/provision/target").strip()
-    if target != "aarch64-linux-gnu":
-        raise ValueError("ICK target does not match declared qualification")
-    # Foreign cross-GCC is queried only for bootstrap CRT/libgcc support paths.
-    libgcc ∈ str ← run(["aarch64-linux-gnu-gcc", "-print-libgcc-file-name"], work, work + "/provision/foreign-support-path").strip()
-    support ∈ str ← str(Path(libgcc).parent)
-    syslib ∈ str ← "/usr/aarch64-linux-gnu/lib"
-    argv ∈ list[str] ← [compiler, "-std=c11", "-Wall", "-Wextra", "-Wpedantic", "@OPT@", "-isystem", "/usr/aarch64-linux-gnu/include", "-nostdlib", "-static", "-no-pie", syslib + "/crt1.o", syslib + "/crti.o", support + "/crtbeginT.o", "@SOURCE@", "-L" + syslib, "-L" + support, "-Wl,--start-group", "-lc", "-lm", "-lgcc", "-lgcc_eh", "-Wl,--end-group", support + "/crtend.o", syslib + "/crtn.o", "-o", "@OUTPUT@"]
-    joined ∈ str ← "\n".join(argv)
-    write(work + "/profile/compile-argv.txt", joined + "\n")
-    write(work + "/profile/runtime-argv.txt", "/usr/bin/qemu-aarch64\n")
-    write(work + "/profile/profile.tsv", "toolchain\tick\ntarget\tLinux/AArch64/QEMU\nick_revision\t" + ICK + "\nithon_revision\t" + ITHON + "\ncompiler\t" + compiler + "\ncompiler_sha256\t" + digest(Path(compiler).read_bytes()) + "\ncc1\t" + cc1 + "\ncc1_sha256\t" + digest(Path(cc1).read_bytes()) + "\nforeign_support\t" + support + "\n")
-    run(["dpkg-query", "-W"], work, work + "/provision/packages")
-    run(["qemu-aarch64", "--version"], work, work + "/provision/qemu")
     archive ∈ str ← work + "/provision/grease.zip"
     run(["gh", "api", "/repos/dilapidated-shed/grease/actions/artifacts/11419782646/zip"], work, work + "/provision/grease-download")
     Path(archive).write_bytes(Path(work + "/provision/grease-download/stdout.bin").read_bytes())
@@ -110,6 +87,31 @@ def provision(work ∈ str) → None:
     run([interpreter, "-m", "pip", "install", "--only-binary=:all:", "transformers==4.46.3"], work, work + "/provision/transformers")
     freeze ∈ str ← run([interpreter, "-m", "pip", "freeze", "--all"], work, work + "/provision/dependencies")
     write(work + "/profile/dependencies.txt", freeze)
+    print("Pinned Grease and foreign model runtime acquired")
+    # Existing owner materializer is inherited bootstrap source.
+    run(["sh", work + "/ick/ick/materialize.sh", work + "/ick/gcc", work + "/ick-source"], work, work + "/provision/materialize")
+    build ∈ str ← work + "/ick-build"
+    Path(build).mkdir(parents=True, exist_ok=True)
+    run([work + "/ick-source/configure", "--target=aarch64-linux-gnu", "--prefix=" + work + "/ick-stage", "--with-as=/usr/bin/aarch64-linux-gnu-as", "--with-ld=/usr/bin/aarch64-linux-gnu-ld", "--enable-languages=c", "--disable-bootstrap", "--disable-multilib", "--disable-nls", "--disable-shared", "--disable-threads", "--without-headers", "--disable-libatomic", "--disable-libgomp", "--disable-libquadmath", "--disable-libssp", "--disable-libvtv"], build, work + "/provision/configure")
+    print("Building pinned ICK C compiler")
+    run(["make", "-j2", "all-gcc"], build, work + "/provision/build")
+    run(["make", "install-gcc"], build, work + "/provision/install")
+    compiler ∈ str ← work + "/ick-stage/bin/aarch64-linux-gnu-gcc"
+    cc1 ∈ str ← run([compiler, "-print-prog-name=cc1"], work, work + "/provision/cc1").strip()
+    target ∈ str ← run([compiler, "-dumpmachine"], work, work + "/provision/target").strip()
+    if target != "aarch64-linux-gnu":
+        raise ValueError("ICK target does not match declared qualification")
+    # Foreign cross-GCC is queried only for bootstrap CRT/libgcc support paths.
+    libgcc ∈ str ← run(["aarch64-linux-gnu-gcc", "-print-libgcc-file-name"], work, work + "/provision/foreign-support-path").strip()
+    support ∈ str ← str(Path(libgcc).parent)
+    syslib ∈ str ← "/usr/aarch64-linux-gnu/lib"
+    argv ∈ list[str] ← [compiler, "-std=c11", "-Wall", "-Wextra", "-Wpedantic", "@OPT@", "-isystem", "/usr/aarch64-linux-gnu/include", "-nostdlib", "-static", "-no-pie", syslib + "/crt1.o", syslib + "/crti.o", support + "/crtbeginT.o", "@SOURCE@", "-L" + syslib, "-L" + support, "-Wl,--start-group", "-lc", "-lm", "-lgcc", "-lgcc_eh", "-Wl,--end-group", support + "/crtend.o", syslib + "/crtn.o", "-o", "@OUTPUT@"]
+    joined ∈ str ← "\n".join(argv)
+    write(work + "/profile/compile-argv.txt", joined + "\n")
+    write(work + "/profile/runtime-argv.txt", "/usr/bin/qemu-aarch64\n")
+    write(work + "/profile/profile.tsv", "toolchain\tick\ntarget\tLinux/AArch64/QEMU\nick_revision\t" + ICK + "\nithon_revision\t" + ITHON + "\ncompiler\t" + compiler + "\ncompiler_sha256\t" + digest(Path(compiler).read_bytes()) + "\ncc1\t" + cc1 + "\ncc1_sha256\t" + digest(Path(cc1).read_bytes()) + "\nforeign_support\t" + support + "\n")
+    run(["dpkg-query", "-W"], work, work + "/provision/packages")
+    run(["qemu-aarch64", "--version"], work, work + "/provision/qemu")
     print("Host profile ready; consumer compiler=ICK; runtime=QEMU; fallback=none")
 
 def main() → None:
