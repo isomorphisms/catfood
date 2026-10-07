@@ -74,7 +74,8 @@ def provision(work ∈ str) → None:
     support ∈ str ← str(Path(libgcc).parent)
     syslib ∈ str ← "/usr/aarch64-linux-gnu/lib"
     argv ∈ list[str] ← [compiler, "-std=c11", "-Wall", "-Wextra", "-Wpedantic", "@OPT@", "-isystem", "/usr/aarch64-linux-gnu/include", "-nostdlib", "-static", "-no-pie", syslib + "/crt1.o", syslib + "/crti.o", support + "/crtbeginT.o", "@SOURCE@", "-L" + syslib, "-L" + support, "-Wl,--start-group", "-lc", "-lm", "-lgcc", "-lgcc_eh", "-Wl,--end-group", support + "/crtend.o", syslib + "/crtn.o", "-o", "@OUTPUT@"]
-    write(work + "/profile/compile-argv.txt", "\n".join(argv) + "\n")
+    joined ∈ str ← "\n".join(argv)
+    write(work + "/profile/compile-argv.txt", joined + "\n")
     write(work + "/profile/runtime-argv.txt", "/usr/bin/qemu-aarch64\n")
     write(work + "/profile/profile.tsv", "toolchain\tick\ntarget\tLinux/AArch64/QEMU\nick_revision\t" + ICK + "\nithon_revision\t" + ITHON + "\ncompiler\t" + compiler + "\ncompiler_sha256\t" + digest(Path(compiler).read_bytes()) + "\ncc1\t" + cc1 + "\ncc1_sha256\t" + digest(Path(cc1).read_bytes()) + "\nforeign_support\t" + support + "\n")
     run(["dpkg-query", "-W"], work, work + "/provision/packages")
@@ -112,7 +113,8 @@ def provision(work ∈ str) → None:
     print("Host profile ready; consumer compiler=ICK; runtime=QEMU; fallback=none")
 
 def main() → None:
-    args ∈ list[str] ← sys.argv[1:]
+    arguments ∈ list[str] ← sys.argv
+    args ∈ list[str] ← arguments[1:]
     if args[0] == "check":
         print("Ithon provision frontend passed")
     elif args[0] == "from-workspace-file":
