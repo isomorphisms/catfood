@@ -2,7 +2,7 @@
 # role: runtime | host | reference | review
 # ABI lane disposition: package:<package-id> | packages:<package-id>,<package-id> | gap:<reason> | n/a
 # `review` is explicit unresolved classification debt and blocks readiness.
-ish	runtime	gap:android-package-missing	gap:android-package-missing	maintained-Idriç-runtime-needs-immutable-ARM-artifacts
+ish	runtime	package:ish-armeabi-v7a	package:ish-arm64-v8a	compiled-Idriç-program-with-private-Chez-runtime;physical-acceptance-pending
 grease	runtime	package:grease-phone	package:grease-tablet	separate-bootstrap-runtime
 
 oils	host	n/a	n/a	grease-source-and-host-build-input

@@ -56,10 +56,17 @@ The installer can prove a matching package digest and its own completed installa
 Known gaps remain visible. Installing all currently published packages is not a whole-distribution readiness claim while `check.sh ready <target>` still fails.
 ## Reconciled generations
 
-The current target/delivery branch carries the exact PowerVR and Reddit packages, Grease multicall commands, an explicit missing-artifact Ish obligation, device inventory commands and Shizuku export snapshots. See [the retirement record](../docs/android-generation-retirement.md) for exact prior heads, content comparisons, one successor per retired PR and outstanding acceptance. Inventory inspection/comparison never removes packages; preserving an export does not provision or start Shizuku. C67 retains its physical identity while sharing the AArch64 package lane.
+The current target/delivery branch carries the exact PowerVR and Reddit packages, Grease multicall commands, paired published Ish archives, device inventory commands and Shizuku export snapshots. See [the retirement record](../docs/android-generation-retirement.md) for exact prior heads, content comparisons, one successor per retired PR and outstanding acceptance. Inventory inspection/comparison never removes packages; preserving an export does not provision or start Shizuku. C67 retains its physical identity while sharing the AArch64 package lane.
 
 Maintained applications normally produce paired A1+C67 builds using
 `application-targets.tsv`, with A1 primary. `conversation-targets.tsv` retains
 program-specific build details and is mechanically checked against that policy.
 Old v1 receipts remain historical; reinstall to produce current v2 installation
 evidence. No launch/runtime/physical result is carried forward implicitly.
+
+The [runtime delivery progress record](../docs/runtime-delivery-progress.md)
+retains whole-inventory discovery and the unresolved shared producer work.
+After installation, `android/acceptance/ish-installed.grease` accepts exactly
+`phone|c67|tablet` and an absolute, observed installed workspace. Run it with
+the delivered Grease command. It executes the runtime and writes a separate
+instance-bound receipt; a passing host artifact test cannot substitute for it.

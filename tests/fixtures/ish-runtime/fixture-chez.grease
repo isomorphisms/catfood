@@ -1,0 +1,4 @@
+#!/usr/bin/env grease
+# Host orchestration fixture only.
+set -eu
+if test "$5" = --version { write -- fixture-chez } else { write -- CHEZ-EVAL-PASS }

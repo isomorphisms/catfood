@@ -1,0 +1,96 @@
+#!/usr/bin/env grease
+# Grease control-flow/receipt fixtures; no ARM or physical runtime execution.
+set -eu
+test "$#" -eq 1
+var control = $1
+var preparation = "$control/tests/fixtures/ish-runtime"
+var temporary = $(mktemp -d)
+write -- "Fixture directory: $temporary"
+mkdir -p "$temporary/control/android/acceptance" "$temporary/control/tests" "$temporary/bin" "$temporary/state"
+cp "$control/android/target.sh" "$control/android/check.sh" "$control/android/application-targets.tsv" "$control/android/conversation-targets.tsv" "$control/android/package-restrictions.tsv" "$temporary/control/android/"
+cp "$control/tests/android-properties.sh" "$temporary/bin/getprop"
+chmod +x "$temporary/bin/getprop"
+setglobal ENV.PATH = "$temporary/bin:$[ENV.PATH]"
+setglobal ENV.CATFOOD_DEVICE_STATE = "$temporary/state"
+setglobal ENV.PREFIX = '/data/data/com.termux/files/usr'
+write -- synthetic-kitchen-instance > "$temporary/state/device-id"
+var ref = '0e6ba10f8edde26e940685ac386ad4279afbe259'
+var abi = 'arm64-v8a'
+var package = 'ish-arm64-v8a'
+var workspace = "$temporary/work space"
+var dir = "$workspace/packages/$package/$ref"
+mkdir -p "$dir/bin" "$dir/libexec/ish" "$dir/receipts" "$workspace/bin" "$workspace/receipts"
+cp "$preparation/fixture-ish.grease" "$dir/bin/ish"
+cp "$preparation/fixture-chez.grease" "$dir/libexec/ish/scheme"
+chmod +x "$dir/bin/ish" "$dir/libexec/ish/scheme"
+ln -s "$dir/bin/ish" "$workspace/bin/ish"
+for payload in petite.boot scheme.boot ish-backend.so libish_runtime.so { write -- fixture > "$dir/libexec/ish/$payload" }
+printf r'abi\t%s\nsource_sha\t%s\n' $abi $ref > "$dir/receipts/build.tsv"
+proc seal-payloads {
+    sha256sum "$dir/bin/ish" "$dir/libexec/ish/scheme" "$dir/libexec/ish/petite.boot" "$dir/libexec/ish/scheme.boot" "$dir/libexec/ish/ish-backend.so" "$dir/libexec/ish/libish_runtime.so" |
+        sed "s|$dir/|/fixture/build/package/|" > "$dir/receipts/files.sha256"
+}
+seal-payloads
+cp "$control/tests/android-properties.sh" "$temporary/bin/toybox"
+chmod +x "$temporary/bin/toybox"
+# Adapter changes ONLY direct Android paths and the digest-bound fixture
+# metadata. It is never the published procedure and its receipts stay here.
+sed "s#/system/bin/getprop#$temporary/bin/getprop#g; s#test -x /system/bin/toybox#test -x $temporary/bin/toybox#g" "$control/android/acceptance/ish-installed.grease" > "$temporary/control/android/acceptance/ish-installed.grease"
+printf r'ish https://github.com/dilapidated-shed/grease.git ish none\n' > "$temporary/control/tools.tsv"
+printf r'grease\treference\tn/a\tn/a\tfixture\nish\truntime\tgap:fixture\tpackage:%s\tfixture\n' $package > "$temporary/control/android/delivery.tsv"
+awk -F r'\t' '$1 == "ish-arm64-v8a" {print}' "$control/android/packages.tsv" > "$temporary/control/android/packages.tsv"
+var original_sha = $(awk -F r'\t' '{print $9}' "$temporary/control/android/packages.tsv")
+mkdir -p "$workspace/downloads"
+tar -C $dir -czf "$temporary/fixture.tar.gz" .
+var sha = $(sha256sum "$temporary/fixture.tar.gz" | cut -d ' ' -f 1)
+sed "s/$original_sha/$sha/" "$temporary/control/android/packages.tsv" > "$temporary/control/android/packages.new"
+mv "$temporary/control/android/packages.new" "$temporary/control/android/packages.tsv"
+mv "$temporary/fixture.tar.gz" "$workspace/downloads/$package-$sha"
+var url = $(awk -F r'\t' '{print $8}' "$temporary/control/android/packages.tsv")
+var receipt = "$workspace/receipts/c67-$package.tsv"
+{
+    printf r'schema\tcatfood-android-evidence-v2\npackage\t%s\ntarget\tc67\npackage_lane\tarm64-v8a\ndevice_id\tsynthetic-kitchen-instance\ndevice_class\tphone\ndevice_target\tc67\ndevice_product\tMiro_C67\ndevice_model\tMiro C67\ndevice_fingerprint\tsynthetic\nabi\tarm64-v8a\nmode\tarchive\nsource\tdilapidated-shed/grease\nsource_ref\t%s\npackage_ref\t%s\nurl\t%s\nsha256\t%s\ntermux_packages\tcurl,tar\nruntime_requires\t-\npackage_requires\t-\n' $package $ref $ref $url $sha
+    for stage in build package publication installation launch runtime emulator physical_device {
+        if test $stage = package { printf r'package_result\tPASS\npackage_evidence\tsha256:%s\n' $sha } elif test $stage = installation {
+            printf r'installation_result\tPASS\ninstallation_evidence\t%s\n' $dir
+        } else { printf r'%s_result\tNOT_VERIFIED\n%s_evidence\t-\n' $stage $stage }
+    }
+} > $receipt
+var before = $(sha256sum $receipt)
+setglobal ENV.CATFOOD_TARGET = 'c67'
+proc execute {
+    grease "$temporary/control/android/acceptance/ish-installed.grease" c67 $workspace
+}
+proc refuse(name, diagnostic) {
+    try { execute > "$temporary/$name.log" 2>&1 }
+    test "$[_error.code]" -ne 0
+    grep -F $diagnostic "$temporary/$name.log" > /dev/null || { cat "$temporary/$name.log"; exit 1 }
+    test "$(sha256sum $receipt)" = "$before"
+    test "$(find "$workspace/receipts" -name '*-physical.tsv' | wc -l)" -eq 0
+    write -- "fixture refusal PASS: $name"
+}
+setglobal ENV.CATFOOD_DEVICE_ID = 'synthetic-forbidden-override'
+refuse override 'refuses synthetic/manifest override'
+setglobal ENV.CATFOOD_DEVICE_ID = ''
+setglobal ENV.CATFOOD_TEST_MODEL = 'TAB_P10'
+refuse identity 'conflicting Android identity properties'
+setglobal ENV.CATFOOD_TEST_MODEL = 'Miro C67'
+write -- another-instance > "$temporary/state/device-id"
+refuse instance 'receipt belongs to another device instance'
+write -- synthetic-kitchen-instance > "$temporary/state/device-id"
+write -- corruption >> "$dir/libexec/ish/petite.boot"
+refuse digest 'computed checksum did NOT match'
+seal-payloads
+refuse changed-digest-record 'private runtime digest record differs from the pinned published archive'
+write -- fixture > "$dir/libexec/ish/petite.boot"
+seal-payloads
+setglobal ENV.FIXTURE_PARTIAL_FAILURE = '1'
+refuse partial 'Command failed with status 9'
+setglobal ENV.FIXTURE_PARTIAL_FAILURE = ''
+# Two runs from a foreign directory, with whitespace in the observed workspace.
+cd /tmp
+execute > "$temporary/positive-1.log" 2>&1
+execute > "$temporary/positive-2.log" 2>&1
+test "$(find "$workspace/receipts" -name '*-physical.tsv' | wc -l)" -eq 2
+test "$(sha256sum $receipt)" = "$before"
+write -- "Synthetic orchestration PASS; no physical receipts submitted. Fixture logs: $temporary"

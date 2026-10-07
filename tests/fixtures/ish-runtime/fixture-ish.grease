@@ -1,0 +1,21 @@
+#!/usr/bin/env grease
+# Host orchestration fixture only; never a delivered Ish runtime.
+set -eu
+var partial = $(printenv FIXTURE_PARTIAL_FAILURE || true)
+if test -n "$partial" { exit 9 }
+var hex = $(od -An -tx1 $1)
+if (hex.contains('00')) {
+    write -- 'source contains NUL text' >&2
+    exit 2
+}
+var input = $(cat $1)
+case $input in
+    '/system/bin/toybox echo café $HOME;*') printf r'%s\n' 'café $HOME;*' ;;
+    '/system/bin/toybox env') env ;;
+    '/system/bin/toybox cat') cat ;;
+    '/system/bin/toybox false') exit 1 ;;
+    'toybox echo must-not-search-PATH') write -- 'could not replace ish with executable "toybox"' >&2; exit 126 ;;
+    '/definitely/not/present/ish-probe alpha beta') write -- 'could not replace ish with executable "/definitely/not/present/ish-probe"' >&2; exit 126 ;;
+    '') write -- 'incomplete incantation: expected a name at [0,0)' >&2; exit 2 ;;
+    *) write -- 'source is not UTF-8 near byte 0' >&2; exit 2 ;;
+esac

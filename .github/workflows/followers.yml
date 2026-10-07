@@ -93,6 +93,12 @@ jobs:
         env:
           CATFOOD_TEST_STAGE_ONE: ${{ runner.temp }}/cat-food/bin/grease
         run: sh tests/repository-identities.sh
+      - name: Exercise Ish acceptance sequencing with the installed Grease runtime
+        shell: sh
+        # Fixed Actions shell launches Grease; all fixture logic is Grease.
+        run: |
+          export PATH="$RUNNER_TEMP/cat-food/bin:$PATH"
+          grease tests/ish-acceptance-fixtures.grease "$GITHUB_WORKSPACE"
       - name: Exercise keyless az through the installed Grease command path
         # The shell field cannot use runner context. The fixed runner shell
         # only launches Grease; Grease still executes the acceptance program.

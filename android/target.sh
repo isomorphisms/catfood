@@ -156,3 +156,17 @@ catfood_android_device_id() {
     case $cf_id in ''|-|*[!a-zA-Z0-9_.-]*) return 2 ;; esac
     printf '%s\n' "$cf_id"
 }
+
+# Narrow command interface for post-bootstrap consumers in other languages.
+# Sourcing this stage-zero library still defines functions only.
+if [ "${0##*/}" = target.sh ]; then
+    [ "$#" -eq 2 ] || { printf '%s\n' 'usage: target.sh device-id|expected-abi phone|c67|tablet' >&2; exit 2; }
+    case $1 in
+        device-id)
+            catfood_android_require_device "$2" || exit 2
+            catfood_android_device_id || exit 2
+            ;;
+        expected-abi) catfood_android_expected_abi "$2" || exit 2 ;;
+        *) printf '%s\n' 'unknown target oracle operation' >&2; exit 2 ;;
+    esac
+fi
