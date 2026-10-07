@@ -15,23 +15,15 @@ delivery_target=$(catfood_android_delivery_target "$target") || {
     exit 2
 }
 expected_abi=$(catfood_android_expected_abi "$target") || exit 2
-catfood_android_verify_device_target "$target"
+catfood_android_require_device "$target"
+device_id=$(catfood_android_device_id)
+device_class=$(catfood_android_class "$target")
+legacy_lane=$(catfood_android_legacy_lane "$delivery_target")
 
 CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" \
     sh "$root/android/check.sh" check >/dev/null
 
-abi=${CATFOOD_DEVICE_ABI:-}
-if [ -z "$abi" ] && command -v getprop >/dev/null 2>&1; then
-    abi=$(getprop ro.product.cpu.abi 2>/dev/null | tr -d '\r')
-fi
-if [ -z "$abi" ]; then
-    machine=$(uname -m 2>/dev/null || printf '%s\n' unknown)
-    case "$machine" in
-        armv7*|armv8l|arm) abi=armeabi-v7a ;;
-        aarch64|arm64) abi=arm64-v8a ;;
-        *) abi=unknown ;;
-    esac
-fi
+abi=$(catfood_android_getprop ro.product.cpu.abi)
 if [ "$abi" != "$expected_abi" ]; then
     printf 'Cat Food %s delivery requires ABI %s; found %s\n' "$target" "$expected_abi" "$abi" >&2
     exit 2
@@ -169,7 +161,7 @@ check_package_requirements() {
         receipt="$workspace/receipts/$target-$required.tsv"
         [ -f "$receipt" ] &&
         CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" \
-            sh "$root/android/check.sh" receipt "$receipt" >/dev/null 2>&1 &&
+            sh "$root/android/check.sh" receipt "$receipt" "$target" "$device_id" >/dev/null 2>&1 &&
         grep -Fqx "package_ref${tab}$expected_ref" "$receipt" 2>/dev/null &&
         grep -Fqx "installation_result${tab}PASS" "$receipt" 2>/dev/null || {
             printf '%s requires package %s at %s before installation\n' "$package" "$required" "$expected_ref" >&2
@@ -241,6 +233,10 @@ package_ids=$(awk -F '\t' -v target="$delivery_target" '
 ' "$packages")
 
 for package in $package_ids; do
+    if ! catfood_android_package_allowed "$package" "$target"; then
+        printf '%s is not compatible with device target %s; not installed\n' "$package" "$target"
+        continue
+    fi
     publication_result=NOT_VERIFIED
     publication_evidence=-
     row=$(awk -F '\t' -v package="$package" '
@@ -274,7 +270,7 @@ EOF_ROW
     current=0
     if [ -d "$package_dir" ] && [ -f "$receipt" ] &&
        CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" \
-           sh "$root/android/check.sh" receipt "$receipt" >/dev/null 2>&1 &&
+           sh "$root/android/check.sh" receipt "$receipt" "$target" "$device_id" >/dev/null 2>&1 &&
        grep -Fqx "installation_result${tab}PASS" "$receipt" 2>/dev/null; then
         current=1
         while IFS="$tab" read -r command entrypoint; do
@@ -326,7 +322,7 @@ EOF_ROW
                 exit 3
             }
             for expected in \
-                "target${tab}$delivery_target" \
+                "target${tab}$legacy_lane" \
                 "abi${tab}$abi" \
                 "source_ref${tab}$source_ref" \
                 "package_ref${tab}$package_ref"; do
@@ -391,9 +387,12 @@ EOF_WRAPPER
 
     if [ "$current" -eq 0 ]; then
         {
-            printf 'schema\tcatfood-android-evidence-v1\n'
+            printf 'schema\tcatfood-android-evidence-v2\n'
             printf 'package\t%s\n' "$package"
-            printf 'target\t%s\n' "$delivery_target"
+            printf 'target\t%s\n' "$target"
+            printf 'package_lane\t%s\n' "$delivery_target"
+            printf 'device_id\t%s\n' "$device_id"
+            printf 'device_class\t%s\n' "$device_class"
             printf 'device_target\t%s\n' "$target"
             printf 'device_product\t%s\n' "$device_product"
             printf 'device_model\t%s\n' "$device_model"
@@ -426,7 +425,7 @@ EOF_WRAPPER
             printf 'physical_device_evidence\t-\n'
         } > "$receipt.tmp.$$"
         CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" \
-            sh "$root/android/check.sh" receipt "$receipt.tmp.$$" >/dev/null
+            sh "$root/android/check.sh" receipt "$receipt.tmp.$$" "$target" "$device_id" >/dev/null
         mv "$receipt.tmp.$$" "$receipt"
     fi
 done

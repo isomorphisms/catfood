@@ -41,8 +41,7 @@ Cat Food may expose a control-plane helper from its own checked-out version afte
 
 ## Device profiles
 
-Device-specific facts do not redefine Cat Food's ABI targets. They document how
-a physical product maps onto those targets after an actual runtime receipt.
+Device profiles identify model facts; ABI lanes identify artifacts. Neither establishes a physical-instance run. `package-restrictions.tsv` retains package-specific device requirements (currently the Mali-G57 acceptance runner).
 
 - [MIRO C67 physical profile](devices/miro-c67.md) — physical Android 14 /
   API 34, arm64-v8a with 32-bit compatibility, MT6765/Cortex-A53, PowerVR
@@ -50,7 +49,7 @@ a physical product maps onto those targets after an actual runtime receipt.
 
 ## Evidence boundaries
 
-A package receipt records exact package identity and one result/evidence pair for each of `build`, `package`, `publication`, `installation`, `launch`, `runtime`, `emulator`, and `physical_device`. Results use the shared `PASS`, `FAIL`, `SKIP`, and `NOT_VERIFIED` vocabulary. Every stage is mandatory, `NOT_VERIFIED` carries no invented evidence, and a later stage cannot pass merely because an earlier stage passed. Validate a receipt with `sh android/check.sh receipt RECEIPT`.
+A version 2 package receipt records device target, class, instance ID, observed identity, ABI lane, exact package identity and one result/evidence pair for each of `build`, `package`, `publication`, `installation`, `launch`, `runtime`, `emulator`, and `physical_device`. Results use the shared `PASS`, `FAIL`, `SKIP`, and `NOT_VERIFIED` vocabulary. Every stage is mandatory, `NOT_VERIFIED` carries no invented evidence, and a later stage cannot pass merely because an earlier stage passed. Validate a receipt with `sh android/check.sh receipt RECEIPT`.
 
 The installer can prove a matching package digest and its own completed installation. A fresh successful download also proves that exact package URL was published at install time. It cannot prove the producer build, application launch, runtime behavior, emulator execution, or physical-device execution, so those remain `NOT_VERIFIED` until their own actions produce evidence. A package installed on one Android target does not accept another physical target; in particular, C67 and tablet may share `arm64-v8a` artifacts without sharing physical acceptance.
 
@@ -58,3 +57,9 @@ Known gaps remain visible. Installing all currently published packages is not a 
 ## Reconciled generations
 
 The current target/delivery branch carries the exact PowerVR and Reddit packages, Grease multicall commands, an explicit missing-artifact Ish obligation, device inventory commands and Shizuku export snapshots. See [the retirement record](../docs/android-generation-retirement.md) for exact prior heads, content comparisons, one successor per retired PR and outstanding acceptance. Inventory inspection/comparison never removes packages; preserving an export does not provision or start Shizuku. C67 retains its physical identity while sharing the AArch64 package lane.
+
+Maintained applications normally produce paired A1+C67 builds using
+`application-targets.tsv`, with A1 primary. `conversation-targets.tsv` retains
+program-specific build details and is mechanically checked against that policy.
+Old v1 receipts remain historical; reinstall to produce current v2 installation
+evidence. No launch/runtime/physical result is carried forward implicitly.

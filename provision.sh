@@ -13,6 +13,11 @@ if [ "$target" = auto ]; then
     target=$(catfood_detect_target)
 fi
 case $target in hetzner) target=cloud ;; esac
+case $target in
+    phone|c67|tablet) catfood_android_require_device "$target" ;;
+    cloud|container) catfood_verify_workbench_target ;;
+    termux) printf "%s\n" "Generic Termux has no verified device profile; no provisioning performed" >&2; exit 2 ;;
+esac
 
 case $target in
     cloud)

@@ -1,0 +1,2 @@
+# package	devices	reason	evidence
+powervr-runner-tablet	tablet	Mali-G57-vendor-assertion	https://github.com/fuego-ironworks/idris-shader-backend/blob/f3ed48fce28bbee0c0eb9d588e061502f4f323ff/tools/accept_powervr_android.sh

@@ -1,6 +1,6 @@
-# name	role	phone	tablet	note
+# name	role	armeabi-v7a	arm64-v8a	note
 # role: runtime | host | reference | review
-# target disposition: package:<package-id> | packages:<package-id>,<package-id> | gap:<reason> | n/a
+# ABI lane disposition: package:<package-id> | packages:<package-id>,<package-id> | gap:<reason> | n/a
 # `review` is explicit unresolved classification debt and blocks readiness.
 ish	runtime	gap:android-package-missing	gap:android-package-missing	maintained-Idriç-runtime-needs-immutable-ARM-artifacts
 grease	runtime	package:grease-phone	package:grease-tablet	separate-bootstrap-runtime

@@ -48,6 +48,9 @@ jobs:
       - name: Verify MIRO C67 Android delivery mapping
         shell: sh
         run: sh tests/c67-delivery.sh
+      - name: Reject target and acceptance mutations
+        shell: sh
+        run: sh tests/target-mutations.sh
       - name: Verify Crawl Space Android runtime contract
         shell: sh
         run: sh tests/android-crawlspace.sh

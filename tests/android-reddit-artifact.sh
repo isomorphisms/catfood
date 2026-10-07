@@ -11,6 +11,10 @@ delivery="$tmp/delivery.tsv"
 packages="$tmp/packages.tsv"
 fake_bin="$tmp/bin"
 mkdir -p "$fake_bin"
+cp "$root/tests/android-properties.sh" "$fake_bin/getprop"
+chmod +x "$fake_bin/getprop"
+export CATFOOD_GETPROP="$fake_bin/getprop"
+export CATFOOD_DEVICE_ID=synthetic-artifact-host
 
 cat > "$tools" <<'EOF_TOOLS'
 reddit https://github.com/fuego-ironworks/idric-arm-thumb.git main none

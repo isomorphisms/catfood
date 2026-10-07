@@ -7,6 +7,7 @@ workspace=${CATFOOD_ROOT:-"$HOME/opt"}
 state_home=${XDG_STATE_HOME:-"$HOME/.local/state"}
 device_state=${CATFOOD_DEVICE_STATE:-"$state_home/catfood/device"}
 manager_state=${CATFOOD_MANAGER_STATE:-"$state_home/catfood/manager"}
+. "$root/android/target.sh"
 tab=$(printf '\t')
 
 usage() {
@@ -60,69 +61,15 @@ prop() {
 }
 
 detect_target() {
-    . "$root/android/target.sh"
     case ${CATFOOD_TARGET:-} in
-        phone|c67|tablet)
-            catfood_android_verify_device_target "$CATFOOD_TARGET"
-            printf '%s\n' "$CATFOOD_TARGET"
-            return 0
-            ;;
-    esac
-    case ${CATFOOD_DEVICE_ABI:-$(prop ro.product.cpu.abi)} in
-        armeabi-v7a) printf '%s\n' phone ;;
-        arm64-v8a)
-            case "$(prop ro.product.device):$(prop ro.product.model)" in
-                Miro_C67:*|*:Miro\ C67) printf '%s\n' c67 ;;
-                *) printf '%s\n' tablet ;;
-            esac
-            ;;
-        *)
-            printf '%s\n' 'Cat Food inventory requires an observed Android ABI' >&2
-            return 2
-            ;;
+        phone|c67|tablet) catfood_android_require_device "$CATFOOD_TARGET" || return $?; printf '%s\n' "$CATFOOD_TARGET" ;;
+        *) catfood_detect_android_target ;;
     esac
 }
 
+device_id() { catfood_android_device_id; }
 valid_device_id() {
-    case $1 in
-        ''|*[!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.-]*) return 1 ;;
-        *) return 0 ;;
-    esac
-}
-
-device_id() {
-    if [ -n "${CATFOOD_DEVICE_ID:-}" ]; then
-        valid_device_id "$CATFOOD_DEVICE_ID" || {
-            printf 'unsafe CATFOOD_DEVICE_ID: %s\n' "$CATFOOD_DEVICE_ID" >&2
-            return 2
-        }
-        printf '%s\n' "$CATFOOD_DEVICE_ID"
-        return
-    fi
-
-    id_file=${CATFOOD_DEVICE_ID_FILE:-"$device_state/device-id"}
-    if [ -f "$id_file" ]; then
-        id=$(head -n 1 "$id_file" | tr -d '\r\n')
-        valid_device_id "$id" || {
-            printf 'invalid Cat Food device id file: %s\n' "$id_file" >&2
-            return 2
-        }
-        printf '%s\n' "$id"
-        return
-    fi
-
-    mkdir -p "$(dirname -- "$id_file")"
-    if [ -r /proc/sys/kernel/random/uuid ]; then
-        id=$(head -n 1 /proc/sys/kernel/random/uuid | tr -d '\r\n')
-    else
-        id="device-$(date -u +%Y%m%dT%H%M%SZ)-$$"
-    fi
-    valid_device_id "$id" || return 2
-    temporary=$id_file.tmp.$$
-    umask 077
-    printf '%s\n' "$id" > "$temporary"
-    mv "$temporary" "$id_file"
-    printf '%s\n' "$id"
+    case $1 in ''|-|*[!a-zA-Z0-9_.-]*) return 1 ;; *) return 0 ;; esac
 }
 
 meta() {
@@ -164,13 +111,19 @@ validate_inventory() {
                 print FILENAME ": invalid or missing observed_at" > "/dev/stderr"
                 failed = 1
             }
-            if (target_count != 1 || (target != "phone" && target != "c67" && target != "tablet")) {
-                print FILENAME ": inventory target must be phone, c67 or tablet" > "/dev/stderr"
+            if (target_count != 1 || (target != "phone" && target != "c67" && target != "tablet" && target != "termux")) {
+                print FILENAME ": inventory target must be phone, c67, tablet or generic termux" > "/dev/stderr"
                 failed = 1
             }
             exit failed
         }
-    ' "$inventory"
+    ' "$inventory" || return $?
+    inventory_target=$(meta "$inventory" target)
+    inventory_profile=$(catfood_android_profile "$(meta "$inventory" product)" "$(meta "$inventory" model)" "$(meta "$inventory" abi)") || return $?
+    [ "$inventory_profile" = "$inventory_target" ] || {
+        printf '%s\n' 'inventory identity does not match target' >&2
+        return 1
+    }
 }
 
 inspect_device() {
@@ -182,9 +135,9 @@ inspect_device() {
     [ -n "$abi" ] || abi=$(prop ro.product.cpu.abi)
 
     mkdir -p "$device_state/inspections"
-    inventory=$device_state/.inventory.$
-    android_packages=$device_state/.android-packages.$
-    termux_packages=$device_state/.termux-packages.$
+    inventory=$device_state/.inventory.$$
+    android_packages=$device_state/.android-packages.$$
+    termux_packages=$device_state/.termux-packages.$$
     : > "$android_packages"
     : > "$termux_packages"
     trap 'rm -f "$inventory" "$android_packages" "$termux_packages"' EXIT HUP INT TERM
@@ -226,6 +179,8 @@ inspect_device() {
         row meta manufacturer "$(prop ro.product.manufacturer)" getprop
         row meta brand "$(prop ro.product.brand)" getprop
         row meta model "$(prop ro.product.model)" getprop
+        row meta product "$(prop ro.product.device)" getprop
+        row meta fingerprint "$(prop ro.build.fingerprint)" getprop
         row meta android_release "$(prop ro.build.version.release)" getprop
         row meta android_sdk "$(prop ro.build.version.sdk)" getprop
         row meta abi "$abi" getprop
@@ -236,7 +191,10 @@ inspect_device() {
             [ -f "$receipt" ] || continue
             package=$(awk -F '\t' '$1 == "package" { print $2; exit }' "$receipt")
             package_ref=$(awk -F '\t' '$1 == "package_ref" { print $2; exit }' "$receipt")
-            installation=$(awk -F '\t' '$1 == "installation_result" { print $2; exit }' "$receipt")
+            installation=NOT_VERIFIED
+            if sh "$root/android/check.sh" receipt "$receipt" "$target" "$id" >/dev/null 2>&1; then
+                installation=$(awk -F '\t' '$1 == "installation_result" { print $2; exit }' "$receipt")
+            fi
             if [ -n "$package" ]; then
                 row catfood_package "$package" "${package_ref:--}" "receipt:${installation:-unknown}"
             else
@@ -340,9 +298,13 @@ compare_inventory() {
     }
     target=$(meta "$inventory" target)
     . "$root/android/target.sh"
-    target=$(catfood_android_delivery_target "$target")
+    if [ "$target" = termux ]; then
+        comparison_lane=unassigned
+    else
+        comparison_lane=$(catfood_android_delivery_target "$target")
+    fi
 
-    awk -F '\t' -v target="$target" -v packages="$packages" -v inventory="$inventory" '
+    awk -F '\t' -v target="$comparison_lane" -v packages="$packages" -v inventory="$inventory" '
         function emit(state, item, observed, expected, evidence) {
             print state "\t" item "\t" observed "\t" expected "\t" evidence
         }

@@ -1,8 +1,11 @@
 #!/bin/sh
-set -u
+set -eu
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/../.." && pwd)
 target=${CATFOOD_TARGET:-}
+. "$root/android/target.sh"
+catfood_android_require_device "$target"
+device_id=$(catfood_android_device_id)
 workspace=${CATFOOD_ROOT:-"$HOME/opt"}
 
 case "$target" in
@@ -10,12 +13,12 @@ case "$target" in
         expected_abi=armeabi-v7a
         package=reddit-phone
         ;;
-    tablet)
+    c67|tablet)
         expected_abi=arm64-v8a
         package=reddit-tablet
         ;;
     *)
-        printf 'usage: CATFOOD_TARGET=phone|tablet %s\n' "$0" >&2
+        printf 'usage: CATFOOD_TARGET=phone|c67|tablet %s\n' "$0" >&2
         exit 2
         ;;
 esac
@@ -59,7 +62,7 @@ install_receipt="$workspace/receipts/$target-$package.tsv"
 [ -x "$reddit" ] || fail "installed Reddit command is missing: $reddit"
 [ -f "$install_receipt" ] || fail "installation receipt is missing: $install_receipt"
 
-sh "$root/android/check.sh" receipt "$install_receipt" >/dev/null ||
+sh "$root/android/check.sh" receipt "$install_receipt" "$target" "$device_id" >/dev/null ||
     fail "installation receipt does not match the current Cat Food package manifest"
 
 stamp=$(date -u '+%Y%m%dT%H%M%SZ' 2>/dev/null || printf unknown)
@@ -123,7 +126,7 @@ awk -F '\t' -v OFS='\t' \
     { print }
 ' "$install_receipt" > "$physical_receipt"
 
-sh "$root/android/check.sh" receipt "$physical_receipt" >/dev/null ||
+sh "$root/android/check.sh" receipt "$physical_receipt" "$target" "$device_id" >/dev/null ||
     fail "generated physical-device receipt failed Cat Food validation"
 
 section "Receipt"

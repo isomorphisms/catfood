@@ -2,7 +2,7 @@
 
 Cat Food feeds the maintained tool inventory into development hosts and delivers verified runtime packages to the Android phone and tablet.
 
-It is deliberately small. Cloud, container, and generic Termux targets are workbenches: their repositories live under `/opt` or another selected root. The ARMv7 phone and AArch64 tablet are different: they are runtime targets and do not receive the source fleet, compiler bootstraps, or a local build toolchain.
+It is deliberately small. Cloud and container targets are workbenches: their repositories live under `/opt` or another selected root. MIRO A1, MIRO C67 and TAB_P10: they are runtime targets and do not receive the source fleet, compiler bootstraps, or a local build toolchain.
 
 ## Run Cat Food
 
@@ -12,18 +12,19 @@ Start with `./catfood --help` or `./catfood where` to inspect the commands and v
 ./catfood
 ```
 
-The entrypoint selects one of four concrete targets:
+The entrypoint selects a device profile or workbench role:
 
-- `phone`: 32-bit ARMv7 Android/Termux runtime delivery;
-- `tablet`: AArch64 Android/Termux runtime delivery;
+- `phone`: observed MIRO A1 phone, ARMv7 Android runtime delivery;
+- `c67`: observed MIRO C67 phone, ARM64 Android runtime delivery;
+- `tablet`: observed TAB_P10 tablet, ARM64 Android runtime delivery;
 - `container`: disposable Debian/Ubuntu workbench, selected explicitly;
 - `cloud`: persistent Debian/Ubuntu workbench, including Hetzner.
 
-`termux` remains a compatibility source-workbench target for an unknown or explicitly forced Termux architecture. `hetzner` is an alias for `cloud`. See [TARGETS.md](TARGETS.md).
+`termux` is generic/unknown Android identity; provisioning stops until a known profile is established. `hetzner` is an alias for `cloud`. See [TARGETS.md](TARGETS.md).
 
 ## Android delivery
 
-Phone and tablet use the same repository-side delivery architecture under [`android/`](android/README.md).
+A1, C67 and TAB_P10 use the same repository-side delivery architecture under [`android/`](android/README.md).
 
 `tools.tsv` is the declared Cat Food inventory. `android/delivery.tsv` must account for every row plus the separately bootstrapped Grease entry. Each item is explicitly classified as a runtime product, host tool, reference source, or unresolved classification. Every intended Android runtime is either linked to a real package or left as an explicit gap; adding an inventory row without an Android disposition fails the structural check.
 
@@ -33,7 +34,7 @@ Release packages must contain stripped native runtime payloads. Strip releasable
 
 The device path is download → verify → install. It does not clone project repositories, install a compiler toolchain, bootstrap a compiler, or fall back to a local source build when a package is absent. The tablet's additional storage does not change this boundary.
 
-For programs delivered through ART, the generic `dex-jni` package mode installs direct DEX plus the declared JNI/NDK library and invokes `/system/bin/app_process`. The package receipt must match the target, ABI, source commit, and packaging commit. That mode describes packaging and runtime representation, not a separate build-toolchain exemption.
+For programs delivered through ART, the generic `dex-jni` package mode installs direct DEX plus the declared JNI/NDK library and invokes `/system/bin/app_process`. The immutable embedded receipt must match its historical wire lane, ABI, source commit, and packaging commit; it does not identify the consuming device. That mode describes packaging and runtime representation, not a separate build-toolchain exemption.
 
 Producer compile/link stages follow AICI's ICK-or-NDK contract. Use ICK when the exact target and required surface are qualified. Use Android NDK only for a stage whose exact ICK revision has a recorded capability gap and evidence. If ICK compiles an object and NDK performs the final Android platform link, record those as separate build stages. Existing reviewed DEX payloads or a common trampoline may still be delivered, but new application code must not be generated through Java, Kotlin, Gradle, d8, RefC, generated-C lowering, or another undeclared compiler path. An unfinished ICK capability becomes an explicit gap, not a reason to pretend a different build path is ICK.
 
@@ -47,7 +48,7 @@ sh android/check.sh ready phone   # fails while intended phone runtime gaps rema
 sh android/check.sh ready tablet  # likewise for tablet
 ```
 
-Build, package, publication, installation, launch, runtime behavior, emulator execution, and physical-device execution remain separate. The machine-checked evidence receipt names every stage explicitly; the installer records only the package, publication, and installation results it actually observed and leaves the others `NOT_VERIFIED`.
+Build, package, publication, installation, launch, runtime behavior, emulator execution, and physical-device execution remain separate. The version 2 receipt binds the device profile and instance separately from the ABI/package lane and names every stage explicitly; the installer records only the package, publication, and installation results it actually observed and leaves the others `NOT_VERIFIED`.
 
 ### Android bootstrap
 
@@ -69,7 +70,7 @@ Crawl Space is delivered as a pinned Android runtime. The current package is exa
 
 Cat Food also owns a small platform-binary feed in [`runtime-binaries.tsv`](runtime-binaries.tsv). It currently pins jq 1.8.2 and Miller 6.21.0 (`mlr`) from their upstream release assets for Linux ARMv7, AArch64, x86-64, and RISC-V 64. Each asset is bound to an exact SHA-256 and must pass its version probe after installation. The ARMv7 phone, AArch64 tablet, and x86-64 Linux targets therefore consume prebuilt binaries rather than compiling these utilities locally or relying on a target package-manager version. The RISC-V row is binary availability only; it does not create or imply a maintained RISC-V acceptance target.
 
-Lua is a Cat Food support runtime rather than an Android product row. Phone, tablet, and generic Termux targets acquire the packaged `lua55` runtime and expose stable `lua` and `luac` commands under the Cat Food bin directory; they do not compile Lua on the device. Debian/Ubuntu workbenches acquire `lua5.4` plus `liblua5.4-dev` from the host package manager, then expose the same stable command names. `install-lua.sh` runs an interpreter smoke, a `luac` parse smoke, and writes `receipts/lua.tsv`.
+Lua is a Cat Food support runtime rather than an Android product row. Known Android runtime targets acquire the packaged `lua55` runtime and expose stable `lua` and `luac` commands under the Cat Food bin directory; they do not compile Lua on the device. Debian/Ubuntu workbenches acquire `lua5.4` plus `liblua5.4-dev` from the host package manager, then expose the same stable command names. `install-lua.sh` runs an interpreter smoke, a `luac` parse smoke, and writes `receipts/lua.tsv`.
 
 ## Fresh Hetzner / Ubuntu workbench
 

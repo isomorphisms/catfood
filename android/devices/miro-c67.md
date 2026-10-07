@@ -1,8 +1,11 @@
 # MIRO C67 physical Android profile
 
 This is the retained Cat Food profile for the physical MIRO C67 measured on
-2026-10-05. The machine-readable observation ledger is
+2026-10-05, with ARM32/Bionic execution followed up on 2026-10-06. The
+machine-readable observation ledger is
 [`docs/observations/miro-c67-hardware-2026-10-05.tsv`](../../docs/observations/miro-c67-hardware-2026-10-05.tsv).
+The raw ARM32/Bionic receipt is
+[`docs/observations/miro-c67-arm32-bionic-2026-10-06.txt`](../../docs/observations/miro-c67-arm32-bionic-2026-10-06.txt).
 
 The profile records observed device facts separately from model/platform claims
 and from build acceptance. It does not claim a package has passed physical C67
@@ -37,12 +40,44 @@ kernel machine      aarch64
 ```
 
 This resolves the previous model-only uncertainty: the C67 is an
-`arm64-v8a` Android runtime and also exposes 32-bit ARM compatibility.
+`arm64-v8a` Android runtime with native 32-bit ARM compatibility.
 
 Runtime page size and native execution are captured by
 `android/record-c67-runtime.sh` during normal `c67` provisioning. The
 result is retained at `$CATFOOD_ROOT/receipts/c67-runtime.tsv`; application-level
 physical acceptance remains separate for each APK.
+
+A 2026-10-06 physical `rish` receipt closes the previous ARM32, Bionic, and
+page-size uncertainties:
+
+```text
+zygote mode          zygote64_32
+live zygotes         zygote64, zygote
+native bridge        0 (disabled)
+runtime page size    4096 bytes
+kernel page size     4 kB
+MMU page size        4 kB
+max product page     4096 bytes
+32-bit linker        /system/bin/linker -> runtime APEX linker, ELF32
+32-bit libc          /system/lib/libc.so -> runtime APEX Bionic libc, ELF32
+app_process32        ELF32, ET_DYN, EM_ARM
+```
+
+Direct execution of the ELF32 `/system/bin/linker` reached its own argument
+parser. Direct execution of `/system/bin/app_process32`, and execution of that
+same binary through the 32-bit linker, both reached the Android runtime and
+then aborted with exit 134 after:
+
+```text
+Error changing dalvik-cache ownership : Permission denied
+Aborted
+```
+
+That is a shell-UID runtime permission failure after ELF admission and dynamic
+loading, not an `Exec format error`. Together with
+`ro.dalvik.vm.native.bridge=0`, the receipt demonstrates native AArch32
+execution on the AArch64 kernel and an operational 32-bit Bionic dynamic-loader
+path. Both 32-bit and 64-bit zygotes were live at capture.
 
 ## CPU
 
@@ -249,20 +284,14 @@ Build rules:
 
 ## Cat Food target selection
 
-The target model now keeps physical device identity separate from the package
-ABI lane. Automatic Termux selection is:
+The `c67` profile is a phone consuming the `arm64-v8a` lane, independently
+of the `tablet` profile. Identity comes from observed product/model, not
+architecture. Unknown ARM64 Termux remains generic. Conflicting identity or ABI
+facts fail closed. See [TARGETS.md](../../TARGETS.md).
 
-```text
-ARMv7 Termux                         -> phone
-AArch64 + Miro_C67 / Miro C67      -> c67
-other AArch64 Termux                -> tablet
-```
-
-The `c67` target consumes the existing `tablet` delivery column only as the
-shared `arm64-v8a` package lane. Installer receipts retain `device_target=c67`
-and the observed product/model/fingerprint, so package reuse no longer erases
-the physical-device distinction. `android/check.sh ready c67` applies the same
-AArch64 manifest readiness gate while C67 physical acceptance stays independent.
+Compatible ARM64 artifacts may be shared; acceptance remains per target,
+instance and artifact. The current Mali-G57-specific acceptance runner is
+excluded from C67 and remains an explicit package gap.
 
 Canonical generic Android-native architecture remains in
 `isomorphisms/android-NDK`; this Cat Food file owns the concrete C67

@@ -51,9 +51,9 @@ EOF
 packages=$tmp/packages.tsv
 cat > "$packages" <<'EOF'
 # package	target	abi	mode	source	source_ref	package_ref	url	sha256	command	entrypoint	main_class	jni_library	jni_property	install_requires	termux_packages	runtime_requires	package_requires
-app-phone	phone	armeabi-v7a	file	fixture/app	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	1111111111111111111111111111111111111111	https://example.invalid/app	0000000000000000000000000000000000000000000000000000000000000000	app	bin/app	-	-	-	-	-	-	-
-helper-phone	phone	armeabi-v7a	file	fixture/helper	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	2222222222222222222222222222222222222222	https://example.invalid/helper	0000000000000000000000000000000000000000000000000000000000000000	helper	bin/helper	-	-	-	-	-	-	-
-missing-phone	phone	armeabi-v7a	file	fixture/missing	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	3333333333333333333333333333333333333333	https://example.invalid/missing	0000000000000000000000000000000000000000000000000000000000000000	missing	bin/missing	-	-	-	-	-	-	-
+app-phone	armeabi-v7a	armeabi-v7a	file	fixture/app	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	1111111111111111111111111111111111111111	https://example.invalid/app	0000000000000000000000000000000000000000000000000000000000000000	app	bin/app	-	-	-	-	-	-	-
+helper-phone	armeabi-v7a	armeabi-v7a	file	fixture/helper	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	2222222222222222222222222222222222222222	https://example.invalid/helper	0000000000000000000000000000000000000000000000000000000000000000	helper	bin/helper	-	-	-	-	-	-	-
+missing-phone	armeabi-v7a	armeabi-v7a	file	fixture/missing	aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa	3333333333333333333333333333333333333333	https://example.invalid/missing	0000000000000000000000000000000000000000000000000000000000000000	missing	bin/missing	-	-	-	-	-	-	-
 EOF
 
 common() {
@@ -91,14 +91,14 @@ test -f "$manager/register.tsv"
 test -f "$manager/devices/miro-a1-fixture/inventory.tsv"
 
 common sh "$root/catfood" compare miro-a1-fixture > "$tmp/compare.tsv"
-grep -Fx 'current	app-phone	1111111111111111111111111111111111111111	1111111111111111111111111111111111111111	receipt:PASS' "$tmp/compare.tsv" >/dev/null
+grep -Fx 'unconfirmed	app-phone	1111111111111111111111111111111111111111	1111111111111111111111111111111111111111	receipt:NOT_VERIFIED' "$tmp/compare.tsv" >/dev/null
 grep -Fx 'unrecorded	helper-phone	2222222222222222222222222222222222222222	2222222222222222222222222222222222222222	package-directory' "$tmp/compare.tsv" >/dev/null
 grep -Fx 'missing	missing-phone	-	3333333333333333333333333333333333333333	not-observed' "$tmp/compare.tsv" >/dev/null
-grep -Fx 'undeclared	old-phone	9999999999999999999999999999999999999999	-	receipt:PASS' "$tmp/compare.tsv" >/dev/null
+grep -Fx 'undeclared	old-phone	9999999999999999999999999999999999999999	-	receipt:NOT_VERIFIED' "$tmp/compare.tsv" >/dev/null
 
 common sh "$root/catfood" report > "$tmp/report.tsv"
 grep -F "miro-a1-fixture	main-a1	MIRO A1	phone	" "$tmp/report.tsv" |
-    grep -F "	$android_packages_sha256	$termux_packages_sha256	1	1	0	0	1	1	0" >/dev/null
+    grep -F "	$android_packages_sha256	$termux_packages_sha256	0	1	0	1	1	1	0" >/dev/null
 
 # Re-evaluate the saved observation against changed repository intent without
 # asking the phone to inspect itself again.
@@ -128,16 +128,16 @@ common env CATFOOD_TARGET=c67 CATFOOD_DEVICE_ABI=arm64-v8a \
 grep -Fx 'meta	target	c67	detected' "$tmp/c67.tsv" >/dev/null
 grep -Fx 'meta	model	Miro C67	getprop' "$tmp/c67.tsv" >/dev/null
 tablet_packages=$tmp/tablet-packages.tsv
-sed 's/	phone	/	tablet	/g' "$packages" > "$tablet_packages"
+sed 's/	armeabi-v7a	/	arm64-v8a	/g' "$packages" > "$tablet_packages"
 common env CATFOOD_ANDROID_PACKAGES="$tablet_packages" \
     sh "$root/catfood" compare "$tmp/c67.tsv" > "$tmp/c67-compare.tsv"
-grep -Fx 'current	app-phone	1111111111111111111111111111111111111111	1111111111111111111111111111111111111111	receipt:PASS' "$tmp/c67-compare.tsv" >/dev/null
+grep -Fx 'unconfirmed	app-phone	1111111111111111111111111111111111111111	1111111111111111111111111111111111111111	receipt:NOT_VERIFIED' "$tmp/c67-compare.tsv" >/dev/null
 if common env CATFOOD_TARGET=c67 CATFOOD_DEVICE_ABI=arm64-v8a \
     CATFOOD_TEST_MODEL=TAB_P10 sh "$root/catfood" inspect > "$tmp/wrong-c67.tsv" 2> "$tmp/wrong-c67.err"; then
     printf '%s\n' 'non-C67 inventory was accepted as c67' >&2
     exit 1
 fi
-grep -F 'requires physical MIRO C67 identity' "$tmp/wrong-c67.err" >/dev/null
+grep -F 'Android target mismatch' "$tmp/wrong-c67.err" >/dev/null
 test ! -s "$tmp/wrong-c67.tsv"
 
 printf '%s\n' 'Cat Food device inventory, Manager record, comparison, and report pass'

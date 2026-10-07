@@ -42,6 +42,10 @@ backend_log=$tmp/backend.log
 app_log=$tmp/app.log
 pkg_log=$tmp/pkg.log
 mkdir -p "$fixture" "$bundle/lib" "$fake_bin"
+cp "$root/tests/android-properties.sh" "$fake_bin/getprop"
+chmod +x "$fake_bin/getprop"
+export CATFOOD_DEVICE_ID=synthetic-a1
+export CATFOOD_GETPROP="$fake_bin/getprop"
 printf '%s\n' 'direct-dex-fixture' > "$bundle/classes.dex"
 printf '%s\n' 'jni-fixture' > "$bundle/lib/libapp.so"
 cat > "$bundle/catfood-package.tsv" <<EOF_RECEIPT
@@ -131,7 +135,7 @@ idris-arm-backend	host	n/a	n/a	known-bad-experimental-backend
 EOF_DELIVERY
 cat > "$fixture_packages" <<EOF_PACKAGES
 # package	target	abi	mode	source	source_ref	package_ref	url	sha256	command	entrypoint	main_class	jni_library	jni_property	install_requires	termux_packages	runtime_requires	package_requires
-app-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime	-	-
+app-phone	armeabi-v7a	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime	-	-
 EOF_PACKAGES
 
 CATFOOD_TOOLS="$fixture_tools" \
@@ -150,8 +154,8 @@ idris-arm-backend	host	n/a	n/a	known-bad-experimental-backend
 EOF_SUITE_DELIVERY
 cat > "$suite_packages" <<EOF_SUITE_PACKAGES
 # package	target	abi	mode	source	source_ref	package_ref	url	sha256	command	entrypoint	main_class	jni_library	jni_property	install_requires	termux_packages	runtime_requires	package_requires
-app-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime	-	-
-helper-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	helper	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime	-	-
+app-phone	armeabi-v7a	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime	-	-
+helper-phone	armeabi-v7a	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	helper	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime	-	-
 EOF_SUITE_PACKAGES
 CATFOOD_TOOLS="$fixture_tools" \
 CATFOOD_ANDROID_DELIVERY="$suite_delivery" \
@@ -272,8 +276,8 @@ sed \
     "$workspace/receipts/phone-app-phone.tsv" > "$promoted_runtime_receipt"
 assert_receipt_rejected promoted-runtime 'runtime PASS requires launch PASS' "$promoted_runtime_receipt"
 
-rewrite_receipt target tablet "$tmp/wrong-identity.tsv"
-assert_receipt_rejected wrong-identity 'target does not match packages.tsv' "$tmp/wrong-identity.tsv"
+rewrite_receipt package_lane arm64-v8a "$tmp/wrong-identity.tsv"
+assert_receipt_rejected wrong-identity 'package_lane does not match packages.tsv' "$tmp/wrong-identity.tsv"
 rewrite_receipt build_result PENDING "$tmp/invalid-result.tsv"
 assert_receipt_rejected invalid-result 'invalid build_result: PENDING' "$tmp/invalid-result.tsv"
 rewrite_receipt build_evidence build.log "$tmp/unverified-with-evidence.tsv"
@@ -351,7 +355,7 @@ reddit	runtime	package:reddit-phone	gap:not-under-test	fixture-reddit
 EOF_REDDIT_DELIVERY
 cat > "$reddit_packages" <<EOF_REDDIT_PACKAGES
 # package	target	abi	mode	source	source_ref	package_ref	url	sha256	command	entrypoint	main_class	jni_library	jni_property	install_requires	termux_packages	runtime_requires	package_requires
-reddit-phone	phone	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	reddit	classes.dex	org.isomorphisms.reddit.RedditCli	lib/libapp.so	reddit.library	curl,sha256sum,tar	-	-	-
+reddit-phone	armeabi-v7a	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	reddit	classes.dex	org.isomorphisms.reddit.RedditCli	lib/libapp.so	reddit.library	curl,sha256sum,tar	-	-	-
 EOF_REDDIT_PACKAGES
 
 reddit_workspace=$tmp/reddit-workspace
@@ -390,7 +394,7 @@ cat > "$fake_bin/getprop" <<'EOF_GETPROP'
 case ${1:-} in
     ro.product.cpu.abi) printf '%s\n' armeabi-v7a ;;
     ro.build.version.sdk) printf '%s\n' 34 ;;
-    ro.product.model) printf '%s\n' fixture-phone ;;
+    ro.product.model) printf '%s\n' 'MIRO A1' ;;
     ro.build.fingerprint) printf '%s\n' fixture/fingerprint ;;
     *) exit 0 ;;
 esac

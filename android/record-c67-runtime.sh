@@ -7,7 +7,8 @@ root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 workspace=${CATFOOD_ROOT:-"$HOME/opt"}
 receipt=${CATFOOD_C67_RUNTIME_RECEIPT:-"$workspace/receipts/c67-runtime.tsv"}
 
-catfood_android_verify_device_target c67
+catfood_android_require_device c67
+device_id=$(catfood_android_device_id)
 
 abi=$(catfood_android_getprop ro.product.cpu.abi || :)
 model=$(catfood_android_getprop ro.product.model || :)
@@ -48,6 +49,13 @@ native_probe=$workspace/bin/jq
     printf 'MIRO C67 native probe is missing: %s\n' "$native_probe" >&2
     exit 3
 }
+binary_manifest=${CATFOOD_BINARY_MANIFEST:-"$root/runtime-binaries.tsv"}
+probe_sha256=$(awk -F '\t' '$1 == "jq" && $4 == "linux-aarch64" && $5 == "file" {print $7; found++} END {if (found != 1) exit 1}' "$binary_manifest")
+if command -v sha256sum >/dev/null 2>&1; then
+    printf '%s  %s\n' "$probe_sha256" "$native_probe" | sha256sum -c - >/dev/null
+else
+    printf '%s  %s\n' "$probe_sha256" "$native_probe" | /system/bin/toybox sha256sum -c - >/dev/null
+fi
 probe_output=$("$native_probe" --version 2>&1) || {
     printf '%s\n' 'MIRO C67 arm64 native jq probe failed' >&2
     exit 3
@@ -78,7 +86,8 @@ mkdir -p "$(dirname -- "$receipt")"
 {
     printf 'schema\tcatfood-c67-runtime-v1\n'
     printf 'target\tc67\n'
-    printf 'delivery_target\ttablet\n'
+    printf 'package_lane\tarm64-v8a\n'
+    printf 'device_id\t%s\n' "$device_id"
     printf 'product_device\t%s\n' "$product"
     printf 'model\t%s\n' "$model"
     printf 'fingerprint\t%s\n' "$fingerprint"
@@ -87,6 +96,7 @@ mkdir -p "$(dirname -- "$receipt")"
     printf 'kernel_machine\t%s\n' "$machine"
     printf 'page_size_bytes\t%s\n' "$page_size"
     printf 'native_probe\t%s\n' "$native_probe"
+    printf 'native_probe_sha256\t%s\n' "$probe_sha256"
     printf 'native_probe_output\t%s\n' "$probe_output"
     printf 'native_probe_receipt\t%s\n' "$binary_receipt"
     printf 'native_probe_result\tPASS\n'

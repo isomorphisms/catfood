@@ -1,51 +1,76 @@
 # Cat Food targets
 
-Cat Food has one control plane and five concrete acceptance targets. Shared mechanics do not imply shared acceptance.
+Cat Food keeps device profile, form factor, artifact ABI, physical instance,
+acceptance evidence, and workbench role separate.
 
-| Target | Environment | Normal policy | What a passing target receipt may prove |
-| --- | --- | --- | --- |
-| `phone` | Termux on 32-bit ARMv7 Android | `$HOME/opt`; download, verify, and install published `armeabi-v7a` runtime packages only | The exact available ARMv7 phone packages installed and the recorded physical-phone checks ran. |
-| `c67` | Termux on the physical MIRO C67 | `$HOME/opt`; consume the existing `arm64-v8a` delivery lane and retain C67 identity separately | The exact AArch64 packages ran on the C67. It does not accept another AArch64 device. |
-| `tablet` | Termux on another AArch64 Android tablet target | `$HOME/opt`; download, verify, and install published `arm64-v8a` runtime packages only | The exact available tablet packages installed and the recorded physical-tablet checks ran. It does not accept the C67. |
-| `container` | Disposable Debian/Ubuntu container or sandbox | full source workbench; depth 1; no shell-profile modification | A clean ephemeral Linux workbench can provision and build. It does not prove persistent-host or Android behavior. |
-| `cloud` | Persistent Debian/Ubuntu host, including Hetzner | `/opt`; full source workbench and host tool builds | The persistent cloud workbench path provisions and builds. Hetzner-specific acceptance may add provider checks. |
+| Selector | Device profile | Class | Primary package lane | Role |
+| --- | --- | --- | --- | --- |
+| `phone` | MIRO A1 | phone | `armeabi-v7a` | Android runtime consumer; primary application target |
+| `c67` | MIRO C67 | phone | `arm64-v8a` | Android runtime consumer; paired application target |
+| `tablet` | TAB_P10 | tablet | `arm64-v8a` | Independent Android runtime consumer |
+| `termux` | unknown | unknown | unassigned | Generic observation only; provisioning refuses |
+| `container` | explicitly selected disposable Debian/Ubuntu environment | host | host-specific | Build/workbench |
+| `cloud` | Debian/Ubuntu Linux; Hetzner is a concrete instance | host | host-specific | Build/workbench |
 
-`termux` remains a compatibility source-workbench target for an unknown or explicitly generic Termux architecture. `hetzner` is an alias for `cloud`.
+`hetzner` remains a selector alias for `cloud`; selecting it does not prove
+which host was reached. Architecture alone never identifies an Android model.
+The C67's retained native AArch32 compatibility does not accept an A1 artifact
+or authorize using A1 storage/Shizuku facts.
 
-## Selection
+## Selection and identity
 
-```sh
-./catfood
-```
+`./catfood --target` reports the selected profile. `android/target.sh` shares
+one identity oracle across selection, installation, inventory and receipt checks.
+It reads product/model and primary ABI. Conflicting known fields and a known
+model with the wrong ABI fail; unknown identity remains generic. A1 product
+tokens are not yet retained, so its exact recognized model supplies positive
+identity. C67's retained product and model are checked together when available.
 
-On Termux, `armv7*`/`armv8l` selects `phone`. An AArch64 device whose Android product identity is `Miro_C67` / `Miro C67` selects `c67`; other AArch64 devices select `tablet`. Non-Termux systems continue to select `cloud` automatically. Container detection is deliberately not guessed; select it explicitly:
+Explicit `CATFOOD_TARGET` overrides remain available. Available observations
+must agree. A host with no Android properties can select an Android profile for
+planning, but installation requires observed identity and primary ABI. An ABI
+override cannot contradict getprop. Known or generic Android consumers cannot
+be forced into host provisioning. Automatic cloud selection requires positive
+Debian/Ubuntu Linux evidence; container selection remains explicit.
 
-```sh
-CATFOOD_TARGET=container ./catfood
-```
+Model identity is not physical-instance identity. Installer and inventory share
+a local per-installation `device_id` (or an explicit user alias), scoped to the
+device's state directory. Never copy it between handsets. Model properties and
+local aliases are consistency checks, not cryptographic attestation.
 
-Any target can be forced explicitly, and `./catfood --target` reports selection without provisioning.
+## Packages and receipts
 
-## Android package lanes
+The two delivery columns and package lanes are named `armeabi-v7a` and
+`arm64-v8a`. The package lane and ABI must agree. Published package IDs, URLs,
+digests and bytes remain unchanged. Only the adapter for immutable embedded
+DEX/JNI metadata retains historical `phone`/`tablet` wire labels.
 
-The existing Android delivery manifests still have two package lanes:
+ABI compatibility alone cannot establish every application's requirements.
+`android/package-restrictions.tsv` records evidenced device restrictions.
+The current ARM64 GPU acceptance archive explicitly requires Mali-G57 and is
+therefore restricted to TAB_P10. C67 exposes a package gap rather than
+installing that incompatible acceptance runner.
 
-- `phone` = `armeabi-v7a`;
-- `tablet` = `arm64-v8a`.
+New `catfood-android-evidence-v2` receipts require the physical target,
+device class, device instance, observed product/model/fingerprint, ABI lane,
+exact artifact identity, and every separate evidence stage. Version 1 is
+historical evidence and cannot be silently reused as current acceptance.
+Installation regenerates its receipt without promoting launch/runtime/device
+results. Validation can bind to an expected target and instance:
 
-The physical `c67` target consumes the `tablet` package lane because the C67 primary ABI is `arm64-v8a`. This is a package/ABI reuse relation, not a claim that the C67 is a tablet. C67 installation receipts retain `device_target=c67` plus the observed product, model, and build fingerprint. `android/check.sh ready c67` evaluates the AArch64 package lane while physical acceptance remains C67-specific.
+`sh android/check.sh receipt RECEIPT TARGET DEVICE_ID`
 
-After normal C67 provisioning, `android/record-c67-runtime.sh` records the runtime page size and executes the pinned AArch64 jq binary, tying a native-execution probe to its Cat Food runtime-binary receipt.
+C67 and tablet may consume identical compatible ARM64 bytes, but retain separate
+receipt names and identities. Installation, launch, runtime, emulator and
+physical-device PASS remain separate claims. Receipt validation checks schema
+and consistency; it does not attest that a claimed physical run happened.
 
-## Android rule
+## Producer policy
 
-All concrete Android targets are runtime-only consumers. Their normal Cat Food path must not:
-
-- clone the project source fleet;
-- install or bootstrap compiler/build toolchains;
-- use an unfinished native compiler backend as a prerequisite for an unrelated package;
-- repair a missing package by building from source on the device.
-
-`android/delivery.tsv` accounts for the entire declared inventory plus Grease. `android/packages.tsv` contains only actual packages. `android/check.sh ready phone|c67|tablet` is the whole-inventory manifest readiness gate and must stay red while intended runtime deliverables or classifications are unresolved.
-
-Do not substitute receipts across targets or evidence kinds. In particular, ARM64 package compatibility does not turn C67 evidence into tablet evidence; GitHub/container execution is not physical Android execution; installation is not application behavior; and an experimental compiler/backend result is not an Android application delivery result.
+`android/application-targets.tsv` is the maintained application policy: normally
+produce both A1 and C67 artifacts; when only one can be completed, A1 is primary.
+`android/conversation-targets.tsv` retains the conversation runtime's API/NDK
+details and is checked against that policy. Its API 21 floor is program-specific,
+not a requirement inferred from either phone's observed Android release.
+Flexible Pipes owns execution of paired producer jobs. This matrix is not a
+publication receipt or physical acceptance.

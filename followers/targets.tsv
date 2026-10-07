@@ -6,4 +6,4 @@ github-x86_64	github-actions	x86_64	container	runtime	sh followers/accept-x86.sh
 github-x86_64-artifact	github-actions	x86_64	artifact	artifact	validate exact published artifact identity, hash, metadata, extraction, and install contract	yes
 container-x86_64	linux-container	x86_64	container	runtime	sh followers/accept-x86.sh container	yes
 hetzner-x86_64	hetzner-linux	x86_64	cloud	runtime	sh followers/accept-x86.sh cloud	yes
-termux-generic	android-termux	unknown	termux	build	-	no
+termux-generic	android-termux	unknown	termux	runtime	-	no
