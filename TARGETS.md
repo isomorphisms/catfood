@@ -17,7 +17,7 @@ Cat Food has one control plane and four concrete acceptance targets. Shared mech
 ./catfood
 ```
 
-On Termux, `armv7*`/`armv8l` selects `phone` and `aarch64`/`arm64` selects `tablet`. Non-Termux systems continue to select `cloud` automatically. Container detection is deliberately not guessed; select it explicitly:
+On Termux, `armv7*`/`armv8l` selects `phone` and `aarch64`/`arm64` selects `tablet`. Automatic `cloud` selection requires Linux plus an exact Debian/Ubuntu ID in `/etc/os-release`. NetBSD/SDF and unknown platforms fail closed. Explicit target selection remains available; it is an override, not detected host evidence. Container detection is deliberately not guessed; select it explicitly:
 
 ```sh
 CATFOOD_TARGET=container ./catfood
