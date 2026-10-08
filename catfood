@@ -11,6 +11,7 @@ usage: ./catfood [--target]
        ./catfood help [tool]
        ./catfood where [tool]
        ./catfood register TOOL ROLE PATH
+       ./catfood plan-android-build APPLICATION_CONTRACT phone|c67 SOURCE_SHA
        ./catfood inspect|record|compare|packages|report
 
 Feed the selected Cat Food target.
@@ -436,6 +437,13 @@ case ${1:-} in
         fi
         register_checkout "$2" "$3" "$4"
         exit $?
+        ;;
+    plan-android-build)
+        if [ "$#" -ne 4 ]; then
+            usage >&2
+            exit 2
+        fi
+        exec sh "$root/android/plan-build.sh" "$2" "$3" "$4"
         ;;
     inspect|record|compare|packages|report)
         exec sh "$root/device-state.sh" "$@"
