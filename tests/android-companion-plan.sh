@@ -43,6 +43,8 @@ reject() {
     fi
     grep -F "$expected" "$tmp/err"
 }
+sed 's/^launcher_label\tzero & infinity$/launcher_label\tWegert/' "$contract" > "$tmp/rebrand.tsv"
+reject 'launcher identity changed against Cat Food policy' "$tmp/rebrand.tsv"
 cp "$contract" "$tmp/duplicate.tsv"
 printf 'launcher_label	Wegert\n' >> "$tmp/duplicate.tsv"
 reject 'duplicate application contract field' "$tmp/duplicate.tsv"
