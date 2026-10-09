@@ -74,3 +74,9 @@ details and is checked against that policy. Its API 21 floor is program-specific
 not a requirement inferred from either phone's observed Android release.
 Flexible Pipes owns execution of paired producer jobs. This matrix is not a
 publication receipt or physical acceptance.
+
+The candidate read-only operation `./catfood plan-android-build CONTRACT phone|c67
+EXACT_SOURCE_SHA` resolves A1/C67 obligations against this matrix. It retains
+required, incompatible and unresolved companion cells without claiming that a
+build ran. See `docs/android-companion-builds.md`. Its output must be checked
+and bound by the shared AICI/Flexible Pipes producer before publication.
