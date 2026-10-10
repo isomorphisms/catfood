@@ -13,6 +13,15 @@ if [ "$target" = auto ]; then
     target=$(catfood_detect_target)
 fi
 case $target in hetzner) target=cloud ;; esac
+# csvkit is an optional convenience feature. Its Python 3/pip runtime must
+# never be acquired as a side effect of ordinary Android package delivery.
+case ${CATFOOD_INSTALL_CSVKIT:-0} in
+    0|1) ;;
+    *)
+        printf '%s\n' 'CATFOOD_INSTALL_CSVKIT must be 0 or 1' >&2
+        exit 2
+        ;;
+esac
 case $target in
     phone|c67|tablet) catfood_android_require_device "$target" ;;
     cloud|container) catfood_verify_workbench_target ;;
@@ -71,7 +80,9 @@ case $target in
             CATFOOD_ROOT=$workspace CATFOOD_TARGET=$target \
                 sh "$root/android/install-crawlspace-bootstrap.sh"
             CATFOOD_ROOT=$workspace sh "$root/android/install-local-clients.sh"
-            CATFOOD_ROOT=$workspace sh "$root/android/install-csvkit.sh"
+            if [ "${CATFOOD_INSTALL_CSVKIT:-0}" = 1 ]; then
+                CATFOOD_ROOT=$workspace sh "$root/android/install-csvkit.sh"
+            fi
         fi
         if [ "$target" = c67 ]; then
             CATFOOD_ROOT=$workspace sh "$root/android/record-c67-runtime.sh"

@@ -7,6 +7,9 @@ on:
       - bootstrap.sh
       - build-tools.sh
       - update-tools.ysh
+      - refresh.sh
+      - doctor.sh
+      - tests/python-dependencies.sh
       - ci/repositories.sh
       - repository-aliases.tsv
       - tests/repository-identities.sh
@@ -16,6 +19,9 @@ on:
       - bootstrap.sh
       - build-tools.sh
       - update-tools.ysh
+      - refresh.sh
+      - doctor.sh
+      - tests/python-dependencies.sh
       - ci/repositories.sh
       - repository-aliases.tsv
       - tests/repository-identities.sh
@@ -34,6 +40,9 @@ jobs:
     timeout-minutes: 20
     env:
       CATFOOD_JOBS: '2'
+      # The Grease/Oils reference oracle deliberately needs Python 2 until
+      # the source compiler is migrated. This is not default provisioning.
+      CATFOOD_GREASE_LEGACY_PYTHON2: '1'
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

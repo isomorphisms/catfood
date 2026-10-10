@@ -44,6 +44,8 @@ Overrides:
   CATFOOD_ROOT=/path/to/workspace
   CATFOOD_BUILD_TOOLS=0|1
   CATFOOD_INSTALL_YSH=0|1
+  CATFOOD_GREASE_LEGACY_PYTHON2=0|1   # host source build only; defaults to 0
+  CATFOOD_INSTALL_CSVKIT=0|1           # Android optional Python 3 tool; defaults to 0
   CATFOOD_CHECKOUTS=/path/to/machine-local-checkouts.tsv
 EOF
 }
@@ -70,9 +72,14 @@ Repository: https://github.com/dilapidated-shed/grease.git
 Branch: main
 Canonical workbench checkout: $CATFOOD_ROOT/grease
 Local presence: use ./catfood where grease; do not assume the checkout exists.
-Cat Food role: stage-one shell bootstrap, fed separately before tools.tsv.
+Cat Food role: fork-specific shell runtime, fed separately before tools.tsv.
 
-Cat Food keeps Grease outside tools.tsv because it supplies the shell used to feed the remaining workbench. See bootstrap.sh for the exact bootstrap path and the Grease checkout itself for repository-specific command help.
+The ordinary stage-one control shell is the separately installed native YSH.
+Grease's Python 2 source-development interpreter is disabled in normal
+provisioning and can be requested only with CATFOOD_GREASE_LEGACY_PYTHON2=1.
+A fresh workbench without a native Grease executable must report the
+missing runtime, not silently substitute upstream YSH as Grease.
+See bootstrap.sh and the Grease checkout for exact source details.
 EOF
         return 0
     fi
