@@ -82,6 +82,59 @@ CATFOOD_ROOT="$host" PATH="$fakebin:$PATH" \
     sh "$root/update-tools.ysh" "$host" 1 "$tmp/empty.tsv" 1 0 >/dev/null
 test ! -L "$host/bin/grease"
 
+# A stale source-stage shell must not sneak Python 2 back in *before*
+# activate.sh runs. Exercise bootstrap.sh itself, with the repository fetch
+# and nested update command replaced by harmless local effects.
+stage="$tmp/stage-zero"
+stagebin="$tmp/stage-bin"
+mkdir -p "$stage/ci" "$stagebin" "$host/grease/source/bin"
+cp "$root/bootstrap.sh" "$stage/bootstrap.sh"
+cat > "$stage/ci/repositories.sh" <<'EOF_REPOS'
+same_repository_url() { :; }
+EOF_REPOS
+cat > "$stage/check-manifest.sh" <<'EOF_CHECK'
+#!/bin/sh
+exit 0
+EOF_CHECK
+cat > "$stage/update-tools.ysh" <<'EOF_UPDATE'
+#!/bin/sh
+printf '%s\\n' stage-zero-update >> "$CATFOOD_TEST_LOG"
+EOF_UPDATE
+cat > "$stagebin/git" <<'EOF_STAGE_GIT'
+#!/bin/sh
+[ "${1:-}" = -C ] || exit 98
+case ${3:-} in
+    remote) printf '%s\\n' https://github.com/dilapidated-shed/grease.git ;;
+    fetch|checkout|merge|submodule|show-ref|status) exit 0 ;;
+    *) exit 97 ;;
+esac
+EOF_STAGE_GIT
+cat > "$host/grease/source/bin/ysh" <<'EOF_SOURCE_YSH'
+#!/bin/sh
+printf '%s\\n' legacy-ysh-run >> "$CATFOOD_TEST_LOG"
+[ "${1:-}" = -c ] && exit 0
+exec sh "$@"
+EOF_SOURCE_YSH
+chmod +x "$stagebin/git" "$host/grease/source/bin/ysh"
+ln -s "$host/grease/source/bin/ysh" "$stagebin/ysh"
+ln -s "$host/grease/source/bin/ysh" "$host/bin/ysh"
+: > "$log"
+CATFOOD_ROOT="$host" CATFOOD_MANIFEST="$tmp/empty.tsv" \\
+    CATFOOD_TEST_LOG="$log" CATFOOD_YSH= \\
+    CATFOOD_GREASE_LEGACY_PYTHON2=0 PATH="$stagebin:$PATH" \\
+    sh "$stage/bootstrap.sh" > "$tmp/bootstrap-default.out"
+grep -F 'no runnable YSH yet' "$tmp/bootstrap-default.out" >/dev/null
+grep -Fx stage-zero-update "$log" >/dev/null
+! grep -Fx legacy-ysh-run "$log" >/dev/null
+
+: > "$log"
+CATFOOD_ROOT="$host" CATFOOD_MANIFEST="$tmp/empty.tsv" \\
+    CATFOOD_TEST_LOG="$log" CATFOOD_YSH= \\
+    CATFOOD_GREASE_LEGACY_PYTHON2=1 PATH="$stagebin:$PATH" \\
+    sh "$stage/bootstrap.sh" > "$tmp/bootstrap-legacy.out"
+grep -Fx legacy-ysh-run "$log" >/dev/null
+: > "$log"
+
 # A Grease-native candidate can be linked without the legacy interpreter.
 mkdir -p "$host/grease/source/_bin/cxx-sh"
 cat > "$host/grease/source/_bin/cxx-sh/ysh" <<'EOF_NATIVE'
@@ -92,6 +145,9 @@ chmod +x "$host/grease/source/_bin/cxx-sh/ysh"
 CATFOOD_ROOT="$host" PATH="$fakebin:$PATH" \
     sh "$root/update-tools.ysh" "$host" 1 "$tmp/empty.tsv" 1 0 >/dev/null
 test "$(readlink "$host/bin/grease")" = "$host/grease/source/_bin/cxx-sh/ysh"
+# The old Cat Food-owned Python 2 stable YSH link is also cleared.
+test ! -L "$host/bin/ysh"
+! grep -Fx legacy-ysh-run "$log" >/dev/null
 
 # Test refresh.sh's real native-runner selection against the known-bad
 # already-linked legacy executable, without cloning or compiling anything.
