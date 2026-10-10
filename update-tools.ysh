@@ -11,6 +11,13 @@ workspace=${1:-${CATFOOD_ROOT:-/opt}}
 history_depth=${2:-${CATFOOD_DEPTH:-12}}
 manifest=${3:-${CATFOOD_MANIFEST:-$root/tools.tsv}}
 links_only=${4:-${CATFOOD_LINKS_ONLY:-0}}
+# YSH does not expose exported shell variables the same way as POSIX sh.
+# refresh.sh therefore passes the legacy choice explicitly as argument 5.
+grease_legacy=${5:-${CATFOOD_GREASE_LEGACY_PYTHON2:-0}}
+case $grease_legacy in
+    0|1) ;;
+    *) printf '%s\n' 'Grease Python 2 choice must be 0 or 1' >&2; exit 2 ;;
+esac
 failures=0
 
 feed_repository() {
@@ -280,13 +287,42 @@ install_command_links() {
         "$workspace/oils/_bin/cxx-sh/ysh" \
         "$workspace/oils/bin/ysh" \
         "$workspace/oils/ysh"
-    link_first grease \
-        "$workspace/.build/grease/bin/grease" \
-        "$workspace/grease/_bin/cxx-sh/ysh" \
-        "$workspace/grease/bin/ysh" \
-        "$workspace/grease/ysh" \
-        "$workspace/grease/source/_bin/cxx-sh/ysh" \
-        "$workspace/grease/source/bin/ysh"
+    if test "$grease_legacy" = 1; then
+        # Source development only: this interpreter intentionally uses
+        # vendored Python 2 and may not qualify normal host provisioning.
+        link_first grease \
+            "$workspace/.build/grease/bin/grease" \
+            "$workspace/grease/_bin/cxx-sh/ysh" \
+            "$workspace/grease/bin/ysh" \
+            "$workspace/grease/ysh" \
+            "$workspace/grease/source/_bin/cxx-sh/ysh" \
+            "$workspace/grease/source/bin/ysh"
+    else
+        # Old Cat Food runs can leave an active Python 2 Grease symlink.
+        # Remove only those known Cat Food-selected legacy link targets.
+        # Keep the actual interpreter and arbitrary user files untouched.
+        grease_link=$workspace/bin/grease
+        if test -L "$grease_link"; then
+            old_target=$(readlink "$grease_link" 2>/dev/null || true)
+            case "$old_target" in
+                "$workspace/.build/grease/bin/grease" | \
+                "$workspace/grease/bin/ysh" | \
+                "$workspace/grease/ysh" | \
+                "$workspace/grease/source/bin/ysh")
+                    if ! rm -f "$grease_link"; then
+                        failures=1
+                        return 0
+                    fi
+                    ;;
+            esac
+        fi
+
+        # Neither source/bin/ysh nor the Python 2 launcher is a native
+        # Grease artifact. Do not silently substitute installed Oils YSH.
+        link_first grease \
+            "$workspace/grease/_bin/cxx-sh/ysh" \
+            "$workspace/grease/source/_bin/cxx-sh/ysh"
+    fi
 
     install_gopeed_command
     link_first go_down_load "$workspace/bin/gopeed"
