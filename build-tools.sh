@@ -50,7 +50,16 @@ build_grease() {
     # Cat Food provisioning. Never substitute stock YSH for a Grease receipt.
     case ${CATFOOD_GREASE_LEGACY_PYTHON2:-0} in
         0)
+            # Native compiled engine is opt-in only when an exact producer
+            # artifact is provided; never bootstrap Python 2 as fallback.
+            if [ -n "${CATFOOD_GREASE_NATIVE:-}${CATFOOD_GREASE_NATIVE_SHA256:-}${CATFOOD_GREASE_NATIVE_GREASE_SHA:-}${CATFOOD_GREASE_NATIVE_SOURCE_SHA:-}" ]; then
+                script_root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+                CATFOOD_ROOT="$workspace" CATFOOD_BUILD_ROOT="$build_root" \
+                    sh "$script_root/install-grease-native.sh"
+                return $?
+            fi
             printf '%s\n' 'Grease Python 2 source bootstrap skipped (explicit opt-in: CATFOOD_GREASE_LEGACY_PYTHON2=1)'
+            printf '%s\n' 'Compiled Grease producer artifact not supplied; host doctor retains the Grease gap'
             return 0
             ;;
         1)

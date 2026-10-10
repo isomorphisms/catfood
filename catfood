@@ -45,6 +45,10 @@ Overrides:
   CATFOOD_BUILD_TOOLS=0|1
   CATFOOD_INSTALL_YSH=0|1
   CATFOOD_GREASE_LEGACY_PYTHON2=0|1   # host source build only; defaults to 0
+  CATFOOD_GREASE_NATIVE=/absolute/path/to/compiled/ysh
+  CATFOOD_GREASE_NATIVE_SHA256=verified-native-sha256
+  CATFOOD_GREASE_NATIVE_GREASE_SHA=grease-commit
+  CATFOOD_GREASE_NATIVE_SOURCE_SHA=pinned-source-gitlink
   CATFOOD_INSTALL_CSVKIT=0|1           # Android optional Python 3 tool; defaults to 0
   CATFOOD_CHECKOUTS=/path/to/machine-local-checkouts.tsv
 EOF
@@ -79,7 +83,10 @@ Grease's Python 2 source-development interpreter is disabled in normal
 provisioning and can be requested only with CATFOOD_GREASE_LEGACY_PYTHON2=1.
 A fresh workbench without a native Grease executable must report the
 missing runtime, not silently substitute upstream YSH as Grease.
-See bootstrap.sh and the Grease checkout for exact source details.
+Normal host Grease requires the compiled ELF to pass install-grease-native.sh
+source pin, hash, architecture, arithmetic and alias/unalias checks.
+The old Python 2 development launcher and test suite remain separate.
+See README.md for required producer values, acceptance limits and bootstrap.sh.
 EOF
         return 0
     fi

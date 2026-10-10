@@ -26,6 +26,10 @@ jobs:
           dash -n provision.sh
           dash -n install-binaries.sh
           dash -n install-lua.sh
+          dash -n install-grease-native.sh
+          dash -n build-tools.sh
+          dash -n doctor.sh
+          dash -n tests/grease-native.sh
           dash -n android/check.sh
           dash -n android/install.sh
           dash -n android/bootstrap-crawlspace.sh
@@ -40,6 +44,10 @@ jobs:
       - name: Verify transferred repository identity and updates
         shell: sh
         run: sh tests/repository-identities.sh
+      - name: Exercise Grease native adoption and rejecting fixtures
+        shell: sh
+        # Synthetic compiled C double tests wiring, not real Grease semantics.
+        run: sh tests/grease-native.sh
       - name: Exercise reconciled inventory and Shizuku preservation
         shell: sh
         run: |

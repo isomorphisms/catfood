@@ -18,11 +18,14 @@ android/bootstrap-crawlspace.sh	stage-zero	sh	Starts the delivered Crawl Space s
 android/install-crawlspace-bootstrap.sh	stage-zero	sh	Installs the stable post-reboot Crawl Space helper
 activate.sh	transition	sh	Creates stable command links after bootstrap
 refresh.sh	transition	sh	Hands YSH files to a runnable Grease or YSH
-build-tools.sh	transition	sh	Existing post-bootstrap build driver pending Grease migration
+build-tools.sh	transition	sh	Compiled Grease receipt path and opt-in Python 2 development lane
+install-grease-native.sh	transition	sh	Check pinned native ELF digest, source revision and behavior
 doctor.sh	transition	sh	Existing host-workbench verifier pending Grease migration
 import-config.sh	transition	sh	Secret importer remains dependency-free and auditable
 tests/check-manifest.sh	test	sh	Stage-zero manifest failure fixtures
 tests/entrypoint.sh	test	sh	Cloud and generic Termux dispatch fixtures
+tests/grease-native.sh	test	sh	Synthetic compiled engine and refusing native-selection fixture
+tests/fixtures/grease-alias.ysh	test	ysh	Native compiled Grease alias and unalias smoke
 tests/targets.sh	test	sh	Target selection fixtures
 tests/android-delivery.sh	test	sh	Whole-inventory Android runtime delivery fixtures
 tests/android-crawlspace.sh	test	sh	Crawl Space exact-build delivery, bootstrap, and no-device-build fixtures

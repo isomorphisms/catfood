@@ -144,7 +144,8 @@ EOF_NATIVE
 chmod +x "$host/grease/source/_bin/cxx-sh/ysh"
 CATFOOD_ROOT="$host" PATH="$fakebin:$PATH" \
     sh "$root/update-tools.ysh" "$host" 1 "$tmp/empty.tsv" 1 0 >/dev/null
-test "$(readlink "$host/bin/grease")" = "$host/grease/source/_bin/cxx-sh/ysh"
+# Checkout names alone do not qualify an ELF producer; reject this fake shell.
+test ! -L "$host/bin/grease"
 # The old Cat Food-owned Python 2 stable YSH link is also cleared.
 test ! -L "$host/bin/ysh"
 ! grep -Fx legacy-ysh-run "$log" >/dev/null

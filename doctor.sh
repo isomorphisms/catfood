@@ -78,7 +78,40 @@ fi
 if [ -x "$workspace/bin/grease" ]; then
     output=$("$workspace/bin/grease" -c 'var answer = 6 * 7; write -- "grease=$answer"' 2>/dev/null || true)
     if [ "$output" != grease=42 ]; then
-        printf '%-22s source interpreter smoke failed\n' grease >&2
+        printf '%-22s Grease arithmetic smoke failed\n' grease >&2
+        failures=1
+    fi
+fi
+if [ "${CATFOOD_GREASE_LEGACY_PYTHON2:-0}" != 1 ] &&
+   [ -x "$workspace/bin/grease" ]; then
+    native_root=${CATFOOD_BUILD_ROOT:-$workspace/.build}/grease-native
+    native_engine=$native_root/bin/ysh
+    native_wrapper=$native_root/bin/grease
+    native_receipt=$native_root/receipt.tsv
+    if [ ! -L "$workspace/bin/grease" ] ||
+       [ "$(readlink "$workspace/bin/grease")" != "$native_wrapper" ] ||
+       [ ! -x "$native_engine" ] || [ ! -f "$native_receipt" ]; then
+        printf '%-22s not linked to checked compiled runtime\n' grease >&2
+        failures=1
+    else
+        expected_digest=$(awk -F '\t' '$1 == "sha256" {print $2}' "$native_receipt")
+        actual_digest=$(sha256sum "$native_engine" | awk '{print $1}')
+        if [ -z "$expected_digest" ] || [ "$actual_digest" != "$expected_digest" ]; then
+            printf '%-22s compiled runtime digest mismatch\n' grease >&2
+            failures=1
+        fi
+        for receipt_field in runtime_arithmetic runtime_alias_unalias; do
+            observed=$(awk -F '\t' -v field="$receipt_field" '$1 == field {print $2}' "$native_receipt")
+            if [ "$observed" != PASS ]; then
+                printf 'grease receipt %s is not PASS\n' "$receipt_field" >&2
+                failures=1
+            fi
+        done
+    fi
+    alias_expected=$(printf 'alias-ok\nstatus=1')
+    if ! alias_observed=$("$workspace/bin/grease" "$root/tests/fixtures/grease-alias.ysh" 2>/dev/null) ||
+       [ "$alias_observed" != "$alias_expected" ]; then
+        printf '%-22s compiled runtime alias/unalias fixture failed\n' grease >&2
         failures=1
     fi
 fi

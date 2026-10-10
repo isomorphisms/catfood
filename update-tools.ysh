@@ -324,6 +324,8 @@ install_command_links() {
                 "$workspace/.build/grease/bin/grease" | \
                 "$workspace/grease/bin/ysh" | \
                 "$workspace/grease/ysh" | \
+                "$workspace/grease/_bin/cxx-sh/ysh" | \
+                "$workspace/grease/source/_bin/cxx-sh/ysh" | \
                 "$workspace/grease/source/bin/ysh")
                     if ! rm -f "$grease_link"; then
                         failures=1
@@ -335,9 +337,9 @@ install_command_links() {
 
         # Neither source/bin/ysh nor the Python 2 launcher is a native
         # Grease artifact. Do not silently substitute installed Oils YSH.
-        link_first grease \
-            "$workspace/grease/_bin/cxx-sh/ysh" \
-            "$workspace/grease/source/_bin/cxx-sh/ysh"
+        # File name and location alone cannot qualify a Grease producer.
+        # Adopt only the native engine checked against its source and digest.
+        link_first grease "$workspace/.build/grease-native/bin/grease"
     fi
 
     install_gopeed_command
