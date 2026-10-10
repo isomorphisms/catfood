@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-eb6641f77a39-container-x86_64
+repository	isomorphisms/catfood
+branch	fix/grease-native-runtime-no-python2-20261010
+pr	133
+trigger_commit	eb6641f77a398e97956325c69be03f9297ae2fbe
+leader_platform	github-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	container-x86_64
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit eb6641f77a398e97956325c69be03f9297ae2fbe on container-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh container
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	-
+follow_policy	exact
