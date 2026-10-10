@@ -118,4 +118,5 @@ fi
 
 CATFOOD_ROOT=$workspace CATFOOD_DEPTH=$history_depth CATFOOD_MANIFEST=$manifest \
     exec "$shell" "$root/update-tools.ysh" \
-        "$workspace" "$history_depth" "$manifest" 0
+        "$workspace" "$history_depth" "$manifest" 0 \
+        "${CATFOOD_GREASE_LEGACY_PYTHON2:-0}"
