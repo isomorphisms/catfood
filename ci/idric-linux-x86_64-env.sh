@@ -5,6 +5,7 @@ set -eu
 bundle=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)
 scheme="$bundle/chez-10.4.1/bin/scheme"
 program="$bundle/compiler/build/exec/idris2_app/idris2.so"
+[ -f "$program" ] || program="$bundle/compiler/build/exec/idris2_app/idris2.ss"
 
 [ -x "$scheme" ] || { echo 'idric: bundled Chez Scheme is missing' >&2; exit 1; }
 [ -f "$program" ] || { echo 'idric: compiled Idriç program is missing' >&2; exit 1; }

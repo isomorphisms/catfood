@@ -54,7 +54,19 @@ jobs:
           test "$(uname -m)" = x86_64
           test "$(git -C idric-source rev-parse HEAD)" = "$IDRIC_SHA"
           sh -n ci/idric-linux-x86_64-package.sh ci/idric-linux-x86_64-env.sh
+      - name: Restore exact pinned compiler producer cache
+        id: producer-cache
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            idric-source/_/.tools
+            idric-source/_/bootstrap-build
+            idric-source/_/build
+            idric-source/_/libs/*/build
+            idric-source/_/support/c
+          key: earth4a-idric-ubuntu24-x86_64-94dfd99bd3e376507fedc8611053b7173b2519f0-v1
       - name: Build the pinned compiler with its owned Chez runtime
+        if: steps.producer-cache.outputs.cache-hit != 'true'
         shell: bash
         env:
           JOBS: '2'
@@ -63,6 +75,24 @@ jobs:
           sh idric-source/edric bootstrap
           test -x idric-source/_/build/exec/idris2
           idric-source/_/build/exec/idris2 --version
+      - name: Save exact pinned compiler producer cache
+        if: steps.producer-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            idric-source/_/.tools
+            idric-source/_/bootstrap-build
+            idric-source/_/build
+            idric-source/_/libs/*/build
+            idric-source/_/support/c
+          key: earth4a-idric-ubuntu24-x86_64-94dfd99bd3e376507fedc8611053b7173b2519f0-v1
+      - name: Verify pinned compiler identity even when producer cache is restored
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git -C idric-source rev-parse HEAD)" = "$IDRIC_SHA"
+          idric-source/_/build/exec/idris2 --version | tee "$RUNNER_TEMP/idric-build-version.txt"
+          grep -F '0.8.0-94dfd99bd' "$RUNNER_TEMP/idric-build-version.txt"
       - name: Package compiler, matching TTC libraries, support and Chez
         shell: bash
         run: |
