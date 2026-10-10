@@ -44,6 +44,8 @@ Overrides:
   CATFOOD_ROOT=/path/to/workspace
   CATFOOD_BUILD_TOOLS=0|1
   CATFOOD_INSTALL_YSH=0|1
+  CATFOOD_GREASE_LEGACY_PYTHON2=0|1   # host source build only; defaults to 0
+  CATFOOD_INSTALL_CSVKIT=0|1           # Android optional Python 3 tool; defaults to 0
   CATFOOD_CHECKOUTS=/path/to/machine-local-checkouts.tsv
 EOF
 }
