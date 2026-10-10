@@ -26,12 +26,13 @@ IDRIS2_DATA="$bundle/compiler/support"
 IDRIS2_LIBS="$bundle/compiler/support/c"
 LD_LIBRARY_PATH="$bundle/compiler/build/exec/idris2_app:$IDRIS2_LIBS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 CHEZ=$scheme
+IDRIS2_INC_SRC="$bundle/compiler/build/exec/idris2_app"
 PATH="$bundle/bin:$PATH"
-export IDRIS2_PATH IDRIS2_DATA IDRIS2_LIBS LD_LIBRARY_PATH CHEZ PATH
+export IDRIS2_PATH IDRIS2_DATA IDRIS2_LIBS IDRIS2_INC_SRC LD_LIBRARY_PATH CHEZ PATH
 
 case "${0##*/}" in
     idric|idris2)
-        exec "$scheme" --script "$program" "$@"
+        exec "$scheme" --program "$program" "$@"
         ;;
     idric-env)
         [ "$#" -gt 0 ] || { echo 'usage: idric-env COMMAND [ARG ...]' >&2; exit 2; }
