@@ -32,20 +32,26 @@ if [ "${CATFOOD_BUILD_TOOLS:-1}" != 0 ]; then
     CATFOOD_ROOT=$workspace CATFOOD_JOBS=${CATFOOD_JOBS:-2} \
         sh "$root/build-tools.sh"
 
-    # Expose outputs produced by the build without another manifest fetch.
-    if [ -x "$workspace/bin/grease" ] && \
-       "$workspace/bin/grease" -c 'echo' >/dev/null 2>&1; then
-        grease_runner=$workspace/bin/grease
-    elif [ -x "$workspace/bin/ysh" ] && \
-         "$workspace/bin/ysh" -c 'echo' >/dev/null 2>&1; then
+    # Run the linking control script under the established native stage-one
+    # shell. Do not accidentally execute a previous Python 2 Grease launcher.
+    if [ -x "$workspace/bin/ysh" ] && \
+       "$workspace/bin/ysh" -c 'echo' >/dev/null 2>&1; then
         grease_runner=$workspace/bin/ysh
+    elif [ -x "$workspace/grease/source/_bin/cxx-sh/ysh" ] && \
+         "$workspace/grease/source/_bin/cxx-sh/ysh" -c 'echo' >/dev/null 2>&1; then
+        grease_runner=$workspace/grease/source/_bin/cxx-sh/ysh
+    elif [ "${CATFOOD_GREASE_LEGACY_PYTHON2:-0}" = 1 ] && \
+         [ -x "$workspace/bin/grease" ] && \
+         "$workspace/bin/grease" -c 'echo' >/dev/null 2>&1; then
+        grease_runner=$workspace/bin/grease
     else
-        printf '%s\n' 'cat food cannot refresh links without Grease/YSH' >&2
+        printf '%s\n' 'cat food cannot refresh links: no runnable native stage-one shell' >&2
         exit 1
     fi
     CATFOOD_ROOT=$workspace CATFOOD_LINKS_ONLY=1 \
         "$grease_runner" "$root/update-tools.ysh" \
-            "$workspace" "${CATFOOD_DEPTH:-12}" "$root/tools.tsv" 1
+            "$workspace" "${CATFOOD_DEPTH:-12}" "$root/tools.tsv" 1 \
+            "${CATFOOD_GREASE_LEGACY_PYTHON2:-0}"
 fi
 
 CATFOOD_ROOT=$workspace CATFOOD_PREFIX=$prefix \
