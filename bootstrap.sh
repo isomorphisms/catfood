@@ -52,6 +52,18 @@ update_grease() {
 
 runnable_ysh() {
     candidate=$1
+    # An existing stage-one shell link may be left over from a Python 2
+    # source build. Reject the known reference-interpreter paths by default,
+    # including links through the stable workbench bin directory.
+    resolved=$(readlink "$candidate" 2>/dev/null || printf '%s\n' "$candidate")
+    if [ "${CATFOOD_GREASE_LEGACY_PYTHON2:-0}" != 1 ]; then
+        case "$resolved" in
+            */grease/source/bin/ysh | */grease/bin/ysh | \
+            */oils/bin/ysh | */oils/ysh)
+                return 1
+                ;;
+        esac
+    fi
     [ -x "$candidate" ] && "$candidate" -c 'echo' >/dev/null 2>&1
 }
 
@@ -76,7 +88,15 @@ choose_shell() {
         return 0
     fi
 
-    if runnable_ysh "$grease/source/bin/ysh"; then
+    for native in "$grease/source/_bin/cxx-sh/ysh" "$grease/_bin/cxx-sh/ysh"; do
+        if runnable_ysh "$native"; then
+            printf '%s\n' "$native"
+            return 0
+        fi
+    done
+
+    if [ "${CATFOOD_GREASE_LEGACY_PYTHON2:-0}" = 1 ] &&
+       runnable_ysh "$grease/source/bin/ysh"; then
         printf '%s\n' "$grease/source/bin/ysh"
         return 0
     fi
