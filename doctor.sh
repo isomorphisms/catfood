@@ -51,6 +51,11 @@ for stable_name in lua luac R Rscript grease edric idris2 fieldmouse icu ib-smok
     check_stable "$stable_name"
 done
 
+if [ "${CATFOOD_GREASE_LEGACY_PYTHON2:-0}" != 1 ] &&
+   [ ! -x "$workspace/bin/grease" ]; then
+    printf '%s\n' 'Grease native host executable is missing; Python 2 source bootstrap is disabled. Native Grease qualification remains required; use CATFOOD_GREASE_LEGACY_PYTHON2=1 only for explicit legacy development.' >&2
+fi
+
 if [ -x "$workspace/bin/osh" ] && ! "$workspace/bin/osh" -c 'echo' >/dev/null 2>&1; then
     printf '%-22s stable command not runnable\n' osh >&2
     failures=1
