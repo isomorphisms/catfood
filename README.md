@@ -83,13 +83,13 @@ cd /opt/catfood
 ./catfood
 ```
 
-The cloud path installs its declared console/build dependencies, installs released YSH when needed, feeds the repository inventory, builds the current core toolchain, exposes stable commands, and runs `catfood-doctor` before returning success.
+The cloud path installs its declared console/build dependencies, installs released native YSH when needed, feeds the repository inventory, builds the current host tools **without defaulting to the legacy Grease Python 2 interpreter**, exposes available commands, and runs `catfood-doctor` before returning success. If no native Grease from the pinned fork is available, the doctor remains red; a Python-2-free native Grease host producer is separate pending work, not a silent upstream-YSH substitution.
 
 Packaged support runtimes are established before the core source builds. Lua is deliberately acquired from the target package manager rather than becoming another Cat Food-maintained compiler stage.
 
 The core host build currently exercises the repositories that need a real build before they are useful:
 
-- Grease builds its vendored Python 2 bootstrap outside the checkout and exposes the generated interpreter; released native YSH is the stage-one shell.
+- Grease's Oils-derived **source-development interpreter** still uses vendored Python 2. It is **disabled in ordinary Cat Food builds**. An explicitly requested legacy developer build uses `CATFOOD_GREASE_LEGACY_PYTHON2=1`; this does not qualify a Python-2-free native Grease. The stage-one shell is the independently installed native YSH. Cat Food links only a Grease-specific native executable by default, when one already exists under the Grease checkout; if none exists, the workbench doctor reports that Grease remains missing rather than silently calling upstream YSH Grease.
 - Idriç runs its checked-in `./edric all` bootstrap and focused handoff tests.
 - Idric-Net builds and installs its `idric_net` package into the current Idriç prefix before dependent host clients such as ICU are built.
 - Fieldmouse builds with Idriç, runs an interpreter smoke test, and rebuilds when Fieldmouse or Idriç changes.
@@ -133,7 +133,7 @@ Workbenches keep stable command names under `$CATFOOD_ROOT/bin`. Current host na
 
 `gdl` and `go_down_load` are aliases of the `gopeed` REST client. It accepts a direct URL or one URL on standard input, so `aa resolve MD5 | gdl` hands a resolved Anna's Archive member URL to Gopeed without making Gopeed part of AA's HTTP transport.
 
-Android product commands come only from successfully installed runtime packages. After the delivered Grease package makes YSH available, the Cat Food control plane itself also installs its small `gopeed` REST client and the `gdl` / `go_down_load` aliases from the checked-out Cat Food version. It also installs pinned csvkit 2.2.0 into `~/opt/packages/csvkit` from binary Python wheels only and exposes the upstream `csv*`, `in2csv`, and `sql2csv` commands under `~/opt/bin`; the Termux Python/pip prerequisites are installed without recommended compiler packages. These helpers are convenience software, not Android product-delivery evidence. `android/delivery.tsv` therefore continues to describe only the maintained product inventory and its explicit gaps.
+Android product commands come only from successfully installed runtime packages. After the delivered Grease package makes YSH available, the Cat Food control plane itself also installs its small `gopeed` REST client and the `gdl` / `go_down_load` aliases from the checked-out Cat Food version. With the explicit Android option `CATFOOD_INSTALL_CSVKIT=1`, it additionally installs pinned csvkit 2.2.0 into `~/opt/packages/csvkit` from binary Python wheels only and exposes the upstream `csv*`, `in2csv`, and `sql2csv` commands under `~/opt/bin`; that optional path requires Termux Python 3/pip without recommended compiler packages. Existing installed csvkit commands are not deleted when the option is absent. These helpers are convenience software, not Android product-delivery evidence. `android/delivery.tsv` therefore continues to describe only the maintained product inventory and its explicit gaps.
 
 ## Stage zero
 
