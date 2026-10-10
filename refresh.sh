@@ -40,6 +40,9 @@ if [ "${CATFOOD_BUILD_TOOLS:-1}" != 0 ]; then
     elif [ -x "$workspace/grease/source/_bin/cxx-sh/ysh" ] && \
          "$workspace/grease/source/_bin/cxx-sh/ysh" -c 'echo' >/dev/null 2>&1; then
         grease_runner=$workspace/grease/source/_bin/cxx-sh/ysh
+    elif [ -x "$workspace/grease/_bin/cxx-sh/ysh" ] && \
+         "$workspace/grease/_bin/cxx-sh/ysh" -c 'echo' >/dev/null 2>&1; then
+        grease_runner=$workspace/grease/_bin/cxx-sh/ysh
     elif [ "${CATFOOD_GREASE_LEGACY_PYTHON2:-0}" = 1 ] && \
          [ -x "$workspace/bin/grease" ] && \
          "$workspace/bin/grease" -c 'echo' >/dev/null 2>&1; then
