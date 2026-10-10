@@ -1,0 +1,27 @@
+section	key	value	evidence	notes
+package	id	grease-tablet	device-install-log	C67 consumes the arm64-v8a package lane
+package	abi	arm64-v8a	catfood-manifest	physical target remains c67, not tablet
+package	source_ref	8052868773077602266d80bf39aad6998e2da749	device-install-log	Grease/Oils source revision
+package	package_ref	9b3dc89048911bd0e23ee992fe00dcb3cd427f63	catfood-manifest	AArch64 packaging revision
+package	archive_sha256	3ddb962ef313e528e525fa03518f494577e921c2201ecb49f7a11f2fbf4e82b2	device-install-log	download verified before install
+package	command	$HOME/opt/bin/grease	device-install-log	Cat Food stable command
+installation	result	PASS	device-install-log	installed through android/install.sh
+provisioning	full_catfood_result	BLOCKED	device-install-log	pinned linux-aarch64 jq runtime probe failed before Android package delivery
+provisioning	workaround	android/install.sh	observed	direct declared Android installer retained package hashes and target checks
+runtime	operation	GitHub native repository ownership transfer	user-report	maintained Kitchen/Flexible Pipes batch
+runtime	physical_execution	PASS	user-confirmed	physical MIRO C67 Termux
+runtime	exact_final_stdout	NOT_RETAINED	evidence-limit	do not reconstruct final terminal bytes
+runtime	delivery_surface	ChatGPT Android ordinary plain text	user-confirmed	fenced CodeBlock had rendered unavailable
+postcondition	result	PASS	independent-GitHub-read	all ten destinations canonical under isomorphismes
+postcondition	repository_count	10	independent-GitHub-read	all numeric IDs preserved
+postcondition	mapping-class	1412391052	independent-GitHub-read	isomorphismes/mapping-class
+postcondition	montesinos	1412394512	independent-GitHub-read	isomorphismes/montesinos
+postcondition	Bulatov-Goodman-Strauss	1412402847	independent-GitHub-read	isomorphismes/Bulatov-Goodman-Strauss
+postcondition	regina	1412463768	independent-GitHub-read	isomorphismes/regina
+postcondition	VanKoughnett	1412475989	independent-GitHub-read	isomorphismes/VanKoughnett
+postcondition	zakharevich	1412476795	independent-GitHub-read	isomorphismes/zakharevich
+postcondition	snaith	1412477737	independent-GitHub-read	isomorphismes/snaith
+postcondition	kirby-calculus	1412481397	independent-GitHub-read	isomorphismes/kirby-calculus
+postcondition	morava	1412482666	independent-GitHub-read	isomorphismes/morava
+postcondition	goodwillie	1412483445	independent-GitHub-read	isomorphismes/goodwillie
+boundary	generic_trusted_chat_adapter	NOT_DEPLOYED	evidence-limit	this conversation is positive operational evidence, not general attestation
