@@ -98,20 +98,20 @@ exit 0
 EOF_CHECK
 cat > "$stage/update-tools.ysh" <<'EOF_UPDATE'
 #!/bin/sh
-printf '%s\\n' stage-zero-update >> "$CATFOOD_TEST_LOG"
+printf '%s\n' stage-zero-update >> "$CATFOOD_TEST_LOG"
 EOF_UPDATE
 cat > "$stagebin/git" <<'EOF_STAGE_GIT'
 #!/bin/sh
 [ "${1:-}" = -C ] || exit 98
 case ${3:-} in
-    remote) printf '%s\\n' https://github.com/dilapidated-shed/grease.git ;;
+    remote) printf '%s\n' https://github.com/dilapidated-shed/grease.git ;;
     fetch|checkout|merge|submodule|show-ref|status) exit 0 ;;
     *) exit 97 ;;
 esac
 EOF_STAGE_GIT
 cat > "$host/grease/source/bin/ysh" <<'EOF_SOURCE_YSH'
 #!/bin/sh
-printf '%s\\n' legacy-ysh-run >> "$CATFOOD_TEST_LOG"
+printf '%s\n' legacy-ysh-run >> "$CATFOOD_TEST_LOG"
 [ "${1:-}" = -c ] && exit 0
 exec sh "$@"
 EOF_SOURCE_YSH
@@ -119,18 +119,18 @@ chmod +x "$stagebin/git" "$host/grease/source/bin/ysh"
 ln -s "$host/grease/source/bin/ysh" "$stagebin/ysh"
 ln -s "$host/grease/source/bin/ysh" "$host/bin/ysh"
 : > "$log"
-CATFOOD_ROOT="$host" CATFOOD_MANIFEST="$tmp/empty.tsv" \\
-    CATFOOD_TEST_LOG="$log" CATFOOD_YSH= \\
-    CATFOOD_GREASE_LEGACY_PYTHON2=0 PATH="$stagebin:$PATH" \\
+CATFOOD_ROOT="$host" CATFOOD_MANIFEST="$tmp/empty.tsv" \
+    CATFOOD_TEST_LOG="$log" CATFOOD_YSH= \
+    CATFOOD_GREASE_LEGACY_PYTHON2=0 PATH="$stagebin:$PATH" \
     sh "$stage/bootstrap.sh" > "$tmp/bootstrap-default.out"
 grep -F 'no runnable YSH yet' "$tmp/bootstrap-default.out" >/dev/null
 grep -Fx stage-zero-update "$log" >/dev/null
 ! grep -Fx legacy-ysh-run "$log" >/dev/null
 
 : > "$log"
-CATFOOD_ROOT="$host" CATFOOD_MANIFEST="$tmp/empty.tsv" \\
-    CATFOOD_TEST_LOG="$log" CATFOOD_YSH= \\
-    CATFOOD_GREASE_LEGACY_PYTHON2=1 PATH="$stagebin:$PATH" \\
+CATFOOD_ROOT="$host" CATFOOD_MANIFEST="$tmp/empty.tsv" \
+    CATFOOD_TEST_LOG="$log" CATFOOD_YSH= \
+    CATFOOD_GREASE_LEGACY_PYTHON2=1 PATH="$stagebin:$PATH" \
     sh "$stage/bootstrap.sh" > "$tmp/bootstrap-legacy.out"
 grep -Fx legacy-ysh-run "$log" >/dev/null
 : > "$log"
