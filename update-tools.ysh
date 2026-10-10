@@ -122,9 +122,20 @@ link_shell() {
     shift
     link=$workspace/bin/$name
 
-    # Provisioning may deliberately point the stable shell name at a released
-    # native Oils install outside the source checkout. Keep that link as long
-    # as it is still runnable instead of regressing to an older source launcher.
+    if test "$grease_legacy" != 1 && test -L "$link"; then
+        shell_target=$(readlink "$link" 2>/dev/null || true)
+        case "$shell_target" in
+            "$workspace/oils/bin/osh" | "$workspace/oils/osh" | \
+            "$workspace/oils/bin/ysh" | "$workspace/oils/ysh" | \
+            "$workspace/grease/source/bin/ysh")
+                # Detach only the known Cat Food-managed reference launcher.
+                if ! rm -f "$link"; then failures=1; return 0; fi
+                ;;
+        esac
+    fi
+
+    # Keep a runnable native shell link if one was already installed. The
+    # fallback candidate list is native-only unless explicitly opted in.
     if test -L "$link" && test -x "$link" && "$link" -c 'echo' >/dev/null 2>&1; then
         return 0
     fi
@@ -279,14 +290,19 @@ install_command_links() {
         "$workspace/.build/ithon/python" \
         "$workspace/ithon/ithon" \
         "$workspace/ithon/bin/ithon"
-    link_shell osh \
-        "$workspace/oils/_bin/cxx-sh/osh" \
-        "$workspace/oils/bin/osh" \
-        "$workspace/oils/osh"
-    link_shell ysh \
-        "$workspace/oils/_bin/cxx-sh/ysh" \
-        "$workspace/oils/bin/ysh" \
-        "$workspace/oils/ysh"
+    if test "$grease_legacy" = 1; then
+        link_shell osh \
+            "$workspace/oils/_bin/cxx-sh/osh" \
+            "$workspace/oils/bin/osh" \
+            "$workspace/oils/osh"
+        link_shell ysh \
+            "$workspace/oils/_bin/cxx-sh/ysh" \
+            "$workspace/oils/bin/ysh" \
+            "$workspace/oils/ysh"
+    else
+        link_shell osh "$workspace/oils/_bin/cxx-sh/osh"
+        link_shell ysh "$workspace/oils/_bin/cxx-sh/ysh"
+    fi
     if test "$grease_legacy" = 1; then
         # Source development only: this interpreter intentionally uses
         # vendored Python 2 and may not qualify normal host provisioning.
