@@ -1,0 +1,11 @@
+#!/usr/bin/env ysh
+# Equivalent source semantics to spec/grease-alias.test.sh, executed natively.
+shopt -s ysh:all
+alias ll='echo alias-ok'
+ll
+unalias ll
+if alias ll >/dev/null 2>&1 {
+  echo status=0
+} else {
+  echo status=$?
+}
