@@ -2,6 +2,8 @@ name: Pinned Idriç Linux x86_64 bundle and fresh-host Intervals
 
 on:
   push:
+    branches:
+      - main
     paths:
       - '.github/workflows/idric-linux-x86_64-bundle.yml'
       - 'ci/idric-linux-x86_64-package.sh'
