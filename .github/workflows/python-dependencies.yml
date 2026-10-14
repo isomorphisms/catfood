@@ -1,0 +1,34 @@
+name: Cat Food Python dependency defaults
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  python-dependencies:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Check out source under test
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+
+      - name: Check changed shell entrypoints
+        shell: sh
+        run: |
+          sh -n build-tools.sh
+          sh -n provision.sh
+          sh -n refresh.sh
+          sh -n doctor.sh
+          sh -n update-tools.ysh
+          sh -n catfood
+          sh -n tests/python-dependencies.sh
+
+      - name: Exercise Python 2 and csvkit default/opt-in boundaries
+        shell: sh
+        run: sh tests/python-dependencies.sh

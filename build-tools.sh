@@ -45,6 +45,23 @@ mark_state_built() {
 }
 
 build_grease() {
+    # This is the Oils-derived *source development* interpreter, not the
+    # prebuilt native Grease shipped to Android. Keep Python 2 out of ordinary
+    # Cat Food provisioning. Never substitute stock YSH for a Grease receipt.
+    case ${CATFOOD_GREASE_LEGACY_PYTHON2:-0} in
+        0)
+            printf '%s\n' 'Grease Python 2 source bootstrap skipped (explicit opt-in: CATFOOD_GREASE_LEGACY_PYTHON2=1)'
+            return 0
+            ;;
+        1)
+            printf '%s\n' 'building explicitly requested legacy Grease Python 2 source interpreter'
+            ;;
+        *)
+            printf '%s\n' 'CATFOOD_GREASE_LEGACY_PYTHON2 must be 0 or 1' >&2
+            return 2
+            ;;
+    esac
+
     checkout=$workspace/grease
     repo=$checkout/source
     grease_build=$build_root/grease
@@ -309,4 +326,4 @@ build_ib
 build_ithon
 build_ir
 
-printf '%s\n' 'cat food core tools are built'
+printf '%s\n' 'cat food core host build pass finished (not a whole-inventory acceptance receipt)'
