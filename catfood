@@ -8,6 +8,7 @@ root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
 usage() {
     cat <<'EOF'
 usage: ./catfood [--target]
+       ./catfood classify-android-target PRODUCT MODEL PRIMARY_ABI
        ./catfood help [tool]
        ./catfood where [tool]
        ./catfood register TOOL ROLE PATH
@@ -417,6 +418,13 @@ show_target=0
 case ${1:-} in
     '') ;;
     --target) show_target=1 ;;
+    classify-android-target)
+        [ "$#" -eq 4 ] || { usage >&2; exit 2; }
+        # Explicit observed-property adapter; no planning override, installation,
+        # inventory update, or claim that the caller observed physical hardware.
+        catfood_android_profile "$2" "$3" "$4"
+        exit $?
+        ;;
     -h|--help) usage; exit 0 ;;
     help)
         show_help_page "${2:-}"
