@@ -5,9 +5,12 @@ permissions:
   actions: read
 jobs:
   acceptance:
-    uses: isomorphisms/ai-ci/.github/workflows/native-transfer-handoff-reusable.yml@e10c11eab6880764517bb9264a042b43d2d219a9
-    with:
-      catfood_ref: ${{ github.event.pull_request.head.sha || github.sha }}
-      kitchen_ref: 6f2870f0c614f46b2bd45d66f549799d50534ddf
-      fp_ref: 41598f0f795e6b377f42af7f3da82186cb35ec81
-      aici_ref: e10c11eab6880764517bb9264a042b43d2d219a9
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    steps:
+      - uses: isomorphisms/ai-ci/transfer-handoff@1c54573ab1cc5138356cfa9abeabdc681f7f897f
+        with:
+          catfood_ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          kitchen_ref: 6f2870f0c614f46b2bd45d66f549799d50534ddf
+          fp_ref: 41598f0f795e6b377f42af7f3da82186cb35ec81
+          aici_ref: 1c54573ab1cc5138356cfa9abeabdc681f7f897f
