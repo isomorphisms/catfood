@@ -31,6 +31,19 @@ jobs:
       - name: Prove inference and receipt transitions
         shell: sh
         run: sh tests/followers.sh "$RUNNER_TEMP/aici-followers"
+      - name: Independently admit the retained exact-source GitHub receipt
+        shell: sh
+        env:
+          AICI_FOLLOWERS: ${{ runner.temp }}/aici-followers
+        run: sh followers/manage.sh record catfood-3eb5595b846d-github-x86_64 followers/incoming/catfood-3eb5595b846d-github-x86_64.tsv
+      - name: Preserve the verified ledger transition
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: verified-retained-github-follower
+          path: |
+            followers/jobs/catfood-3eb5595b846d-github-x86_64.tsv
+            followers/receipts/catfood-3eb5595b846d-github-x86_64.tsv
+          if-no-files-found: error
       - name: Reconcile the current source trigger
         shell: sh
         env:
