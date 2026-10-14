@@ -39,6 +39,7 @@ ai-ci	host	n/a	n/a	build-test-policy-tool
 computer-science	reference	n/a	n/a	reference-source
 utilities-android-phone-user	runtime	gap:android-package-missing	gap:android-package-missing	android-runtime-applications
 
+billiard	runtime	gap:apk-not-produced	gap:apk-not-produced	paired-MIRO-A1-and-C67-rectangle-experiment
 algebraic-variety-explorer-mobile	runtime	gap:android-package-missing	gap:android-package-missing	mathematical-application
 learn-toki-pona	runtime	gap:android-package-missing	gap:android-package-missing	application
 game	runtime	gap:android-package-missing	gap:android-package-missing	application
