@@ -197,12 +197,14 @@ remove_legacy_workbench_wrapper() {
 # Older Cat Food Termux feeds treated the device as a source workbench.  A
 # phone/tablet is now a runtime target.  Remove only the links and wrappers
 # written by those old Cat Food paths; arbitrary user commands remain protected.
+if [ -z "${CATFOOD_ANDROID_ONLY:-}" ]; then
 for legacy_command in R Rscript edric idris2 fieldmouse icu ib-smoke ick ithon osh ysh grease go_down_load gdl; do
     remove_legacy_workbench_link "$legacy_command"
 done
 remove_legacy_workbench_wrapper az '# catfood az wrapper'
 remove_legacy_workbench_wrapper abe '# catfood az wrapper'
 remove_legacy_workbench_wrapper aa '# catfood aa wrapper'
+fi
 
 safe_command_destination() {
     destination=$1
@@ -233,6 +235,7 @@ package_ids=$(awk -F '\t' -v target="$delivery_target" '
 ' "$packages")
 
 for package in $package_ids; do
+    if [ -n "${CATFOOD_ANDROID_ONLY:-}" ] && [ "$package" != "$CATFOOD_ANDROID_ONLY" ]; then continue; fi
     if ! catfood_android_package_allowed "$package" "$target"; then
         printf '%s is not compatible with device target %s; not installed\n' "$package" "$target"
         continue
@@ -276,6 +279,12 @@ EOF_ROW
         while IFS="$tab" read -r command entrypoint; do
             [ -f "$package_dir/$entrypoint" ] || current=0
         done < "$entries_file"
+
+        case $package in
+            grease-phone|grease-tablet)
+                sh "$root/android/verify-grease-package.sh" "$package_dir" "$package"
+                ;;
+        esac
         if [ "$mode" = dex-jni ] && [ ! -f "$package_dir/$jni_library" ]; then
             current=0
         fi
@@ -314,6 +323,11 @@ EOF_ROW
             }
         done < "$entries_file"
 
+        case $package in
+            grease-phone|grease-tablet)
+                sh "$root/android/verify-grease-package.sh" "$staging" "$package"
+                ;;
+        esac
         if [ "$mode" = dex-jni ]; then
             package_receipt="$staging/catfood-package.tsv"
             [ -f "$package_receipt" ] || {
@@ -352,6 +366,9 @@ EOF_ROW
 
     while IFS="$tab" read -r command entrypoint; do
         [ -n "$command" ] || continue
+        # Stage-zero acquisition can defer exposure until its native runtime
+        # probe passes. Installation receipts still name the actual package.
+        if [ "${CATFOOD_ANDROID_DEFER_COMMANDS:-0}" = 1 ]; then continue; fi
         destination="$workspace/bin/$command"
         safe_command_destination "$destination" "$mode"
         case "$mode" in

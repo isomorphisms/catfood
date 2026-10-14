@@ -114,6 +114,24 @@ fi
 
 printf '%s\n' 'Cat Food C67 delivery target contract passes'
 
+# Acquisition may finish without exposing a runtime that has not been probed.
+# Even a user-owned file at the eventual command path must stay untouched.
+deferred=$tmp/deferred
+mkdir -p "$deferred/bin"
+printf 'unrelated user command\n' > "$deferred/bin/c67-fixture"
+PATH="$fake_bin:$PATH" CATFOOD_TEST_RELEASE="$release" \
+    CATFOOD_DEVICE_ID=synthetic-c67 CATFOOD_TARGET=c67 \
+    CATFOOD_ROOT="$deferred" CATFOOD_CACHE="$cache" \
+    CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" \
+    CATFOOD_ANDROID_PACKAGES="$packages" CATFOOD_ANDROID_DEFER_COMMANDS=1 \
+    sh "$root/android/install.sh" > "$tmp/deferred.out"
+test ! -L "$deferred/bin/c67-fixture"
+test "$(cat "$deferred/bin/c67-fixture")" = 'unrelated user command'
+test -f "$deferred/packages/c67-fixture-arm64/$package_ref/bin/c67-fixture"
+grep -Fqx "installation_evidence$(printf '\t')$deferred/packages/c67-fixture-arm64/$package_ref" \
+    "$deferred/receipts/c67-c67-fixture-arm64.tsv"
+printf '%s\n' 'Deferred command exposure preserves an unrelated command (synthetic)'
+
 # Identical archive bytes reused for TAB_P10, with separate instance/target
 # records. Every "physical" result below is a synthetic validator fixture.
 cp "$root/tests/android-properties.sh" "$fake_bin/getprop"

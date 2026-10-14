@@ -415,6 +415,10 @@ register_checkout() {
 
 show_target=0
 case ${1:-} in
+    ensure-grease)
+        [ "$#" -eq 1 ] || exit 2
+        exec sh "$root/android/ensure-grease.sh"
+        ;;
     '') ;;
     --target) show_target=1 ;;
     -h|--help) usage; exit 0 ;;
