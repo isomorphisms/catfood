@@ -82,7 +82,7 @@ def verify_source(work ∈ str, name ∈ str, revision ∈ str) → None:
     if observed != revision:
         raise ValueError("Owner checkout revision mismatch: " + name)
 
-def provision(work ∈ str) → None:
+def require_host(work ∈ str) → None:
     actions ∈ str ← os.environ.get("GITHUB_ACTIONS", "")
     system ∈ str ← platform.system()
     machine ∈ str ← platform.machine()
@@ -91,12 +91,14 @@ def provision(work ∈ str) → None:
     release ∈ str ← Path("/etc/os-release").read_text()
     if not ("ID=ubuntu" in release):
         raise ValueError("This profile requires observed Ubuntu")
-    verify_source(work, "ick", ICK)
-    verify_source(work, "ithon", ITHON)
     description ∈ str ← platform.platform()
     write(work + "/provision/host.txt", release + "\n" + description + "\n")
-    run(["sudo", "apt-get", "update"], work, work + "/provision/apt-update")
-    run(["sudo", "apt-get", "install", "-y", "build-essential", "flex", "bison", "texinfo", "libgmp-dev", "libmpfr-dev", "libmpc-dev", "libisl-dev", "libzstd-dev", "binutils-aarch64-linux-gnu", "gcc-aarch64-linux-gnu", "libc6-dev-arm64-cross", "qemu-user", "python3-venv"], work, work + "/provision/apt-install")
+
+def acquire_grease(work ∈ str) → None:
+    require_host(work)
+    acquire_grease_payload(work)
+
+def acquire_grease_payload(work ∈ str) → None:
     archive ∈ str ← work + "/provision/grease.zip"
     artifact ∈ dict[str, object] ← json.loads(run(["gh", "api", "/repos/dilapidated-shed/grease/actions/artifacts/" + str(GREASE_ARTIFACT)], work, work + "/provision/grease-metadata"))
     owner_run ∈ dict[str, object] ← json.loads(run(["gh", "api", "/repos/dilapidated-shed/grease/actions/runs/" + str(GREASE_RUN)], work, work + "/provision/grease-owner-run"))
@@ -135,13 +137,26 @@ def provision(work ∈ str) → None:
     Path(launcher).chmod(493)
     run([launcher, "-c", "write -- rhs-runtime"], work, work + "/provision/grease-smoke")
     write(work + "/profile/grease.tsv", "source\t" + GREASE_SOURCE + "\ninherited_source\t" + inherited + "\nartifact\t" + str(GREASE_ARTIFACT) + "\nowner_run\t" + str(GREASE_RUN) + "\nexpires_at\t" + str(artifact["expires_at"]) + "\narchive_sha256\t" + archive_hash + "\nexecutable_sha256\t" + digest(Path(executable).read_bytes()) + "\n")
+    print("Pinned Grease owner runtime acquired and smoke-executed")
+
+def acquire_model(work ∈ str) → None:
+    require_host(work)
     run(["python3", "-m", "venv", work + "/model-runtime"], work, work + "/provision/venv")
     interpreter ∈ str ← work + "/model-runtime/bin/python"
     run([interpreter, "-m", "pip", "install", "--only-binary=:all:", "torch==2.5.1+cpu", "--index-url", "https://download.pytorch.org/whl/cpu"], work, work + "/provision/torch")
     run([interpreter, "-m", "pip", "install", "--only-binary=:all:", "transformers==4.46.3"], work, work + "/provision/transformers")
     freeze ∈ str ← run([interpreter, "-m", "pip", "freeze", "--all"], work, work + "/provision/dependencies")
     write(work + "/profile/dependencies.txt", freeze)
-    print("Pinned Grease and foreign model runtime acquired")
+    print("Pinned foreign model runtime acquired")
+
+def provision(work ∈ str) → None:
+    require_host(work)
+    verify_source(work, "ick", ICK)
+    verify_source(work, "ithon", ITHON)
+    run(["sudo", "apt-get", "update"], work, work + "/provision/apt-update")
+    run(["sudo", "apt-get", "install", "-y", "build-essential", "flex", "bison", "texinfo", "libgmp-dev", "libmpfr-dev", "libmpc-dev", "libisl-dev", "libzstd-dev", "binutils-aarch64-linux-gnu", "gcc-aarch64-linux-gnu", "libc6-dev-arm64-cross", "qemu-user", "python3-venv"], work, work + "/provision/apt-install")
+    acquire_grease_payload(work)
+    acquire_model(work)
     # Existing owner materializer is inherited bootstrap source.
     run(["sh", work + "/ick/ick/materialize.sh", work + "/ick/gcc", work + "/ick-source"], work, work + "/provision/materialize")
     build ∈ str ← work + "/ick-build"
@@ -176,6 +191,10 @@ def main() → None:
     elif args[0] == "from-workspace-file":
         work ∈ str ← Path(args[1]).read_text().strip()
         provision(work)
+    elif args[0] == "grease":
+        acquire_grease(args[1])
+    elif args[0] == "model-runtime":
+        acquire_model(args[1])
     else:
         provision(args[0])
 
