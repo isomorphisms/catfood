@@ -300,8 +300,46 @@ build_ir() {
         -e 'answer ← 8 ÷ 2; stopifnot((answer = 4))'
 }
 
+# Amazon.jobs is an opt-in host build until the exact Idriç/contrib build
+# and independent AICI acceptance are qualified. Never substitute Python.
+build_amazon_jobs() {
+    [ "${CATFOOD_BUILD_AMAZON_JOBS:-0}" = 1 ] || return 0
+
+    repo=$workspace/idric-cli
+    idric=$workspace/Idric
+    compiler=$idric/build/exec/idris2
+    output=$repo/build/exec/amazon-jobs
+    [ -d "$repo/.git" ] || {
+        printf '%s\n' 'Cat Food Amazon.jobs: idric-cli checkout absent' >&2
+        return 1
+    }
+    [ -x "$compiler" ] || {
+        printf '%s\n' 'Cat Food Amazon.jobs: Idriç compiler absent' >&2
+        return 1
+    }
+
+    state="$(revision "$repo") $(revision "$idric")"
+    if [ ! -x "$output" ] || needs_state_build amazon-jobs "$state"; then
+        printf '%s\n' 'building Amazon.jobs Idriç CLI (opt-in)'
+        (
+            cd "$repo"
+            PATH="$idric/.tools/bin:$PATH" \
+            IDRIS2_PREFIX="$idric/bootstrap-build" \
+                "$compiler" -p contrib checkpoints/amazon-jobs/AmazonJobs.idric -o amazon-jobs
+        )
+        [ -x "$output" ] || {
+            printf '%s\n' 'Amazon.jobs build produced no executable' >&2
+            return 1
+        }
+        "$output" --self-test
+        mark_state_built amazon-jobs "$state"
+    fi
+    "$output" --self-test >/dev/null
+}
+
 build_grease
 build_idric
+build_amazon_jobs
 build_fieldmouse
 build_idric_net
 build_icu
