@@ -37,8 +37,7 @@ Delivery to a phone is **download → verify → install**, not compilation.
 
 1. Compile/test shared billiard collision core including exact-corner
    reversal and unfolded equivalence (host evidence is not Android evidence).
-2. Qualify target-specific ICK stages or record exact ICK capability gaps for
-   any NDK stage. Build `armeabi-v7a` and `arm64-v8a` native libraries.
+2. Compile all Billiard, Rough renderer and native app glue C exclusively through source-verified ICK for both target ABIs. An unsupported ICK source or ABI stage remains blocked, with no compiler substitution.
 3. Use the registered NativeActivity APK producer, approved signer, and
    artifact verification for **both** ABIs.
 4. Emulator/touch/render proof, then C67 physical drag/start/angle/speed
@@ -49,3 +48,13 @@ Delivery to a phone is **download → verify → install**, not compilation.
 Related graphics work: rough.framebuffer PR #1 (alpha/coverage) and its stacked
 continuous-dots PR #14. Billiard's mathematical kernel must never depend on
 rough stroke perturbations.
+
+## ICK-only compiler requirement (14 October 2026)
+
+The user explicitly ruled out stock GCC, Clang and NDK C compilation for Billiard.
+All Billiard, Android glue and imported Rough drawing C must use the pinned ICK compiler.
+ICK is GCC-derived, so the filename may include `gcc`; verify its owning source
+and `cc1`, not the basename. The NDK may supply Bionic headers, CRT, and the
+direct linker for objects already produced by ICK, never compile C itself.
+Historical stock-compiler green workflows do not qualify an ICK deliverable.
+Both APK package gaps remain explicit until actual independently checked artifacts exist.
