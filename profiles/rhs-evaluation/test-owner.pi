@@ -1,0 +1,45 @@
+"""Declared owner acquisition controls: no download and no invented runtime pass."""
+import provision
+from builtins import ValueError
+
+def main() → None:
+    artifact ∈ dict[str, object] ← {"id": provision.GREASE_ARTIFACT, "expired": False, "expires_at": "2026-10-19T05:18:44Z", "digest": "sha256:" + str(provision.GREASE_ARCHIVE), "name": "grease-alias-diagnostics-" + str(provision.GREASE_SOURCE), "workflow_run": {"id": provision.GREASE_RUN, "head_sha": provision.GREASE_SOURCE, "repository_id": 1335369896}}
+    owner ∈ dict[str, object] ← {"id": provision.GREASE_RUN, "head_sha": provision.GREASE_SOURCE, "status": "completed", "conclusion": "success", "path": ".github/workflows/grease-receipt.yml"}
+    inherited ∈ str ← "5651cf97a1b5042f24f14112a7ade9a1518eb0bc"
+    provision.verify_owner(artifact, owner, inherited, "2026-10-14T12:00:00Z")
+    cases ∈ list[list[str]] ← [["id", "wrong", "identity mismatch"], ["expired", "yes", "expired"], ["expires_at", "2026-10-14T12:00:00Z", "expired"], ["expires_at", "", "expired"], ["digest", "sha256:forged", "digest mismatch"], ["name", "unrelated", "name mismatch"], ["workflow_run", "wrong", "run or source mismatch"]]
+    checked ∈ int ← 1
+    for case in cases:
+        bad ∈ dict[str, object] ← artifact.copy()
+        bad[case[0]] ← case[1]
+        if case[0] == "workflow_run":
+            bad[case[0]] ← {"id": 0}
+        rejected ∈ bool ← False
+        try:
+            provision.verify_owner(bad, owner, inherited, "2026-10-14T12:00:00Z")
+        except ValueError as error:
+            rejected ← case[2] in str(error)
+        if not rejected:
+            raise ValueError("Wrong rejection for " + case[0])
+        checked ← checked + 1
+    for key in ["id", "head_sha", "status", "conclusion", "path"]:
+        bad_owner ∈ dict[str, object] ← owner.copy()
+        bad_owner[key] ← "forged"
+        rejected ∈ bool ← False
+        try:
+            provision.verify_owner(artifact, bad_owner, inherited, "2026-10-14T12:00:00Z")
+        except ValueError as error:
+            rejected ← "qualification" in str(error)
+        if not rejected:
+            raise ValueError("Owner qualification accepted " + key)
+        checked ← checked + 1
+    rejected ∈ bool ← False
+    try:
+        provision.verify_owner(artifact, owner, "forged", "2026-10-14T12:00:00Z")
+    except ValueError as error:
+        rejected ← "inherited source" in str(error)
+    if not rejected:
+        raise ValueError("Inherited source mismatch accepted")
+    print("PASS", checked + 1, "owner metadata cases; runtime execution not claimed")
+
+main()
