@@ -8,9 +8,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
-      - uses: isomorphisms/ai-ci/transfer-handoff@1c54573ab1cc5138356cfa9abeabdc681f7f897f
+      - uses: isomorphisms/ai-ci/transfer-handoff@ecd83379d01911b83bf9c38e92561009a47020f3
         with:
           catfood_ref: ${{ github.event.pull_request.head.sha || github.sha }}
           kitchen_ref: 6f2870f0c614f46b2bd45d66f549799d50534ddf
           fp_ref: 41598f0f795e6b377f42af7f3da82186cb35ec81
-          aici_ref: 1c54573ab1cc5138356cfa9abeabdc681f7f897f
+          aici_ref: ecd83379d01911b83bf9c38e92561009a47020f3
