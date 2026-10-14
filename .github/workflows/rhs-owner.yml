@@ -1,0 +1,24 @@
+name: RHS owner acquisition
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  provenance:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: dilapidated-shed/ithon
+          ref: d6e83969f82512e920fb17b44326cb54f31d015c
+          path: .ithon
+          persist-credentials: false
+      - name: Execute owner positive and rejecting controls through Ithon
+        shell: /home/runner/work/catfood/catfood/.ithon/ithon /home/runner/work/catfood/catfood/profiles/rhs-evaluation/test-owner.pi {0}
+        run: owner metadata controls
