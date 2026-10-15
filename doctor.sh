@@ -96,6 +96,18 @@ if [ -x "$workspace/bin/ib-smoke" ] && ! "$workspace/bin/ib-smoke" >/dev/null 2>
     printf '%-22s executable smoke failed\n' ib-smoke >&2
     failures=1
 fi
+# Optional until a source-pinned Kitchen build and package exist.
+# An absent command is never described as installed or accepted.
+if [ -x "$workspace/bin/nhtsa-vin" ]; then
+    if [ "$("$workspace/bin/nhtsa-vin" --version 2>/dev/null)" = 'nhtsa-vin 0.1.0' ]; then
+        printf '%-22s executable present; live/Android acceptance unverified\n' nhtsa-vin
+    else
+        printf '%-22s installed command version check failed\n' nhtsa-vin >&2
+        failures=1
+    fi
+else
+    printf '%-22s NOT_BUILT (Idriç CLI source inventory only)\n' nhtsa-vin
+fi
 if [ -x "$workspace/bin/fdroid-deploy" ] && ! "$workspace/bin/fdroid-deploy" --help >/dev/null 2>&1; then
     printf '%-22s help smoke failed\n' fdroid-deploy >&2
     failures=1
