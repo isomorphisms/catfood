@@ -133,6 +133,16 @@ Workbenches keep stable command names under `$CATFOOD_ROOT/bin`. Current host na
 
 `gdl` and `go_down_load` are aliases of the `gopeed` REST client. It accepts a direct URL or one URL on standard input, so `aa resolve MD5 | gdl` hands a resolved Anna's Archive member URL to Gopeed without making Gopeed part of AA's HTTP transport.
 
+The `nhtsa-vin` command is registered from the existing `idric-cli`
+repository and linked to `$CATFOOD_ROOT/bin/nhtsa-vin` **only when the Idriç
+executable has actually been built**. It decodes NHTSA vPIC responses through
+ICU's typed response API. The command's build and fixtures live in
+[`idric-cli/checkpoints/nhtsa`](https://github.com/dilapidated-shed/idric-cli/tree/cli/checkpoints/nhtsa).
+Cat Food doctor reports `NOT_BUILT` when no host executable exists; this
+status does not mean a successful install or live provider check. The existing
+`idric-cli` Android delivery row remains `gap:android-package-missing`
+for both A1 ARM32 and C67 ARM64.
+
 Android product commands come only from successfully installed runtime packages. After the delivered Grease package makes YSH available, the Cat Food control plane itself also installs its small `gopeed` REST client and the `gdl` / `go_down_load` aliases from the checked-out Cat Food version. It also installs pinned csvkit 2.2.0 into `~/opt/packages/csvkit` from binary Python wheels only and exposes the upstream `csv*`, `in2csv`, and `sql2csv` commands under `~/opt/bin`; the Termux Python/pip prerequisites are installed without recommended compiler packages. These helpers are convenience software, not Android product-delivery evidence. `android/delivery.tsv` therefore continues to describe only the maintained product inventory and its explicit gaps.
 
 ## Stage zero
