@@ -320,6 +320,17 @@ build_amazon_jobs() {
 
     state="$(revision "$repo") $(revision "$idric")"
     if [ ! -x "$output" ] || needs_state_build amazon-jobs "$state"; then
+        # ./edric all bootstraps the compiler but does not install contrib.
+        # Install the contributor JSON package into the same compiler prefix
+        # before compiling this application; no Python/jq fallback is allowed.
+        (
+            cd "$idric"
+            PATH="$idric/.tools/bin:$PATH" \
+            make -C _/libs/contrib install \
+              IDRIS2="$compiler" \
+              IDRIS2_PREFIX="$idric/bootstrap-build" \
+              IDRIS2_PATH="$idric/_/libs/contrib/build/ttc:$idric/_/libs/base/build/ttc"
+        )
         printf '%s\n' 'building Amazon.jobs Idriç CLI (opt-in)'
         (
             cd "$repo"
