@@ -549,7 +549,7 @@ same_source_state() {
         ':(exclude).github/workflows/followers.yml' \
         ':(exclude)android/README.md' \
         ':(exclude)android/devices/**' \
-        ':(exclude)docs/observations/**'
+        ':(exclude)docs/observations/**' >/dev/null
 }
 
 resolve_trigger() {
