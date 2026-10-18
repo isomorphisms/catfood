@@ -20,6 +20,7 @@ work. Only immutable package wire metadata retains historical lane labels.
 | Sharing ARM64 admitted a Mali-G57-specific test onto C67 PowerVR. | `powervr-runner-tablet`; exact producer `f3ed48fc.../tools/accept_powervr_android.sh` | Evidenced restriction in `android/package-restrictions.tsv`; C67 gets a visible gap, not the wrong runner. |
 | Optional device identity and no expected target/instance check allowed cross-device receipt reuse. | `android/check.sh`, `install.sh`; `tests/c67-delivery.sh` | Required v2 identity; installer validates target+instance for reuse/dependencies. Identical archive tests retain separate C67/TAB_P10 records; copied and relabeled records fail. |
 | Inventory treated unvalidated `installation_result=PASS` as current; its C67 test copied an A1 receipt. | `device-state.sh`, `tests/device-state.sh` | Malformed/wrong-target receipts remain unconfirmed observations. The copied receipt is retained as a negative fixture. |
+| Narrative device notes and the historical A1-only reader did not expose an operation-scoped, source-bound profile; the reader expected `build_fingerprint` while current inventory emits `fingerprint`. | `android/profile.pi`, `android/profiles/`, `tests/android-profile.pi` | Finite A1/C67/TAB_P10 aliases; explicit model, instance, firmware, ABI, application-context and session scopes; historical fingerprint normalization; per-operation required fields; deterministic material digest; missing, stale, conflicting and branch-only states remain visible. |
 | Old physical bundles and installed Reddit acceptance checked only ABI. | `android/acceptance/run.sh`, `run-v2.sh`, `reddit-installed.sh`, `build-bundles.sh` | Shared identity preflight before execution, per-instance binding, helper and policy files included in bundles. |
 | Non-Termux meant cloud; unknown Termux meant a source workbench. | `android/target.sh`, `provision.sh`, `tests/entrypoint.sh` | Positive Debian/Ubuntu Linux host evidence; Android cannot be forced into host provisioning; generic Termux refuses mutation. |
 | C67 native probe trusted a version string plus a platform receipt without rehashing the command. | `android/record-c67-runtime.sh`; `tests/targets.sh` | Rehash the exact declared jq file before execution and record its digest. Changed executable negative control fails. |
@@ -37,6 +38,10 @@ Other audited distinctions are already sound:
 - C67 profile records GLES 3.2 and API 34 as capability observations, not
   application minimum requirements. The conversation program's API 21 floor
   remains program-specific.
+- A scoped profile projection is reusable input, not physical acquisition,
+  installation, current service readiness or device acceptance. SurfaceFlinger
+  observations do not substitute for an application graphics context; ABI
+  package lanes remain separate from model and physical-instance identity.
 - Device notes separate A1 storage/Shizuku, C67 private rish placement and
   TAB_P10's deferred ADB/removable-storage state. `preserve-shizuku.sh` probes
   actual local bundles rather than asserting the A1 path exists elsewhere;

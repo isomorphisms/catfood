@@ -11,6 +11,9 @@ usage: ./catfood [--target]
        ./catfood help [tool]
        ./catfood where [tool]
        ./catfood register TOOL ROLE PATH
+       ./catfood classify-android-target PRODUCT MODEL PRIMARY_ABI
+       ./catfood android-profile PROFILE_ARGUMENTS...
+       ./catfood android-profile-request REQUEST_ARGUMENTS...
        ./catfood plan-android-build APPLICATION_CONTRACT phone|c67 SOURCE_SHA
        ./catfood inspect|record|compare|packages|report
 
@@ -46,6 +49,51 @@ Overrides:
   CATFOOD_INSTALL_YSH=0|1
   CATFOOD_CHECKOUTS=/path/to/machine-local-checkouts.tsv
 EOF
+}
+
+checked_ithon() {
+    ithon=${CATFOOD_ITHON:-}
+    expected=${CATFOOD_ITHON_SHA256:-}
+    revision=${CATFOOD_ITHON_REVISION:-}
+    if [ -z "$ithon" ] || [ -z "$expected" ] || [ -z "$revision" ]; then
+        printf '%s\n' 'Android profile commands require CATFOOD_ITHON, CATFOOD_ITHON_SHA256, and CATFOOD_ITHON_REVISION' >&2
+        return 2
+    fi
+    case $ithon in
+        /*) ;;
+        *) printf '%s\n' 'CATFOOD_ITHON must be an absolute path' >&2; return 2 ;;
+    esac
+    if [ ! -x "$ithon" ]; then
+        printf 'CATFOOD_ITHON is not executable: %s\n' "$ithon" >&2
+        return 1
+    fi
+    [ "${#expected}" -eq 64 ] && [ "$expected" = "$(printf '%s' "$expected" | tr '[:upper:]' '[:lower:]')" ] || {
+        printf '%s\n' 'CATFOOD_ITHON_SHA256 must be an exact lowercase SHA-256' >&2
+        return 2
+    }
+    if command -v sha256sum >/dev/null 2>&1; then
+        actual=$(sha256sum "$ithon" | awk '{ print $1 }')
+    elif command -v toybox >/dev/null 2>&1; then
+        actual=$(toybox sha256sum "$ithon" | awk '{ print $1 }')
+    else
+        printf '%s\n' 'android-profile requires sha256sum or toybox sha256sum' >&2
+        return 1
+    fi
+    if [ "$actual" != "$expected" ]; then
+        printf 'CATFOOD_ITHON digest mismatch: expected %s, found %s\n' "$expected" "$actual" >&2
+        return 1
+    fi
+    if [ "$revision" != d6e83969f82512e920fb17b44326cb54f31d015c ]; then
+        printf 'CATFOOD_ITHON_REVISION is not the qualified revision: %s\n' "$revision" >&2
+        return 1
+    fi
+    ithon_root=$(CDPATH='' cd -- "$(dirname -- "$ithon")" && pwd -P)
+    actual_revision=$(git -C "$ithon_root" rev-parse HEAD 2>/dev/null || :)
+    if [ "$actual_revision" != "$revision" ] || [ -n "$(git -C "$ithon_root" status --porcelain 2>/dev/null || printf '%s' unavailable)" ]; then
+        printf '%s\n' 'CATFOOD_ITHON must name a clean checkout at CATFOOD_ITHON_REVISION' >&2
+        return 1
+    fi
+    printf '%s\n' "$ithon"
 }
 
 help_index() {
@@ -421,6 +469,25 @@ case ${1:-} in
         ;;
     '') ;;
     --target) show_target=1 ;;
+    classify-android-target)
+        [ "$#" -eq 4 ] || { usage >&2; exit 2; }
+        # Classification consumes supplied properties. It is not acquisition,
+        # installation, inventory mutation, or physical-device acceptance.
+        catfood_android_profile "$2" "$3" "$4"
+        exit $?
+        ;;
+    android-profile)
+        [ "$#" -ge 2 ] || { usage >&2; exit 2; }
+        ithon=$(checked_ithon) || exit $?
+        shift
+        exec "$ithon" "$root/android/profile.pi" "$@"
+        ;;
+    android-profile-request)
+        [ "$#" -ge 2 ] || { usage >&2; exit 2; }
+        ithon=$(checked_ithon) || exit $?
+        shift
+        exec "$ithon" "$root/android/profile-request.pi" "$@" --ithon "$ithon"
+        ;;
     -h|--help) usage; exit 0 ;;
     help)
         show_help_page "${2:-}"

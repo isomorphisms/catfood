@@ -1,0 +1,380 @@
+"""Gate one maintained Android diagnostic request on exact scoped profile bytes."""
+from argparse import ArgumentParser
+from pathlib import Path
+from builtins import dict, list
+import hashlib
+import subprocess
+import sys
+
+AICI_REQUIREMENT_REVISION ∈ str ← "cdf6f09dda2828e4d463dab202d66175397dbbd4"
+KITCHEN_SOURCE_HANDOFF_REVISION ∈ str ← "ba7f651e89ae25e831613c8c3fee2f15f73baa54"
+KITCHEN_SOURCE_HANDOFF_SHA256 ∈ str ← "cc79e130ddd4a79e0a1d5b2c7be37e8daf68e7aee5452c5616f538aa137833d9"
+APPROVED_OBLIGATIONS_CANDIDATE_HEAD ∈ str ← "7f4a3707a63812af1039ad80aea8ad7e86983670"
+APPROVED_OBLIGATIONS_INTERFACE_SHA256 ∈ str ← "b079f6326ef018e2dce46105f055cc3a237bbb4df42d85b0e550228adacf976d"
+QUALIFIED_ITHON_REVISION ∈ str ← "d6e83969f82512e920fb17b44326cb54f31d015c"
+
+def stop(message ∈ str) → None:
+    sys.exit(message)
+
+def sha256_bytes(data ∈ bytes) → str:
+    return hashlib.sha256(data).hexdigest()
+
+def exact_digest(value ∈ str, label ∈ str) → None:
+    count ∈ int ← value.__len__()
+    lowered ∈ str ← value.lower()
+    if count != 64 or value != lowered:
+        stop(label + ":exact lowercase SHA-256 required")
+
+def simple_projection(path ∈ Path, expected ∈ str) → dict[str, str]:
+    data ∈ bytes ← path.read_bytes()
+    exact_digest(expected, "REQUIREMENT_PROJECTION")
+    if sha256_bytes(data) != expected:
+        stop("REQUIREMENT_PROJECTION_CHANGED")
+    values ∈ dict[str, str] ← dict()
+    obligations ∈ int ← 0
+    decoded ∈ str ← data.decode()
+    lines ∈ list[str] ← decoded.splitlines()
+    for line in lines:
+        fields ∈ list[str] ← line.split("\t")
+        field_count ∈ int ← fields.__len__()
+        if field_count < 2:
+            stop("REQUIREMENT_PROJECTION_CORRUPT")
+        key ∈ str ← fields.__getitem__(0)
+        if key == "obligation":
+            obligations ← obligations + 1
+            continue
+        if field_count != 2 or values.__contains__(key):
+            stop("REQUIREMENT_PROJECTION_CORRUPT")
+        values.__setitem__(key, fields.__getitem__(1))
+    schema ∈ str ← values.get("schema", "")
+    if schema != "aici-requirement-projection-v1":
+        stop("REQUIREMENT_PROJECTION_SCHEMA")
+    request_id ∈ str ← values.get("request_id", "")
+    if request_id == "" or obligations == 0:
+        stop("REQUIREMENT_PROJECTION_INCOMPLETE")
+    return values
+
+def read_profile(path ∈ Path) → dict[str, str]:
+    values ∈ dict[str, str] ← dict()
+    text ∈ str ← path.read_text()
+    lines ∈ list[str] ← text.splitlines()
+    for line in lines:
+        fields ∈ list[str] ← line.split("\t")
+        field_count ∈ int ← fields.__len__()
+        if field_count == 3:
+            kind ∈ str ← fields.__getitem__(0)
+            if kind == "meta":
+                key ∈ str ← fields.__getitem__(1)
+                if values.__contains__(key):
+                    stop("PROFILE_PROJECTION_CONFLICT:" + key)
+                values.__setitem__(key, fields.__getitem__(2))
+    schema ∈ str ← values.get("schema", "")
+    if schema != "catfood-android-profile-projection-v2":
+        stop("PROFILE_PROJECTION_SCHEMA")
+    for required in ["canonical_model", "target", "device_instance", "operation", "profile_material_sha256"]:
+        required_value ∈ str ← values.get(required, "")
+        if required_value == "":
+            stop("PROFILE_PROJECTION_MISSING:" + required)
+    return values
+
+def run_checked(argv ∈ list[str], label ∈ str) → str:
+    child ∈ subprocess.CompletedProcess ← subprocess.run(argv, capture_output=True)
+    child_code ∈ int ← child.returncode
+    if child_code != 0:
+        diagnostic ∈ str ← child.stderr.decode().strip()
+        if diagnostic == "":
+            diagnostic ← child.stdout.decode().strip()
+        stop(label + ":" + diagnostic)
+    output ∈ str ← child.stdout.decode().strip()
+    return output
+
+def parse_delivery(path ∈ Path, program ∈ str, target ∈ str) → str:
+    package ∈ str ← ""
+    text ∈ str ← path.read_text()
+    lines ∈ list[str] ← text.splitlines()
+    for line in lines:
+        fields ∈ list[str] ← line.split("\t")
+        field_count ∈ int ← fields.__len__()
+        if field_count >= 5:
+            kind ∈ str ← fields.__getitem__(0)
+            row_program ∈ str ← fields.__getitem__(1)
+            if kind != "delivery" or row_program != program:
+                continue
+            row_role ∈ str ← fields.__getitem__(2)
+            if row_role != "runtime":
+                stop("APPROVED_OBLIGATION_NOT_RUNTIME:" + program)
+            selected ∈ str ← fields.__getitem__(3)
+            if target == "c67" or target == "tablet":
+                selected ← fields.__getitem__(4)
+            prefix ∈ str ← "package:"
+            has_prefix ∈ bool ← selected.startswith(prefix)
+            if has_prefix == False:
+                stop("APPROVED_OBLIGATION_HAS_NO_PACKAGE:" + program)
+            package ← selected.removeprefix(prefix)
+    if package == "":
+        stop("APPROVED_OBLIGATION_MISSING:" + program)
+    return package
+
+def prepare(args ∈ object, root ∈ Path) → None:
+    requirements_argument ∈ str ← args.requirements
+    requirements_sha256 ∈ str ← args.requirements_sha256
+    model ∈ str ← args.model
+    instance ∈ str ← args.instance
+    operation ∈ str ← args.operation
+    approved_argument ∈ str ← args.approved_obligations
+    approved_sha ∈ str ← args.approved_obligations_sha256
+    profile_output_argument ∈ str ← args.profile_output
+    output_argument ∈ str ← args.output
+    ithon ∈ str ← args.ithon
+    inventory ∈ str ← args.inventory or ""
+    observations ∈ str ← args.observations or ""
+    not_before ∈ str ← args.not_before or ""
+    requirements_path ∈ Path ← Path(requirements_argument)
+    requirements ∈ dict[str, str] ← simple_projection(requirements_path, requirements_sha256)
+    program ∈ str ← requirements.get("program", "")
+    owner ∈ str ← requirements.get("owner", "")
+    request_id ∈ str ← requirements.get("request_id", "")
+    if program != "grease" or owner != "dilapidated-shed/grease":
+        stop("DIAGNOSTIC_REQUEST_NOT_MAINTAINED")
+    requirement_target ∈ str ← requirements.get("target", "")
+    if requirement_target != model:
+        stop("DIAGNOSTIC_TARGET_MISMATCH")
+
+    approved_path ∈ Path ← Path(approved_argument)
+    exact_digest(approved_sha, "APPROVED_OBLIGATIONS")
+    obligations ∈ Path ← root.joinpath("android/obligations.sh")
+    obligations_interface_sha ∈ str ← sha256_bytes(obligations.read_bytes())
+    if obligations_interface_sha != APPROVED_OBLIGATIONS_INTERFACE_SHA256:
+        stop("APPROVED_OBLIGATIONS_INTERFACE_CHANGED")
+    run_checked(["sh", str(obligations), "verify", str(approved_path), approved_sha], "APPROVED_OBLIGATIONS_REJECTED")
+
+    profile_output ∈ Path ← Path(profile_output_argument)
+    profile_argv ∈ list[str] ← [ithon, str(root.joinpath("android/profile.pi")), "--model", model, "--instance", instance, "--operation", operation, "--output", str(profile_output)]
+    if inventory != "":
+        profile_argv.extend(["--inventory", inventory])
+    if observations != "":
+        profile_argv.extend(["--observations", observations])
+    if not_before != "":
+        profile_argv.extend(["--not-before", not_before])
+    run_checked(profile_argv, "PROFILE_READER_REJECTED")
+    profile ∈ dict[str, str] ← read_profile(profile_output)
+    canonical_model ∈ str ← profile.get("canonical_model", "")
+    profile_operation ∈ str ← profile.get("operation", "")
+    profile_target ∈ str ← profile.get("target", "")
+    profile_instance ∈ str ← profile.get("device_instance", "")
+    profile_material ∈ str ← profile.get("profile_material_sha256", "")
+    if canonical_model != model or profile_operation != operation:
+        stop("PROFILE_PROJECTION_REQUEST_MISMATCH")
+
+    package ∈ str ← parse_delivery(approved_path, program, profile_target)
+    package_sha ∈ str ← run_checked(["sh", str(obligations), "package-sha", str(approved_path), package], "APPROVED_PACKAGE_REJECTED")
+    exact_digest(package_sha, "APPROVED_PACKAGE")
+    profile_sha ∈ str ← sha256_bytes(profile_output.read_bytes())
+    output_lines ∈ list[str] ← [
+        "schema\tcatfood-android-profile-request-v1",
+        "request_id\t" + request_id,
+        "consumer\tkitchen-cf-a2-s5",
+        "program\t" + program,
+        "canonical_model\t" + canonical_model,
+        "target\t" + profile_target,
+        "device_instance\t" + profile_instance,
+        "operation\t" + profile_operation,
+        "profile_projection_sha256\t" + profile_sha,
+        "profile_material_sha256\t" + profile_material,
+        "requirement_projection_sha256\t" + requirements_sha256,
+        "approved_obligations_sha256\t" + approved_sha,
+        "approved_obligations_candidate_head\t" + APPROVED_OBLIGATIONS_CANDIDATE_HEAD,
+        "approved_obligations_interface_sha256\t" + obligations_interface_sha,
+        "approved_package\t" + package,
+        "approved_package_obligation_sha256\t" + package_sha,
+        "aici_requirement_revision\t" + AICI_REQUIREMENT_REVISION,
+        "kitchen_source_handoff_revision\t" + KITCHEN_SOURCE_HANDOFF_REVISION,
+        "kitchen_source_handoff_sha256\t" + KITCHEN_SOURCE_HANDOFF_SHA256,
+        "kitchen_contract_schema\tsource-handoff-v1",
+        "qualified_ithon_revision\t" + QUALIFIED_ITHON_REVISION,
+        "next_phase\tcommand-preparation"
+    ]
+    joined ∈ str ← "\n".join(output_lines)
+    rendered ∈ str ← joined + "\n"
+    output ∈ Path ← Path(output_argument)
+    if output.exists():
+        stop("OUTPUT_ALREADY_EXISTS")
+    parent_exists ∈ bool ← output.parent.is_dir()
+    if parent_exists == False:
+        stop("OUTPUT_PARENT_MISSING")
+    output.write_text(rendered)
+    print(rendered, end="")
+
+def read_pairs(path ∈ Path, label ∈ str) → dict[str, str]:
+    values ∈ dict[str, str] ← dict()
+    text ∈ str ← path.read_text()
+    lines ∈ list[str] ← text.splitlines()
+    for line in lines:
+        fields ∈ list[str] ← line.split("\t")
+        field_count ∈ int ← fields.__len__()
+        if field_count != 2:
+            stop(label + "_CORRUPT")
+        key ∈ str ← fields.__getitem__(0)
+        if values.__contains__(key):
+            stop(label + "_CORRUPT")
+        values.__setitem__(key, fields.__getitem__(1))
+    return values
+
+def verify_paths(request_path ∈ Path, profile_path ∈ Path) → tuple[dict[str, str], dict[str, str]]:
+    values ∈ dict[str, str] ← read_pairs(request_path, "PROFILE_REQUEST")
+    schema ∈ str ← values.get("schema", "")
+    if schema != "catfood-android-profile-request-v1":
+        stop("PROFILE_REQUEST_SCHEMA")
+    profile ∈ dict[str, str] ← read_profile(profile_path)
+    bound_projection ∈ str ← values.get("profile_projection_sha256", "")
+    actual_projection ∈ str ← sha256_bytes(profile_path.read_bytes())
+    if bound_projection != actual_projection:
+        stop("PROFILE_REQUEST_PROJECTION_CHANGED")
+    bound_material ∈ str ← values.get("profile_material_sha256", "")
+    actual_material ∈ str ← profile.get("profile_material_sha256", "")
+    if bound_material != actual_material:
+        stop("PROFILE_REQUEST_MATERIAL_CHANGED")
+    for key in ["canonical_model", "target", "device_instance", "operation"]:
+        bound_value ∈ str ← values.get(key, "")
+        profile_value ∈ str ← profile.get(key, "")
+        if bound_value != profile_value:
+            stop("PROFILE_REQUEST_BINDING_CHANGED:" + key)
+    next_phase ∈ str ← values.get("next_phase", "")
+    if next_phase != "command-preparation":
+        stop("PROFILE_REQUEST_PHASE")
+    return (values, profile)
+
+def verify(args ∈ object) → None:
+    request_argument ∈ str ← args.request
+    profile_argument ∈ str ← args.profile
+    verify_paths(Path(request_argument), Path(profile_argument))
+    print("PASS exact profile call retained before command preparation")
+
+def receipt(args ∈ object) → None:
+    request_argument ∈ str ← args.request
+    profile_argument ∈ str ← args.profile
+    result ∈ str ← args.result
+    evidence ∈ str ← args.evidence
+    output_argument ∈ str ← args.output
+    if result != "PASS" and result != "FAIL" and result != "NOT_VERIFIED":
+        stop("PROFILE_RECEIPT_RESULT")
+    if evidence == "" or "\t" in evidence or "\n" in evidence:
+        stop("PROFILE_RECEIPT_EVIDENCE")
+    request_path ∈ Path ← Path(request_argument)
+    profile_path ∈ Path ← Path(profile_argument)
+    verified ∈ tuple[dict[str, str], dict[str, str]] ← verify_paths(request_path, profile_path)
+    request ∈ dict[str, str] ← verified.__getitem__(0)
+    profile ∈ dict[str, str] ← verified.__getitem__(1)
+    request_id ∈ str ← request.get("request_id", "")
+    profile_projection ∈ str ← request.get("profile_projection_sha256", "")
+    profile_material ∈ str ← profile.get("profile_material_sha256", "")
+    lines ∈ list[str] ← [
+        "schema\tcatfood-android-profile-receipt-v1",
+        "request_sha256\t" + sha256_bytes(request_path.read_bytes()),
+        "request_id\t" + request_id,
+        "profile_projection_sha256\t" + profile_projection,
+        "profile_material_sha256\t" + profile_material,
+        "diagnostic_result\t" + result,
+        "diagnostic_evidence\t" + evidence
+    ]
+    joined ∈ str ← "\n".join(lines)
+    rendered ∈ str ← joined + "\n"
+    output ∈ Path ← Path(output_argument)
+    if output.exists():
+        stop("OUTPUT_ALREADY_EXISTS")
+    parent_exists ∈ bool ← output.parent.is_dir()
+    if parent_exists == False:
+        stop("OUTPUT_PARENT_MISSING")
+    output.write_text(rendered)
+    print(rendered, end="")
+
+def verify_receipt(args ∈ object) → None:
+    request_argument ∈ str ← args.request
+    profile_argument ∈ str ← args.profile
+    receipt_argument ∈ str ← args.receipt
+    request_path ∈ Path ← Path(request_argument)
+    profile_path ∈ Path ← Path(profile_argument)
+    verified ∈ tuple[dict[str, str], dict[str, str]] ← verify_paths(request_path, profile_path)
+    request ∈ dict[str, str] ← verified.__getitem__(0)
+    profile ∈ dict[str, str] ← verified.__getitem__(1)
+    values ∈ dict[str, str] ← read_pairs(Path(receipt_argument), "PROFILE_RECEIPT")
+    schema ∈ str ← values.get("schema", "")
+    if schema != "catfood-android-profile-receipt-v1":
+        stop("PROFILE_RECEIPT_SCHEMA")
+    expected_request_sha ∈ str ← sha256_bytes(request_path.read_bytes())
+    expected_request_id ∈ str ← request.get("request_id", "")
+    expected_projection ∈ str ← request.get("profile_projection_sha256", "")
+    expected_material ∈ str ← profile.get("profile_material_sha256", "")
+    actual_request_sha ∈ str ← values.get("request_sha256", "")
+    actual_request_id ∈ str ← values.get("request_id", "")
+    actual_projection ∈ str ← values.get("profile_projection_sha256", "")
+    actual_material ∈ str ← values.get("profile_material_sha256", "")
+    if actual_request_sha != expected_request_sha:
+        stop("PROFILE_RECEIPT_REQUEST_CHANGED")
+    if actual_request_id != expected_request_id:
+        stop("PROFILE_RECEIPT_REQUEST_ID_CHANGED")
+    if actual_projection != expected_projection:
+        stop("PROFILE_RECEIPT_PROJECTION_CHANGED")
+    if actual_material != expected_material:
+        stop("PROFILE_RECEIPT_MATERIAL_CHANGED")
+    result ∈ str ← values.get("diagnostic_result", "")
+    evidence ∈ str ← values.get("diagnostic_evidence", "")
+    if (result != "PASS" and result != "FAIL" and result != "NOT_VERIFIED") or evidence == "":
+        stop("PROFILE_RECEIPT_RESULT")
+    print("PASS exact profile digest retained in diagnostic receipt")
+
+def main() → None:
+    parser ∈ ArgumentParser ← ArgumentParser(description="Prepare or verify a source-bound Android diagnostic request")
+    parser.add_argument("mode", choices=["prepare", "verify", "receipt", "verify-receipt"])
+    parser.add_argument("--ithon", required=True)
+    parser.add_argument("--model")
+    parser.add_argument("--instance")
+    parser.add_argument("--operation")
+    parser.add_argument("--inventory")
+    parser.add_argument("--observations")
+    parser.add_argument("--not-before")
+    parser.add_argument("--requirements")
+    parser.add_argument("--requirements-sha256")
+    parser.add_argument("--approved-obligations")
+    parser.add_argument("--approved-obligations-sha256")
+    parser.add_argument("--profile-output")
+    parser.add_argument("--output")
+    parser.add_argument("--request")
+    parser.add_argument("--profile")
+    parser.add_argument("--receipt")
+    parser.add_argument("--result")
+    parser.add_argument("--evidence")
+    args ∈ object ← parser.parse_args()
+    source_name ∈ str ← sys._getframe().f_code.co_filename
+    root ∈ Path ← Path(source_name).resolve().parents.__getitem__(1)
+    mode ∈ str ← args.mode
+    if mode == "prepare":
+        required_values ∈ list[str] ← [args.model or "", args.instance or "", args.operation or "", args.requirements or "", args.requirements_sha256 or "", args.approved_obligations or "", args.approved_obligations_sha256 or "", args.profile_output or "", args.output or ""]
+        for required_value in required_values:
+            if required_value == "":
+                stop("PROFILE_REQUEST_ARGUMENT_MISSING")
+        prepare(args, root)
+    elif mode == "verify":
+        request ∈ str ← args.request or ""
+        profile ∈ str ← args.profile or ""
+        if request == "" or profile == "":
+            stop("PROFILE_REQUEST_ARGUMENT_MISSING:request/profile")
+        verify(args)
+    elif mode == "receipt":
+        receipt_request ∈ str ← args.request or ""
+        receipt_profile ∈ str ← args.profile or ""
+        result ∈ str ← args.result or ""
+        evidence ∈ str ← args.evidence or ""
+        receipt_output ∈ str ← args.output or ""
+        if receipt_request == "" or receipt_profile == "" or result == "" or evidence == "" or receipt_output == "":
+            stop("PROFILE_RECEIPT_ARGUMENT_MISSING")
+        receipt(args)
+    else:
+        verify_request ∈ str ← args.request or ""
+        verify_profile ∈ str ← args.profile or ""
+        verify_receipt_path ∈ str ← args.receipt or ""
+        if verify_request == "" or verify_profile == "" or verify_receipt_path == "":
+            stop("PROFILE_RECEIPT_ARGUMENT_MISSING")
+        verify_receipt(args)
+
+main()

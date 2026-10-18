@@ -1,0 +1,456 @@
+"""Project source-bound Android facts for one operation without probing a device."""
+from argparse import ArgumentParser
+from pathlib import Path
+from builtins import dict, int, list
+import hashlib
+import subprocess
+import sys
+
+def stop(message ∈ str) → None:
+    sys.exit(message)
+
+def sha256_bytes(data ∈ bytes) → str:
+    return hashlib.sha256(data).hexdigest()
+
+def sha256_file(path ∈ Path) → str:
+    return sha256_bytes(path.read_bytes())
+
+def is_unknown(value ∈ str) → bool:
+    return value == "" or value == "-" or value == "UNKNOWN" or value == "NOT_CAPTURED"
+
+def safe_field(value ∈ str) → None:
+    if value == "":
+        stop("PROFILE_CORRUPT:unsafe field " + value)
+
+def safe_source(root ∈ Path, name ∈ str, expected ∈ str) → None:
+    if name == "-" and expected == "-":
+        return
+    if name.startswith("/") or name.startswith("../") or "/../" in name:
+        stop("PROFILE_CORRUPT:unsafe source path")
+    expected_count ∈ int ← expected.__len__()
+    if expected_count != 64:
+        stop("PROFILE_CORRUPT:invalid source digest")
+    source ∈ Path ← root.joinpath(name)
+    source_present ∈ bool ← source.is_file()
+    if source_present == False:
+        stop("PROFILE_SOURCE_MISSING:" + name)
+    if sha256_file(source) != expected:
+        stop("PROFILE_SOURCE_CHANGED:" + name)
+
+def read_aliases(path ∈ Path) → dict[str, str]:
+    data ∈ bytes ← path.read_bytes()
+    lines ∈ list[str] ← data.decode().splitlines()
+    line_count ∈ int ← lines.__len__()
+    if line_count == 0:
+        stop("PROFILE_CORRUPT:alias schema")
+    header ∈ str ← lines.__getitem__(0)
+    if header != "# catfood-android-profile-aliases-v1":
+        stop("PROFILE_CORRUPT:alias schema")
+    aliases ∈ dict[str, str] ← dict()
+    for line in lines:
+        if line == "" or line.startswith("#"):
+            continue
+        fields ∈ list[str] ← line.split("\t")
+        field_count ∈ int ← fields.__len__()
+        if field_count != 3:
+            stop("PROFILE_CORRUPT:alias fields")
+        kind ∈ str ← fields.__getitem__(0)
+        alias ∈ str ← fields.__getitem__(1)
+        canonical ∈ str ← fields.__getitem__(2)
+        if kind != "canonical" and kind != "model" and kind != "product" and kind != "selector":
+            stop("PROFILE_CORRUPT:alias kind")
+        key ∈ str ← alias.casefold()
+        duplicate ∈ bool ← aliases.__contains__(key)
+        if duplicate:
+            previous ∈ str ← aliases.get(key)
+            if previous != canonical:
+                stop("PROFILE_CONFLICT:alias " + alias)
+        aliases.__setitem__(key, canonical)
+    return aliases
+
+def resolve_alias(value ∈ str, aliases ∈ dict[str, str]) → str:
+    return aliases.get(value.casefold(), "")
+
+def read_profile(root ∈ Path, path ∈ Path) → dict[str, dict[str, str]]:
+    data ∈ bytes ← path.read_bytes()
+    lines ∈ list[str] ← data.decode().splitlines()
+    line_count ∈ int ← lines.__len__()
+    if line_count == 0:
+        stop("PROFILE_CORRUPT:profile schema")
+    header ∈ str ← lines.__getitem__(0)
+    if header != "# catfood-android-profile-v2":
+        stop("PROFILE_CORRUPT:profile schema")
+    facts ∈ dict[str, dict[str, str]] ← dict()
+    for line in lines:
+        if line == "" or line.startswith("#"):
+            continue
+        fields ∈ list[str] ← line.split("\t")
+        field_count ∈ int ← fields.__len__()
+        if field_count != 8:
+            stop("PROFILE_CORRUPT:profile fields")
+        field ∈ str ← fields.__getitem__(0)
+        safe_field(field)
+        duplicate ∈ bool ← facts.__contains__(field)
+        if duplicate:
+            stop("PROFILE_CONFLICT:" + field)
+        scope ∈ str ← fields.__getitem__(2)
+        state ∈ str ← fields.__getitem__(3)
+        material ∈ str ← fields.__getitem__(4)
+        if scope != "model" and scope != "firmware" and scope != "instance" and scope != "application-context" and scope != "session":
+            stop("PROFILE_CORRUPT:scope " + field)
+        if state != "known" and state != "historical" and state != "unknown":
+            stop("PROFILE_CORRUPT:state " + field)
+        if material != "always" and material != "if-required":
+            stop("PROFILE_CORRUPT:material " + field)
+        safe_source(root, fields.__getitem__(5), fields.__getitem__(6))
+        fact ∈ dict[str, str] ← dict()
+        fact.__setitem__("field", field)
+        fact.__setitem__("value", fields.__getitem__(1))
+        fact.__setitem__("scope", scope)
+        fact.__setitem__("state", state)
+        fact.__setitem__("material", material)
+        fact.__setitem__("source", fields.__getitem__(5))
+        fact.__setitem__("source_sha256", fields.__getitem__(6))
+        fact.__setitem__("note", fields.__getitem__(7))
+        fact.__setitem__("observed_at", "")
+        facts.__setitem__(field, fact)
+    return facts
+
+def read_policy(path ∈ Path, operation ∈ str) → dict[str, list[str]]:
+    data ∈ bytes ← path.read_bytes()
+    lines ∈ list[str] ← data.decode().splitlines()
+    line_count ∈ int ← lines.__len__()
+    if line_count == 0:
+        stop("PROFILE_CORRUPT:required-field schema")
+    header ∈ str ← lines.__getitem__(0)
+    if header != "# catfood-android-profile-required-fields-v1":
+        stop("PROFILE_CORRUPT:required-field schema")
+    selected ∈ dict[str, list[str]] ← dict()
+    for line in lines:
+        if line == "" or line.startswith("#"):
+            continue
+        fields ∈ list[str] ← line.split("\t")
+        field_count ∈ int ← fields.__len__()
+        if field_count != 4:
+            stop("PROFILE_CORRUPT:required-field row")
+        row_operation ∈ str ← fields.__getitem__(0)
+        if row_operation != operation:
+            continue
+        field ∈ str ← fields.__getitem__(1)
+        safe_field(field)
+        duplicate ∈ bool ← selected.__contains__(field)
+        if duplicate:
+            stop("PROFILE_CONFLICT:required field " + field)
+        minimum ∈ str ← fields.__getitem__(2)
+        scope ∈ str ← fields.__getitem__(3)
+        if minimum != "known" and minimum != "current":
+            stop("PROFILE_CORRUPT:minimum state")
+        selected.__setitem__(field, [minimum, scope])
+    selected_count ∈ int ← selected.__len__()
+    if selected_count == 0:
+        stop("PROFILE_POLICY_ABSENT:" + operation)
+    return selected
+
+def read_inventory(path ∈ Path) → tuple[dict[str, str], str]:
+    data ∈ bytes ← path.read_bytes()
+    lines ∈ list[str] ← data.decode().splitlines()
+    line_count ∈ int ← lines.__len__()
+    if line_count == 0:
+        stop("INVENTORY_CORRUPT:schema")
+    header ∈ str ← lines.__getitem__(0)
+    if header != "# catfood-device-inventory-v1":
+        stop("INVENTORY_CORRUPT:schema")
+    metadata ∈ dict[str, str] ← dict()
+    for line in lines:
+        if line == "" or line.startswith("#"):
+            continue
+        fields ∈ list[str] ← line.split("\t")
+        field_count ∈ int ← fields.__len__()
+        if field_count != 4:
+            stop("INVENTORY_CORRUPT:four fields required")
+        kind ∈ str ← fields.__getitem__(0)
+        if kind != "meta":
+            continue
+        key ∈ str ← fields.__getitem__(1)
+        value ∈ str ← fields.__getitem__(2)
+        duplicate ∈ bool ← metadata.__contains__(key)
+        if duplicate:
+            stop("INVENTORY_CONFLICT:" + key)
+        metadata.__setitem__(key, value)
+    old_fingerprint ∈ str ← metadata.get("build_fingerprint", "")
+    fingerprint ∈ str ← metadata.get("fingerprint", "")
+    if old_fingerprint != "" and fingerprint != "" and old_fingerprint != fingerprint:
+        stop("PROFILE_CONFLICT:firmware_fingerprint")
+    if fingerprint == "":
+        fingerprint ← old_fingerprint
+    metadata.__setitem__("canonical_fingerprint", fingerprint)
+    return (metadata, sha256_bytes(data))
+
+def read_observations(path ∈ Path) → tuple[dict[str, str], dict[str, dict[str, str]], str]:
+    data ∈ bytes ← path.read_bytes()
+    lines ∈ list[str] ← data.decode().splitlines()
+    line_count ∈ int ← lines.__len__()
+    if line_count == 0:
+        stop("OBSERVATION_CORRUPT:schema")
+    header ∈ str ← lines.__getitem__(0)
+    if header != "# catfood-android-observations-v1":
+        stop("OBSERVATION_CORRUPT:schema")
+    metadata ∈ dict[str, str] ← dict()
+    observations ∈ dict[str, dict[str, str]] ← dict()
+    for line in lines:
+        if line == "" or line.startswith("#"):
+            continue
+        fields ∈ list[str] ← line.split("\t")
+        field_count ∈ int ← fields.__len__()
+        if field_count != 4:
+            stop("OBSERVATION_CORRUPT:four fields required")
+        kind ∈ str ← fields.__getitem__(0)
+        key ∈ str ← fields.__getitem__(1)
+        if kind == "meta":
+            duplicate ∈ bool ← metadata.__contains__(key)
+            if duplicate:
+                stop("OBSERVATION_CONFLICT:" + key)
+            metadata.__setitem__(key, fields.__getitem__(2))
+        elif kind == "observation":
+            safe_field(key)
+            duplicate ∈ bool ← observations.__contains__(key)
+            if duplicate:
+                stop("OBSERVATION_CONFLICT:" + key)
+            observation ∈ dict[str, str] ← dict()
+            observation.__setitem__("value", fields.__getitem__(2))
+            observation.__setitem__("scope", fields.__getitem__(3))
+            observations.__setitem__(key, observation)
+        else:
+            stop("OBSERVATION_CORRUPT:unknown row kind")
+    return (metadata, observations, sha256_bytes(data))
+
+def validate_timestamp(value ∈ str, label ∈ str) → None:
+    value_count ∈ int ← value.__len__()
+    shape ∈ bool ← value_count == 20
+    if shape:
+        fourth ∈ str ← value.__getitem__(4)
+        seventh ∈ str ← value.__getitem__(7)
+        tenth ∈ str ← value.__getitem__(10)
+        thirteenth ∈ str ← value.__getitem__(13)
+        sixteenth ∈ str ← value.__getitem__(16)
+        nineteenth ∈ str ← value.__getitem__(19)
+        shape ← fourth == "-" and seventh == "-" and tenth == "T" and thirteenth == ":" and sixteenth == ":" and nineteenth == "Z"
+    if shape == False:
+        stop(label + ":invalid observed_at")
+
+def timestamp_key(value ∈ str) → int:
+    compact ∈ str ← value.replace("-", "").replace("T", "").replace(":", "").replace("Z", "")
+    return int(compact)
+
+def validate_identity(metadata ∈ dict[str, str], canonical ∈ str, expected_target ∈ str, expected_abi ∈ str, instance ∈ str, aliases ∈ dict[str, str], label ∈ str) → None:
+    observed_instance ∈ str ← metadata.get("device_id", "")
+    if observed_instance != "" and observed_instance != instance:
+        stop("PROFILE_CONFLICT:physical instance")
+    observed_target ∈ str ← metadata.get("target", "")
+    if observed_target != "" and observed_target != "-" and observed_target != expected_target:
+        stop("PROFILE_CONFLICT:target")
+    observed_abi ∈ str ← metadata.get("abi", "")
+    if observed_abi != "" and observed_abi != "-" and observed_abi != expected_abi:
+        stop("PROFILE_CONFLICT:primary_abi")
+    observed_model ∈ str ← metadata.get("model", "")
+    if observed_model != "" and observed_model != "-":
+        model ∈ str ← resolve_alias(observed_model, aliases)
+        if model == "" or model != canonical:
+            stop("PROFILE_CONFLICT:model")
+    observed_product ∈ str ← metadata.get("product", "")
+    if observed_product != "" and observed_product != "-":
+        product ∈ str ← resolve_alias(observed_product, aliases)
+        if product != "" and product != canonical:
+            stop("PROFILE_CONFLICT:product")
+    observed_at ∈ str ← metadata.get("observed_at", "")
+    if observed_at != "":
+        validate_timestamp(observed_at, label)
+
+def current_fact(field ∈ str, value ∈ str, scope ∈ str, source ∈ str, source_sha256 ∈ str, observed_at ∈ str) → dict[str, str]:
+    fact ∈ dict[str, str] ← dict()
+    fact.__setitem__("field", field)
+    fact.__setitem__("value", value)
+    fact.__setitem__("scope", scope)
+    fact.__setitem__("state", "current")
+    fact.__setitem__("material", "if-required")
+    fact.__setitem__("source", source)
+    fact.__setitem__("source_sha256", source_sha256)
+    fact.__setitem__("note", "current supplied observation")
+    fact.__setitem__("observed_at", observed_at)
+    return fact
+
+def scoped_observation_sha(metadata ∈ dict[str, str], field ∈ str, value ∈ str, scope ∈ str) → str:
+    lines ∈ list[str] ← []
+    for key in ["device_id", "target", "model", "product", "abi", "observed_at"]:
+        metadata_value ∈ str ← metadata.get(key, "")
+        lines.append("meta\t" + key + "\t" + metadata_value)
+    lines.append("observation\t" + field + "\t" + value + "\t" + scope)
+    joined ∈ str ← "\n".join(lines)
+    rendered ∈ str ← joined + "\n"
+    return sha256_bytes(rendered.encode())
+
+def availability(root ∈ Path, relative ∈ str, data ∈ bytes) → str:
+    child ∈ subprocess.CompletedProcess ← subprocess.run(["git", "-C", str(root), "show", "origin/main:" + relative], capture_output=True)
+    child_code ∈ int ← child.returncode
+    if child_code != 0:
+        return "BRANCH_ONLY"
+    child_output ∈ bytes ← child.stdout
+    if child_output == data:
+        return "LANDED_LOCAL_REMOTE_SNAPSHOT"
+    return "BRANCH_ONLY:LANDED_BYTES_DIFFER"
+
+def main() → None:
+    parser ∈ ArgumentParser ← ArgumentParser(description="Project a source-bound Android profile")
+    parser.add_argument("--model", required=True)
+    parser.add_argument("--instance", required=True)
+    parser.add_argument("--operation", default="all")
+    parser.add_argument("--inventory")
+    parser.add_argument("--observations")
+    parser.add_argument("--not-before")
+    parser.add_argument("--output", required=True)
+    args ∈ object ← parser.parse_args()
+    instance ∈ str ← args.instance
+    model_argument ∈ str ← args.model
+    operation ∈ str ← args.operation
+    output_argument ∈ str ← args.output
+    inventory_argument ∈ str ← args.inventory or ""
+    observations_argument ∈ str ← args.observations or ""
+    not_before ∈ str ← args.not_before or ""
+    if instance == "":
+        stop("PROFILE_CONFLICT:unsafe physical instance")
+    if not_before != "":
+        validate_timestamp(not_before, "PROFILE_FRESHNESS")
+
+    source_name ∈ str ← sys._getframe().f_code.co_filename
+    root ∈ Path ← Path(source_name).resolve().parents.__getitem__(1)
+    profile_directory ∈ Path ← root.joinpath("android/profiles")
+    aliases_path ∈ Path ← profile_directory.joinpath("aliases.tsv")
+    required_path ∈ Path ← profile_directory.joinpath("required-fields.tsv")
+    aliases ∈ dict[str, str] ← read_aliases(aliases_path)
+    canonical ∈ str ← resolve_alias(model_argument, aliases)
+    if canonical == "":
+        stop("PROFILE_ABSENT:" + model_argument)
+    relative_profile ∈ str ← "android/profiles/" + canonical + ".tsv"
+    profile_path ∈ Path ← root.joinpath(relative_profile)
+    profile_present ∈ bool ← profile_path.is_file()
+    if profile_present == False:
+        stop("PROFILE_ABSENT:" + canonical)
+    facts ∈ dict[str, dict[str, str]] ← read_profile(root, profile_path)
+    target_fact ∈ dict[str, str] ← facts.get("target")
+    abi_fact ∈ dict[str, str] ← facts.get("primary_abi")
+    expected_target ∈ str ← target_fact.get("value")
+    expected_abi ∈ str ← abi_fact.get("value")
+    instance_binding ∈ str ← "DECLARED_NOT_OBSERVED"
+
+    if inventory_argument != "":
+        inventory_result ∈ tuple[dict[str, str], str] ← read_inventory(Path(inventory_argument))
+        inventory ∈ dict[str, str] ← inventory_result.__getitem__(0)
+        inventory_sha ∈ str ← inventory_result.__getitem__(1)
+        validate_identity(inventory, canonical, expected_target, expected_abi, instance, aliases, "INVENTORY_CORRUPT")
+        instance_binding ← "INVENTORY_OBSERVATION"
+        fingerprint ∈ str ← inventory.get("canonical_fingerprint", "")
+        observed_at ∈ str ← inventory.get("observed_at", "")
+        if is_unknown(fingerprint) == False:
+            scoped_inventory_sha ∈ str ← scoped_observation_sha(inventory, "firmware_fingerprint", fingerprint, "firmware")
+            facts.__setitem__("firmware_fingerprint", current_fact("firmware_fingerprint", fingerprint, "firmware", "inventory", scoped_inventory_sha, observed_at))
+
+    if observations_argument != "":
+        observation_result ∈ tuple[dict[str, str], dict[str, dict[str, str]], str] ← read_observations(Path(observations_argument))
+        observation_metadata ∈ dict[str, str] ← observation_result.__getitem__(0)
+        observations ∈ dict[str, dict[str, str]] ← observation_result.__getitem__(1)
+        observation_sha ∈ str ← observation_result.__getitem__(2)
+        validate_identity(observation_metadata, canonical, expected_target, expected_abi, instance, aliases, "OBSERVATION_CORRUPT")
+        observed_at ∈ str ← observation_metadata.get("observed_at", "")
+        for field in ["application_gl_context", "shizuku_readiness"]:
+            observation_present ∈ bool ← observations.__contains__(field)
+            if observation_present:
+                observation ∈ dict[str, str] ← observations.get(field)
+                observation_value ∈ str ← observation.get("value")
+                observation_scope ∈ str ← observation.get("scope")
+                scoped_source_sha ∈ str ← scoped_observation_sha(observation_metadata, field, observation_value, observation_scope)
+                facts.__setitem__(field, current_fact(field, observation_value, observation_scope, "observations", scoped_source_sha, observed_at))
+
+    selected ∈ dict[str, list[str]] ← dict()
+    if operation == "all":
+        fact_fields ∈ list[str] ← list(facts.keys())
+        for field in fact_fields:
+            selected_fact ∈ dict[str, str] ← facts.get(field)
+            selected.__setitem__(field, ["any", selected_fact.get("scope")])
+    else:
+        selected ← read_policy(required_path, operation)
+
+    selected_fields ∈ list[str] ← list(selected.keys())
+    for field in selected_fields:
+        fact_present ∈ bool ← facts.__contains__(field)
+        if fact_present == False:
+            stop("PROFILE_MISSING:" + field)
+        fact ∈ dict[str, str] ← facts.get(field)
+        requirement ∈ list[str] ← selected.get(field)
+        minimum ∈ str ← requirement.__getitem__(0)
+        required_scope ∈ str ← requirement.__getitem__(1)
+        fact_scope ∈ str ← fact.get("scope")
+        if fact_scope != required_scope:
+            stop("PROFILE_SCOPE:" + field)
+        value ∈ str ← fact.get("value")
+        state ∈ str ← fact.get("state")
+        if minimum == "known" and ((state != "known" and state != "current") or is_unknown(value)):
+            stop("PROFILE_MISSING:" + field)
+        if minimum == "current":
+            if state == "historical":
+                stop("PROFILE_STALE:" + field)
+            if state != "current" or is_unknown(value):
+                stop("PROFILE_MISSING:" + field)
+            observed_at ∈ str ← fact.get("observed_at")
+            if observed_at == "":
+                stop("PROFILE_STALE:" + field)
+            if not_before != "":
+                observed_key ∈ int ← timestamp_key(observed_at)
+                required_key ∈ int ← timestamp_key(not_before)
+                if observed_key < required_key:
+                    stop("PROFILE_STALE:" + field)
+
+    material_lines ∈ list[str] ← ["resolver\tcatfood-profile-resolver-v2", "canonical_model\t" + canonical, "device_instance\t" + instance, "operation\t" + operation]
+    rendered_facts ∈ list[str] ← []
+    for field in selected_fields:
+        fact ∈ dict[str, str] ← facts.get(field)
+        fact_value ∈ str ← fact.get("value")
+        fact_scope ∈ str ← fact.get("scope")
+        fact_state ∈ str ← fact.get("state")
+        fact_source ∈ str ← fact.get("source")
+        fact_source_sha256 ∈ str ← fact.get("source_sha256")
+        fact_observed_at ∈ str ← fact.get("observed_at")
+        line ∈ str ← "fact\t" + field + "\t" + fact_value + "\t" + fact_scope + "\t" + fact_state + "\t" + fact_source + "\t" + fact_source_sha256 + "\t" + fact_observed_at
+        rendered_facts.append(line)
+        material_lines.append(line)
+    joined_material ∈ str ← "\n".join(material_lines)
+    material_text ∈ str ← joined_material + "\n"
+    material_bytes ∈ bytes ← material_text.encode()
+    profile_data ∈ bytes ← profile_path.read_bytes()
+    output_lines ∈ list[str] ← [
+        "meta\tschema\tcatfood-android-profile-projection-v2",
+        "meta\tresolver_version\tcatfood-profile-resolver-v2",
+        "meta\tcanonical_model\t" + canonical,
+        "meta\ttarget\t" + expected_target,
+        "meta\tdevice_instance\t" + instance,
+        "meta\tinstance_binding\t" + instance_binding,
+        "meta\toperation\t" + operation,
+        "meta\tavailability\t" + availability(root, relative_profile, profile_data),
+        "meta\tprofile_definition_sha256\t" + sha256_bytes(profile_data),
+        "meta\talias_map_sha256\t" + sha256_file(aliases_path),
+        "meta\trequired_fields_sha256\t" + sha256_file(required_path),
+        "meta\tprofile_material_sha256\t" + sha256_bytes(material_bytes)
+    ]
+    output_lines.extend(rendered_facts)
+    joined_output ∈ str ← "\n".join(output_lines)
+    rendered ∈ str ← joined_output + "\n"
+    output ∈ Path ← Path(output_argument)
+    output_exists ∈ bool ← output.exists()
+    if output_exists:
+        stop("OUTPUT_ALREADY_EXISTS")
+    parent_exists ∈ bool ← output.parent.is_dir()
+    if parent_exists == False:
+        stop("OUTPUT_PARENT_MISSING")
+    output.write_text(rendered)
+    print(rendered, end="")
+
+main()

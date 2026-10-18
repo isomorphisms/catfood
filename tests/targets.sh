@@ -45,6 +45,10 @@ reject 'target mismatch' CATFOOD_TARGET=c67 CATFOOD_TEST_DEVICE=TAB_P10_ROW CATF
 reject 'unknown Android identity' CATFOOD_TARGET=tablet CATFOOD_TEST_DEVICE=Other CATFOOD_TEST_MODEL=Other CATFOOD_TEST_ABI=arm64-v8a
 reject 'cannot be selected as a build workbench' CATFOOD_TARGET=cloud
 expect c67 CATFOOD_TARGET=c67 CATFOOD_TEST_DEVICE=Miro_C67 CATFOOD_TEST_MODEL='Miro C67' CATFOOD_TEST_ABI=arm64-v8a
+[ "$(sh "$root/catfood" classify-android-target '' 'MIRO A1' armeabi-v7a)" = phone ]
+[ "$(CATFOOD_TARGET=tablet sh "$root/catfood" classify-android-target Miro_C67 'Miro C67' arm64-v8a)" = c67 ]
+if sh "$root/catfood" classify-android-target Miro_C67 TAB_P10 arm64-v8a >"$temporary/out" 2>"$temporary/err"; then exit 1; fi
+grep -F 'conflicting Android identity properties' "$temporary/err" >/dev/null
 # Explicit host planning selections work; host absence never proves cloud.
 [ "$(CATFOOD_TARGET=container sh "$root/catfood" --target)" = container ]
 [ "$(CATFOOD_TARGET=hetzner sh "$root/catfood" --target)" = cloud ]

@@ -12,6 +12,12 @@ Start with `./catfood --help` or `./catfood where` to inspect the commands and v
 ./catfood
 ```
 
+Maintained Android consumers can classify supplied identity properties with
+`./catfood classify-android-target` and obtain a source-bound, operation-scoped
+profile with `./catfood android-profile`. See the
+[profile contract](android/profiles/README.md). Neither command probes,
+provisions, or accepts a physical device.
+
 The entrypoint selects a device profile or workbench role:
 
 - `phone`: observed MIRO A1 phone, ARMv7 Android runtime delivery;

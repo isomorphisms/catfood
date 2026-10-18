@@ -1,0 +1,11 @@
+# catfood-android-profile-v2
+# field<TAB>value<TAB>scope<TAB>state<TAB>material<TAB>source_path<TAB>source_sha256<TAB>note
+application_gl_context	UNKNOWN	application-context	unknown	if-required	-	-	SurfaceFlinger does not establish an application context
+device_class	phone	model	known	always	android/devices/miro-a1.md	a112781be92e49cbf9e749ea7fad835f1d64dbdcbef0cbba649d5b262bc30fde	phone form factor
+firmware_fingerprint	UNKNOWN	firmware	unknown	if-required	-	-	not retained by the historical A1 profile
+gpu_renderer	PowerVR Rogue GE8322	model	known	always	android/devices/miro-a1.md	a112781be92e49cbf9e749ea7fad835f1d64dbdcbef0cbba649d5b262bc30fde	model fact; not application-context acceptance
+model_name	MIRO A1	model	known	always	android/devices/miro-a1.md	a112781be92e49cbf9e749ea7fad835f1d64dbdcbef0cbba649d5b262bc30fde	canonical observed model spelling
+primary_abi	armeabi-v7a	model	known	always	android/devices/miro-a1.md	a112781be92e49cbf9e749ea7fad835f1d64dbdcbef0cbba649d5b262bc30fde	primary Android userspace lane
+shizuku_readiness	UNKNOWN	session	unknown	if-required	-	-	service readiness is mutable session state
+soc	SC9863A	model	known	always	android/devices/miro-a1.md	a112781be92e49cbf9e749ea7fad835f1d64dbdcbef0cbba649d5b262bc30fde	model platform family
+target	phone	model	known	always	android/devices/miro-a1.md	a112781be92e49cbf9e749ea7fad835f1d64dbdcbef0cbba649d5b262bc30fde	Cat Food target selector

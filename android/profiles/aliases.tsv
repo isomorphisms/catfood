@@ -1,0 +1,15 @@
+# catfood-android-profile-aliases-v1
+# kind<TAB>alias<TAB>canonical_model
+canonical	miro-a1	miro-a1
+model	MIRO A1	miro-a1
+selector	phone	miro-a1
+canonical	miro-c67	miro-c67
+model	Miro C67	miro-c67
+product	Miro_C67	miro-c67
+selector	c67	miro-c67
+canonical	svitoo-tab-p10	svitoo-tab-p10
+model	TAB_P10	svitoo-tab-p10
+model	TAB_P10_ROW	svitoo-tab-p10
+product	TAB_P10	svitoo-tab-p10
+product	TAB_P10_ROW	svitoo-tab-p10
+selector	tablet	svitoo-tab-p10

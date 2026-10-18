@@ -1,0 +1,313 @@
+"""Regression controls for scoped Android profile lookup and request binding."""
+from argparse import ArgumentParser
+from pathlib import Path
+from builtins import ValueError, dict, int, list
+import hashlib
+import os
+import shutil
+import subprocess
+import tempfile
+import sys
+
+ITHON_REVISION ∈ str ← "d6e83969f82512e920fb17b44326cb54f31d015c"
+REQUIREMENT_SHA ∈ str ← "a0981c2268ed3ffd4d56d30a429cb1254803dcefb6326e088878355327f8cbe8"
+
+def fail(message ∈ str) → None:
+    raise ValueError(message)
+
+def sha256_file(path ∈ Path) → str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+def invoke(argv ∈ list[str], environment ∈ dict[str, str]) → subprocess.CompletedProcess:
+    return subprocess.run(argv, capture_output=True, env=environment)
+
+def expect_pass(argv ∈ list[str], environment ∈ dict[str, str], label ∈ str) → subprocess.CompletedProcess:
+    child ∈ subprocess.CompletedProcess ← invoke(argv, environment)
+    code ∈ int ← child.returncode
+    if code != 0:
+        diagnostic ∈ str ← child.stderr.decode()
+        fail(label + " unexpectedly failed: " + diagnostic)
+    return child
+
+def expect_reject(argv ∈ list[str], environment ∈ dict[str, str], diagnostic ∈ str, label ∈ str) → None:
+    child ∈ subprocess.CompletedProcess ← invoke(argv, environment)
+    code ∈ int ← child.returncode
+    if code == 0:
+        fail(label + " unexpectedly passed")
+    stderr ∈ str ← child.stderr.decode()
+    diagnostic_index ∈ int ← stderr.find(diagnostic)
+    if diagnostic_index < 0:
+        fail(label + " wrong diagnostic: " + stderr)
+
+def write_lines(path ∈ Path, lines ∈ list[str]) → None:
+    joined ∈ str ← "\n".join(lines)
+    path.write_text(joined + "\n")
+
+def inventory(path ∈ Path, instance ∈ str, model ∈ str, product ∈ str, abi ∈ str, fingerprint ∈ str, observed_at ∈ str) → None:
+    write_lines(path, [
+        "# catfood-device-inventory-v1",
+        "meta\tdevice_id\t" + instance + "\tlocal-state",
+        "meta\tobserved_at\t" + observed_at + "\tclock",
+        "meta\ttarget\tphone\tdetected",
+        "meta\tmodel\t" + model + "\tgetprop",
+        "meta\tproduct\t" + product + "\tgetprop",
+        "meta\tfingerprint\t" + fingerprint + "\tgetprop",
+        "meta\tabi\t" + abi + "\tgetprop"
+    ])
+
+def observations(path ∈ Path, instance ∈ str, context ∈ str, context_scope ∈ str, service ∈ str) → None:
+    write_lines(path, [
+        "# catfood-android-observations-v1",
+        "meta\tdevice_id\t" + instance + "\tlocal-state",
+        "meta\tobserved_at\t2026-10-18T12:00:00Z\tclock",
+        "meta\ttarget\tphone\tdetected",
+        "meta\tmodel\tMIRO A1\tgetprop",
+        "meta\tproduct\t-\tgetprop",
+        "meta\tabi\tarmeabi-v7a\tgetprop",
+        "observation\tapplication_gl_context\t" + context + "\t" + context_scope,
+        "observation\tshizuku_readiness\t" + service + "\tsession"
+    ])
+
+def profile_command(catfood ∈ str, model ∈ str, instance ∈ str, operation ∈ str, output ∈ Path) → list[str]:
+    return [catfood, "android-profile", "--model", model, "--instance", instance, "--operation", operation, "--output", str(output)]
+
+def main() → None:
+    parser ∈ ArgumentParser ← ArgumentParser()
+    parser.add_argument("--ithon", required=True)
+    args ∈ object ← parser.parse_args()
+    ithon ∈ str ← args.ithon
+    source_name ∈ str ← sys._getframe().f_code.co_filename
+    root ∈ Path ← Path(source_name).resolve().parents.__getitem__(1)
+    catfood ∈ str ← str(root.joinpath("catfood"))
+    temporary_name ∈ str ← tempfile.mkdtemp(prefix="catfood-profile-")
+    temporary ∈ Path ← Path(temporary_name)
+    environment ∈ dict[str, str] ← dict(os.environ)
+    environment.__setitem__("CATFOOD_ITHON", ithon)
+    environment.__setitem__("CATFOOD_ITHON_SHA256", sha256_file(Path(ithon)))
+    environment.__setitem__("CATFOOD_ITHON_REVISION", ITHON_REVISION)
+    checked ∈ int ← 0
+    try:
+        for model in ["miro-a1", "miro-c67", "svitoo-tab-p10"]:
+            output ∈ Path ← temporary.joinpath("stable-" + model + ".tsv")
+            expect_pass(profile_command(catfood, model, model + "-fixture", "stable-hardware", output), environment, "stable " + model)
+            checked ← checked + 1
+
+        alias_output ∈ Path ← temporary.joinpath("alias.tsv")
+        expect_pass(profile_command(catfood, "MIRO A1", "a1-one", "stable-hardware", alias_output), environment, "finite alias")
+        checked ← checked + 1
+
+        for unknown in ["unknown-arm32", "unknown-aarch64"]:
+            expect_reject(profile_command(catfood, unknown, "unknown", "stable-hardware", temporary.joinpath(unknown + ".tsv")), environment, "PROFILE_ABSENT", unknown)
+            checked ← checked + 1
+
+        current ∈ Path ← temporary.joinpath("inventory.tsv")
+        inventory(current, "a1-one", "MIRO A1", "-", "armeabi-v7a", "MIRO/A1/current", "2026-10-18T12:00:00Z")
+        diagnostic ∈ Path ← temporary.joinpath("diagnostic.tsv")
+        command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-base", diagnostic)
+        command.extend(["--inventory", str(current), "--not-before", "2026-10-18T00:00:00Z"])
+        expect_pass(command, environment, "current firmware")
+        checked ← checked + 1
+
+        repeated ∈ Path ← temporary.joinpath("diagnostic-repeat.tsv")
+        repeat_command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-base", repeated)
+        repeat_command.extend(["--not-before", "2026-10-18T00:00:00Z", "--inventory", str(current)])
+        expect_pass(repeat_command, environment, "repeat current firmware")
+        diagnostic_bytes ∈ bytes ← diagnostic.read_bytes()
+        repeated_bytes ∈ bytes ← repeated.read_bytes()
+        if diagnostic_bytes != repeated_bytes:
+            fail("equal pinned material changed projection bytes")
+        checked ← checked + 1
+
+        reordered ∈ Path ← temporary.joinpath("reordered-inventory.tsv")
+        write_lines(reordered, [
+            "# catfood-device-inventory-v1",
+            "meta\tabi\tarmeabi-v7a\tgetprop",
+            "meta\tfingerprint\tMIRO/A1/current\tgetprop",
+            "meta\tproduct\t-\tgetprop",
+            "meta\tmodel\tMIRO A1\tgetprop",
+            "meta\ttarget\tphone\tdetected",
+            "meta\tobserved_at\t2026-10-18T12:00:00Z\tclock",
+            "meta\tdevice_id\ta1-one\tlocal-state"
+        ])
+        reordered_output ∈ Path ← temporary.joinpath("reordered-profile.tsv")
+        reordered_command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-base", reordered_output)
+        reordered_command.extend(["--inventory", str(reordered), "--not-before", "2026-10-18T00:00:00Z"])
+        expect_pass(reordered_command, environment, "harmless record order")
+        reordered_bytes ∈ bytes ← reordered_output.read_bytes()
+        if diagnostic_bytes != reordered_bytes:
+            fail("harmless record order changed canonical profile")
+        checked ← checked + 1
+
+        legacy ∈ Path ← temporary.joinpath("legacy-inventory.tsv")
+        write_lines(legacy, [
+            "# catfood-device-inventory-v1",
+            "meta\tdevice_id\ta1-one\tlocal-state",
+            "meta\tobserved_at\t2026-10-18T12:00:00Z\tclock",
+            "meta\ttarget\tphone\tdetected",
+            "meta\tmodel\tMIRO A1\tgetprop",
+            "meta\tproduct\t-\tgetprop",
+            "meta\tbuild_fingerprint\tMIRO/A1/current\tlegacy",
+            "meta\tabi\tarmeabi-v7a\tgetprop"
+        ])
+        legacy_output ∈ Path ← temporary.joinpath("legacy-profile.tsv")
+        legacy_command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-base", legacy_output)
+        legacy_command.extend(["--inventory", str(legacy), "--not-before", "2026-10-18T00:00:00Z"])
+        expect_pass(legacy_command, environment, "historical fingerprint field")
+        legacy_bytes ∈ bytes ← legacy_output.read_bytes()
+        if diagnostic_bytes != legacy_bytes:
+            fail("legacy fingerprint field changed canonical projection")
+        checked ← checked + 1
+
+        conflicting_fingerprints ∈ Path ← temporary.joinpath("conflicting-fingerprints.tsv")
+        write_lines(conflicting_fingerprints, [
+            "# catfood-device-inventory-v1",
+            "meta\tdevice_id\ta1-one\tlocal-state",
+            "meta\tobserved_at\t2026-10-18T12:00:00Z\tclock",
+            "meta\ttarget\tphone\tdetected",
+            "meta\tmodel\tMIRO A1\tgetprop",
+            "meta\tproduct\t-\tgetprop",
+            "meta\tbuild_fingerprint\tMIRO/A1/old\tlegacy",
+            "meta\tfingerprint\tMIRO/A1/current\tgetprop",
+            "meta\tabi\tarmeabi-v7a\tgetprop"
+        ])
+        conflicting_fingerprint_command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-base", temporary.joinpath("conflicting-fingerprint-profile.tsv"))
+        conflicting_fingerprint_command.extend(["--inventory", str(conflicting_fingerprints)])
+        expect_reject(conflicting_fingerprint_command, environment, "PROFILE_CONFLICT:firmware_fingerprint", "conflicting historical fingerprint fields")
+        checked ← checked + 1
+
+        expect_reject(profile_command(catfood, "miro-a1", "a1-one", "diagnostic-base", temporary.joinpath("missing-firmware.tsv")), environment, "PROFILE_MISSING:firmware_fingerprint", "missing firmware")
+        checked ← checked + 1
+        empty ∈ Path ← temporary.joinpath("empty.tsv")
+        inventory(empty, "a1-one", "MIRO A1", "-", "armeabi-v7a", "", "2026-10-18T12:00:00Z")
+        empty_command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-base", temporary.joinpath("empty-firmware.tsv"))
+        empty_command.extend(["--inventory", str(empty)])
+        expect_reject(empty_command, environment, "PROFILE_MISSING:firmware_fingerprint", "empty firmware")
+        checked ← checked + 1
+
+        stale_command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-base", temporary.joinpath("stale.tsv"))
+        stale_command.extend(["--inventory", str(current), "--not-before", "2026-10-19T00:00:00Z"])
+        expect_reject(stale_command, environment, "PROFILE_STALE:firmware_fingerprint", "stale firmware")
+        checked ← checked + 1
+
+        historical ∈ list[str] ← profile_command(catfood, "miro-c67", "c67-one", "diagnostic-base", temporary.joinpath("c67-historical.tsv"))
+        expect_reject(historical, environment, "PROFILE_STALE:firmware_fingerprint", "historical C67 firmware")
+        checked ← checked + 1
+
+        wrong_instance ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-two", "diagnostic-base", temporary.joinpath("wrong-instance.tsv"))
+        wrong_instance.extend(["--inventory", str(current)])
+        expect_reject(wrong_instance, environment, "PROFILE_CONFLICT:physical instance", "two same-model instances")
+        checked ← checked + 1
+
+        wrong_abi_inventory ∈ Path ← temporary.joinpath("wrong-abi-inventory.tsv")
+        inventory(wrong_abi_inventory, "a1-one", "MIRO A1", "-", "arm64-v8a", "MIRO/A1/current", "2026-10-18T12:00:00Z")
+        wrong_abi ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-base", temporary.joinpath("wrong-abi.tsv"))
+        wrong_abi.extend(["--inventory", str(wrong_abi_inventory)])
+        expect_reject(wrong_abi, environment, "PROFILE_CONFLICT:primary_abi", "wrong ABI")
+        checked ← checked + 1
+
+        conflict_inventory ∈ Path ← temporary.joinpath("conflict-inventory.tsv")
+        inventory(conflict_inventory, "a1-one", "Miro C67", "Miro_C67", "armeabi-v7a", "MIRO/A1/current", "2026-10-18T12:00:00Z")
+        conflict ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-base", temporary.joinpath("identity-conflict.tsv"))
+        conflict.extend(["--inventory", str(conflict_inventory)])
+        expect_reject(conflict, environment, "PROFILE_CONFLICT:model", "conflicting identity")
+        checked ← checked + 1
+
+        surface ∈ Path ← temporary.joinpath("surface.tsv")
+        observations(surface, "a1-one", "OpenGL ES 3.2", "surfaceflinger", "stopped")
+        surface_command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-app-graphics", temporary.joinpath("surface-profile.tsv"))
+        surface_command.extend(["--inventory", str(current), "--observations", str(surface)])
+        expect_reject(surface_command, environment, "PROFILE_SCOPE:application_gl_context", "SurfaceFlinger substitution")
+        checked ← checked + 1
+
+        application ∈ Path ← temporary.joinpath("application.tsv")
+        observations(application, "a1-one", "OpenGL ES 3.2", "application-context", "stopped")
+        application_profile ∈ Path ← temporary.joinpath("application-profile.tsv")
+        application_command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-app-graphics", application_profile)
+        application_command.extend(["--inventory", str(current), "--observations", str(application)])
+        expect_pass(application_command, environment, "application context")
+        checked ← checked + 1
+
+        stable_plain ∈ Path ← temporary.joinpath("stable-plain.tsv")
+        stable_stopped ∈ Path ← temporary.joinpath("stable-stopped.tsv")
+        expect_pass(profile_command(catfood, "miro-a1", "a1-one", "stable-hardware", stable_plain), environment, "stable without mutable probe")
+        stable_stopped_command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "stable-hardware", stable_stopped)
+        stable_stopped_command.extend(["--observations", str(application)])
+        expect_pass(stable_stopped_command, environment, "stable with stopped service")
+        stable_plain_bytes ∈ bytes ← stable_plain.read_bytes()
+        stable_stopped_bytes ∈ bytes ← stable_stopped.read_bytes()
+        if stable_plain_bytes != stable_stopped_bytes:
+            fail("stopped service changed static profile")
+        checked ← checked + 1
+
+        application_unrelated ∈ Path ← temporary.joinpath("application-unrelated.tsv")
+        observations(application_unrelated, "a1-one", "OpenGL ES 3.2", "application-context", "working")
+        unrelated_profile ∈ Path ← temporary.joinpath("application-unrelated-profile.tsv")
+        unrelated_command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-app-graphics", unrelated_profile)
+        unrelated_command.extend(["--inventory", str(current), "--observations", str(application_unrelated)])
+        expect_pass(unrelated_command, environment, "unrelated session change")
+        application_bytes ∈ bytes ← application_profile.read_bytes()
+        unrelated_bytes ∈ bytes ← unrelated_profile.read_bytes()
+        if application_bytes != unrelated_bytes:
+            fail("unrelated session fact changed application profile")
+        checked ← checked + 1
+
+        application_changed ∈ Path ← temporary.joinpath("application-changed.tsv")
+        observations(application_changed, "a1-one", "OpenGL ES 2.0", "application-context", "stopped")
+        changed_profile ∈ Path ← temporary.joinpath("application-changed-profile.tsv")
+        changed_command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-app-graphics", changed_profile)
+        changed_command.extend(["--inventory", str(current), "--observations", str(application_changed)])
+        expect_pass(changed_command, environment, "changed application context")
+        changed_bytes ∈ bytes ← changed_profile.read_bytes()
+        if application_bytes == changed_bytes:
+            fail("material application-context change retained projection")
+        checked ← checked + 1
+
+        approved ∈ Path ← temporary.joinpath("approved.tsv")
+        obligations ∈ str ← str(root.joinpath("android/obligations.sh"))
+        expect_pass(["sh", obligations, "build", str(approved)], environment, "approved obligations build")
+        approved_sha ∈ str ← sha256_file(approved)
+        request_profile ∈ Path ← temporary.joinpath("request-profile.tsv")
+        request ∈ Path ← temporary.joinpath("request.tsv")
+        request_command ∈ list[str] ← [catfood, "android-profile-request", "prepare", "--model", "miro-a1", "--instance", "a1-one", "--operation", "diagnostic-base", "--inventory", str(current), "--not-before", "2026-10-18T00:00:00Z", "--requirements", str(root.joinpath("tests/fixtures/android-profile/a1-grease-requirements.tsv")), "--requirements-sha256", REQUIREMENT_SHA, "--approved-obligations", str(approved), "--approved-obligations-sha256", approved_sha, "--profile-output", str(request_profile), "--output", str(request)]
+        expect_pass(request_command, environment, "real diagnostic request")
+        verify_command ∈ list[str] ← [catfood, "android-profile-request", "verify", "--request", str(request), "--profile", str(request_profile)]
+        expect_pass(verify_command, environment, "request verification")
+        checked ← checked + 1
+
+        receipt ∈ Path ← temporary.joinpath("receipt.tsv")
+        receipt_command ∈ list[str] ← [catfood, "android-profile-request", "receipt", "--request", str(request), "--profile", str(request_profile), "--result", "NOT_VERIFIED", "--evidence", "source-only-no-diagnostic-executed", "--output", str(receipt)]
+        expect_pass(receipt_command, environment, "diagnostic receipt")
+        verify_receipt_command ∈ list[str] ← [catfood, "android-profile-request", "verify-receipt", "--request", str(request), "--profile", str(request_profile), "--receipt", str(receipt)]
+        expect_pass(verify_receipt_command, environment, "diagnostic receipt verification")
+        checked ← checked + 1
+
+        changed_inventory ∈ Path ← temporary.joinpath("changed-inventory.tsv")
+        inventory(changed_inventory, "a1-one", "MIRO A1", "-", "armeabi-v7a", "MIRO/A1/changed", "2026-10-18T12:00:00Z")
+        changed_request_profile ∈ Path ← temporary.joinpath("changed-request-profile.tsv")
+        changed_request_profile_command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-base", changed_request_profile)
+        changed_request_profile_command.extend(["--inventory", str(changed_inventory), "--not-before", "2026-10-18T00:00:00Z"])
+        expect_pass(changed_request_profile_command, environment, "changed request material")
+        invalidated_request ∈ list[str] ← [catfood, "android-profile-request", "verify", "--request", str(request), "--profile", str(changed_request_profile)]
+        expect_reject(invalidated_request, environment, "PROFILE_REQUEST_PROJECTION_CHANGED", "material change invalidates request")
+        checked ← checked + 1
+
+        changed_receipt ∈ list[str] ← [catfood, "android-profile-request", "verify-receipt", "--request", str(request), "--profile", str(changed_request_profile), "--receipt", str(receipt)]
+        expect_reject(changed_receipt, environment, "PROFILE_REQUEST_PROJECTION_CHANGED", "material change invalidates receipt")
+        checked ← checked + 1
+
+        removed ∈ Path ← temporary.joinpath("removed-profile-binding.tsv")
+        kept ∈ list[str] ← []
+        request_lines ∈ list[str] ← request.read_text().splitlines()
+        for request_line in request_lines:
+            is_profile_binding ∈ bool ← request_line.startswith("profile_projection_sha256\t")
+            if is_profile_binding == False:
+                kept.append(request_line)
+        write_lines(removed, kept)
+        removed_command ∈ list[str] ← [catfood, "android-profile-request", "verify", "--request", str(removed), "--profile", str(request_profile)]
+        expect_reject(removed_command, environment, "PROFILE_REQUEST_PROJECTION_CHANGED", "removed profile consumer call")
+        checked ← checked + 1
+    finally:
+        shutil.rmtree(temporary_name)
+    print("PASS", checked, "scoped-profile and pre-command request controls")
+
+main()

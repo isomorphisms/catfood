@@ -1,0 +1,26 @@
+# catfood-android-profile-required-fields-v1
+# operation<TAB>field<TAB>minimum_state<TAB>required_scope
+stable-hardware	device_class	known	model
+stable-hardware	gpu_renderer	known	model
+stable-hardware	model_name	known	model
+stable-hardware	primary_abi	known	model
+stable-hardware	soc	known	model
+stable-hardware	target	known	model
+diagnostic-base	device_class	known	model
+diagnostic-base	firmware_fingerprint	current	firmware
+diagnostic-base	model_name	known	model
+diagnostic-base	primary_abi	known	model
+diagnostic-base	target	known	model
+diagnostic-app-graphics	application_gl_context	current	application-context
+diagnostic-app-graphics	device_class	known	model
+diagnostic-app-graphics	firmware_fingerprint	current	firmware
+diagnostic-app-graphics	gpu_renderer	known	model
+diagnostic-app-graphics	model_name	known	model
+diagnostic-app-graphics	primary_abi	known	model
+diagnostic-app-graphics	target	known	model
+diagnostic-shizuku	device_class	known	model
+diagnostic-shizuku	firmware_fingerprint	current	firmware
+diagnostic-shizuku	model_name	known	model
+diagnostic-shizuku	primary_abi	known	model
+diagnostic-shizuku	shizuku_readiness	current	session
+diagnostic-shizuku	target	known	model
