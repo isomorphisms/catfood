@@ -1,8 +1,8 @@
 schema	aici-follower-job-v1
 job_id	catfood-b387f90d3973-github-x86_64
 repository	isomorphisms/catfood
-branch	sun/bc-cf08-s01-host-cells
-pr	-
+branch	main
+pr	139
 trigger_commit	b387f90d3973aae39ba19d370a830da627299ab1
 leader_platform	github-x86_64
 leader_arch	x86_64
