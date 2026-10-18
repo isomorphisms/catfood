@@ -4,8 +4,10 @@ set -eu
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 targets=$root/followers/targets.tsv
 rules=$root/followers/impact-rules.tsv
+host_cells=$root/followers/host-cells.tsv
 jobs=$root/followers/jobs
 receipts=$root/followers/receipts
+host_receipts=$root/followers/host-receipts
 
 fatal() { printf 'followers: %s\n' "$*" >&2; exit 1; }
 tab=$(printf '\t')
@@ -13,6 +15,355 @@ tab=$(printf '\t')
 record_value() {
     file=$1 key=$2
     awk -F '\t' -v key="$key" '$1 == key { if (seen++) exit 2; value=$2 } END { if (!seen) exit 1; print value }' "$file"
+}
+
+scope_matches() {
+    expected=$1 observed=$2
+    case $expected in
+        observed-at-run)
+            case $observed in ''|-|unknown|unknown-current) return 1 ;; esac
+            ;;
+        unknown-current)
+            [ "$observed" = unknown-current ] || return 1
+            ;;
+        *)
+            [ "$expected" = "$observed" ] || return 1
+            ;;
+    esac
+}
+
+target_field() {
+    target=$1 field=$2
+    target_line "$target" | awk -F '\t' -v field="$field" '{print $field}'
+}
+
+cell_line() {
+    cell=$1
+    awk -F '\t' -v cell="$cell" '
+        $1 !~ /^#/ && $1 == cell { if (found++) exit 2; line=$0 }
+        END { if (!found) exit 1; print line }
+    ' "$host_cells"
+}
+
+host_cell_records_check() {
+    [ -f "$host_cells" ] || fatal "missing host-cell records: $host_cells"
+    awk -F '\t' '
+        $1 ~ /^#/ { next }
+        NF != 21 { print "host cell " $1 " has " NF " fields, expected 21" > "/dev/stderr"; exit 2 }
+        seen[$1]++ { print "duplicate host cell " $1 > "/dev/stderr"; exit 2 }
+    ' "$host_cells" || fatal 'invalid host-cell record shape'
+
+    while IFS="$tab" read -r cell target required component implementation \
+        host_os host_release architecture abi libc runtime cpu repository \
+        source_revision artifact artifact_sha256 availability evidence_kind \
+        eligibility disposition evidence_ref
+    do
+        case $cell in ''|'#'*) continue ;; esac
+        line=$(target_line "$target") || fatal "host cell $cell names unknown target $target"
+        concrete=$(printf '%s\n' "$line" | awk -F '\t' '{print $7}')
+        maintenance=$(printf '%s\n' "$line" | awk -F '\t' '{print $14}')
+        target_arch=$(printf '%s\n' "$line" | awk -F '\t' '{print $3}')
+        target_os=$(printf '%s\n' "$line" | awk -F '\t' '{print $8}')
+        target_release=$(printf '%s\n' "$line" | awk -F '\t' '{print $9}')
+        target_abi=$(printf '%s\n' "$line" | awk -F '\t' '{print $10}')
+        target_libc=$(printf '%s\n' "$line" | awk -F '\t' '{print $11}')
+        target_runtime=$(printf '%s\n' "$line" | awk -F '\t' '{print $12}')
+        target_cpu=$(printf '%s\n' "$line" | awk -F '\t' '{print $13}')
+
+        scope_matches "$target_os" "$host_os" ||
+            fatal "host cell $cell OS $host_os does not match $target"
+        scope_matches "$target_release" "$host_release" ||
+            fatal "host cell $cell release $host_release does not match $target"
+        scope_matches "$target_arch" "$architecture" ||
+            fatal "host cell $cell architecture $architecture does not match $target"
+        scope_matches "$target_abi" "$abi" ||
+            fatal "host cell $cell ABI $abi does not match $target"
+        scope_matches "$target_libc" "$libc" ||
+            fatal "host cell $cell libc $libc does not match $target"
+        scope_matches "$target_runtime" "$runtime" ||
+            fatal "host cell $cell runtime $runtime does not match $target"
+        scope_matches "$target_cpu" "$cpu" ||
+            fatal "host cell $cell CPU $cpu does not match $target"
+
+        case $required in
+            yes)
+                [ "$concrete" = yes ] && [ "$maintenance" = yes ] ||
+                    fatal "required host cell $cell is not backed by a maintained concrete target"
+                ;;
+            conditional)
+                [ "$maintenance" = conditional ] ||
+                    fatal "conditional host cell $cell lacks conditional target authority"
+                ;;
+            no) ;;
+            *) fatal "host cell $cell has invalid required value $required" ;;
+        esac
+        case $source_revision in
+            *[!0123456789abcdef]*|'') fatal "host cell $cell has invalid source revision" ;;
+        esac
+        [ "${#source_revision}" -eq 40 ] ||
+            fatal "host cell $cell source revision is not a full commit"
+        if [ "$artifact_sha256" != - ]; then
+            case $artifact_sha256 in
+                *[!0123456789abcdef]*|'') fatal "host cell $cell has invalid artifact SHA-256" ;;
+            esac
+            [ "${#artifact_sha256}" -eq 64 ] ||
+                fatal "host cell $cell artifact SHA-256 has the wrong length"
+            [ "$artifact" != - ] || fatal "host cell $cell hashes an unnamed artifact"
+        fi
+        case $implementation in
+            *cpp*|*c++*|*cxx*)
+                [ "$eligibility" = ineligible ] ||
+                    fatal "C++ host cell $cell must remain ineligible"
+                ;;
+        esac
+        if [ "$disposition" = accepted ]; then
+            [ "$eligibility" = eligible ] ||
+                fatal "host cell $cell accepted without eligible material"
+            for material in "$host_os" "$host_release" "$architecture" "$abi" \
+                "$libc" "$runtime" "$cpu"
+            do
+                case $material in
+                    ''|-|unknown|unknown-current|observed-at-run)
+                        fatal "host cell $cell accepted with unresolved scope $material"
+                        ;;
+                esac
+            done
+            case $evidence_kind in
+                branch|ci-label|source-presence)
+                    fatal "host cell $cell accepted from $evidence_kind"
+                    ;;
+            esac
+            case $availability in
+                permanent|current) ;;
+                until:*)
+                    expiry=${availability#until:}
+                    case $expiry in
+                        ????-??-??T??:??:??Z) ;;
+                        *) fatal "host cell $cell has invalid availability timestamp $expiry" ;;
+                    esac
+                    now=${CATFOOD_HOST_CELL_NOW:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}
+                    [ "$expiry" \> "$now" ] ||
+                        fatal "host cell $cell accepted an expired artifact"
+                    ;;
+                *) fatal "host cell $cell accepted without current acquisition material" ;;
+            esac
+        fi
+        [ "$eligibility" != revoked ] || [ "$disposition" != accepted ] ||
+            fatal "host cell $cell reused a revoked qualification"
+        case $evidence_ref in
+            http://*|https://*|followers/*) ;;
+            *) fatal "host cell $cell has an uninspectable evidence reference" ;;
+        esac
+        : "$component" "$repository"
+    done < "$host_cells"
+
+    while IFS="$tab" read -r target platform architecture profile kind action \
+        concrete host_os host_release host_abi host_libc host_runtime host_cpu \
+        maintenance required_cells
+    do
+        case $target in ''|'#'*) continue ;; esac
+        [ -n "$required_cells" ] || fatal "target $target lacks required_host_cells"
+        [ "$required_cells" != - ] || continue
+        oldifs=$IFS
+        IFS=,
+        for cell in $required_cells; do
+            IFS=$oldifs
+            record=$(cell_line "$cell") ||
+                fatal "target $target requires missing host cell $cell"
+            record_target=$(printf '%s\n' "$record" | awk -F '\t' '{print $2}')
+            [ "$record_target" = "$target" ] ||
+                fatal "required host cell $cell belongs to $record_target, not $target"
+            record_required=$(printf '%s\n' "$record" | awk -F '\t' '{print $3}')
+            case $maintenance in
+                yes)
+                    [ "$record_required" = yes ] ||
+                        fatal "maintained target $target does not require host cell $cell"
+                    ;;
+                conditional)
+                    [ "$record_required" = conditional ] ||
+                        fatal "conditional target $target does not conditionally require host cell $cell"
+                    ;;
+            esac
+            IFS=,
+        done
+        IFS=$oldifs
+        : "$platform" "$architecture" "$profile" "$kind" "$action" "$concrete" \
+            "$host_os" "$host_release" "$host_abi" "$host_libc" "$host_runtime" \
+            "$host_cpu" "$maintenance"
+    done < "$targets"
+}
+
+receipt_nonempty() {
+    nonempty_file=$1 nonempty_key=$2
+    nonempty_value=$(record_value "$nonempty_file" "$nonempty_key") ||
+        fatal "$nonempty_file lacks host-cell field $nonempty_key"
+    case $nonempty_value in ''|-|unknown|unknown-current)
+        fatal "$nonempty_file has unresolved host-cell field $nonempty_key"
+        ;;
+    esac
+    printf '%s\n' "$nonempty_value"
+}
+
+validate_host_receipt() {
+    job=$1 receipt=$2 host_receipt=$3 target=$4
+    [ -f "$receipt" ] || fatal "accepted host job lacks receipt: $receipt"
+    [ -f "$host_receipt" ] || fatal "accepted host job lacks host receipt: $host_receipt"
+    expected_target=$(record_value "$job" follower_platform)
+    [ "$expected_target" = "$target" ] || fatal "$job target changed during host validation"
+    [ "$(record_value "$host_receipt" schema)" = catfood-host-receipt-v1 ] ||
+        fatal "$host_receipt has the wrong host receipt schema"
+    [ "$(record_value "$host_receipt" job_id)" = "$(record_value "$job" job_id)" ] ||
+        fatal "$host_receipt does not name $job"
+    [ "$(record_value "$host_receipt" repository)" = "$(record_value "$job" repository)" ] ||
+        fatal "$host_receipt repository does not match $job"
+    [ "$(record_value "$host_receipt" host_target)" = "$target" ] ||
+        fatal "$host_receipt cannot be reused for host target $target"
+
+    observed_os=$(receipt_nonempty "$host_receipt" observed_os)
+    observed_release=$(receipt_nonempty "$host_receipt" observed_release)
+    observed_arch=$(receipt_nonempty "$host_receipt" observed_architecture)
+    observed_abi=$(receipt_nonempty "$host_receipt" observed_abi)
+    observed_libc=$(receipt_nonempty "$host_receipt" observed_libc)
+    observed_runtime=$(receipt_nonempty "$host_receipt" runtime_identity)
+    observed_cpu=$(receipt_nonempty "$host_receipt" cpu_identity)
+    receipt_nonempty "$host_receipt" observed_account >/dev/null
+    receipt_nonempty "$host_receipt" observed_hostname >/dev/null
+    receipt_nonempty "$host_receipt" storage_identity >/dev/null
+
+    scope_matches "$(target_field "$target" 8)" "$observed_os" ||
+        fatal "$receipt OS cannot accept $target"
+    scope_matches "$(target_field "$target" 9)" "$observed_release" ||
+        fatal "$receipt release cannot accept $target"
+    scope_matches "$(target_field "$target" 3)" "$observed_arch" ||
+        fatal "$receipt architecture cannot accept $target"
+    scope_matches "$(target_field "$target" 10)" "$observed_abi" ||
+        fatal "$receipt ABI cannot accept $target"
+    scope_matches "$(target_field "$target" 11)" "$observed_libc" ||
+        fatal "$receipt libc cannot accept $target"
+    scope_matches "$(target_field "$target" 12)" "$observed_runtime" ||
+        fatal "$receipt runtime cannot accept $target"
+    scope_matches "$(target_field "$target" 13)" "$observed_cpu" ||
+        fatal "$receipt CPU cannot accept $target"
+
+    trigger=$(record_value "$job" trigger_commit)
+    [ "$(record_value "$host_receipt" source_revision)" = "$trigger" ] ||
+        fatal "$host_receipt source revision does not match $job"
+    [ "$(record_value "$host_receipt" evidence_kind)" = "$(record_value "$job" acceptance_kind)" ] ||
+        fatal "$host_receipt evidence kind does not match $job"
+    [ "$(record_value "$host_receipt" qualification_state)" = current ] ||
+        fatal "$host_receipt qualification is not current"
+    [ "$(record_value "$host_receipt" observation_kind)" = live ] ||
+        fatal "$host_receipt is not a live host observation"
+    [ "$(record_value "$receipt" artifact)" = "$(record_value "$job" artifact)" ] ||
+        fatal "$receipt artifact does not match $job"
+    [ "$(record_value "$receipt" artifact_sha256)" = "$(record_value "$job" artifact_sha256)" ] ||
+        fatal "$receipt artifact digest does not match $job"
+
+    availability=$(record_value "$host_receipt" artifact_available_until) ||
+        fatal "$host_receipt lacks artifact availability"
+    artifact=$(record_value "$job" artifact)
+    if [ "$artifact" = - ]; then
+        [ "$availability" = not-applicable ] ||
+            fatal "$host_receipt invents availability for an artifact-free job"
+    else
+        case $availability in
+            permanent) ;;
+            *)
+                case $availability in
+                    ????-??-??T??:??:??Z) ;;
+                    *) fatal "$host_receipt has invalid artifact availability $availability" ;;
+                esac
+                now=${CATFOOD_HOST_CELL_NOW:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}
+                [ "$availability" \> "$now" ] ||
+                    fatal "$host_receipt artifact availability expired at $availability"
+                ;;
+        esac
+    fi
+}
+
+host_target() {
+    target=$1
+    platform=$(target_field "$target" 2)
+    [ "$platform" != android-termux ]
+}
+
+host_reconcile() {
+    trigger=$1
+    host_cell_records_check
+    host_scratch=$(mktemp -d)
+    trap 'rm -rf "$host_scratch"' EXIT HUP INT TERM
+    affected "$trigger" > "$host_scratch/affected"
+    trap 'rm -rf "$host_scratch"' EXIT HUP INT TERM
+    while IFS="$tab" read -r target kind reason; do
+        host_target "$target" || continue
+        job_for "$trigger" "$target" >/dev/null ||
+            fatal "host matrix is missing follower cell $trigger/$target ($reason)"
+        : "$kind"
+    done < "$host_scratch/affected"
+    for file in "$jobs"/*.tsv; do
+        [ -f "$file" ] || continue
+        [ "$(record_value "$file" trigger_commit)" = "$trigger" ] || continue
+        target=$(record_value "$file" follower_platform)
+        host_target "$target" || continue
+        state=$(record_value "$file" state)
+        if [ "$state" = accepted ]; then
+            evidence=$(record_value "$file" evidence)
+            [ "$evidence" != - ] || fatal "$file claims accepted without evidence"
+            validate_host_receipt "$file" "$receipts/$evidence" \
+                "$host_receipts/$evidence" "$target"
+        fi
+    done
+    rm -rf "$host_scratch"
+    trap - EXIT HUP INT TERM
+    printf 'host-cell reconciliation passes for %s\n' "$trigger"
+}
+
+host_matrix() {
+    [ "$#" -le 1 ] || fatal 'host-matrix [TRIGGER]'
+    host_cell_records_check
+    trigger=${1:-}
+    scratch=$(mktemp)
+    trap 'rm -f "$scratch"' EXIT HUP INT TERM
+    awk -F '\t' '$1 !~ /^#/ {print}' "$host_cells" > "$scratch"
+    if [ -n "$trigger" ]; then
+        trigger=$(resolve_trigger "$trigger")
+        for file in "$jobs"/*.tsv; do
+            [ -f "$file" ] || continue
+            [ "$(record_value "$file" trigger_commit)" = "$trigger" ] || continue
+            target=$(record_value "$file" follower_platform)
+            host_target "$target" || continue
+            state=$(record_value "$file" state)
+            evidence=$(record_value "$file" evidence)
+            availability=unknown
+            evidence_ref=${file#"$root"/}
+            if [ "$state" = accepted ]; then
+                [ "$evidence" != - ] || fatal "$file claims accepted without evidence"
+                receipt=$receipts/$evidence
+                host_receipt=$host_receipts/$evidence
+                validate_host_receipt "$file" "$receipt" "$host_receipt" "$target"
+                availability=$(record_value "$host_receipt" artifact_available_until)
+                evidence_ref=${host_receipt#"$root"/}
+            fi
+            line=$(target_line "$target")
+            printf '%s\t%s\t%s\tfollower\tcatfood\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\teligible\t%s\t%s\n' \
+                "$(record_value "$file" job_id)" "$target" "$(record_value "$file" required)" \
+                "$(printf '%s\n' "$line" | awk -F '\t' '{print $8}')" \
+                "$(printf '%s\n' "$line" | awk -F '\t' '{print $9}')" \
+                "$(printf '%s\n' "$line" | awk -F '\t' '{print $3}')" \
+                "$(printf '%s\n' "$line" | awk -F '\t' '{print $10}')" \
+                "$(printf '%s\n' "$line" | awk -F '\t' '{print $11}')" \
+                "$(printf '%s\n' "$line" | awk -F '\t' '{print $12}')" \
+                "$(printf '%s\n' "$line" | awk -F '\t' '{print $13}')" \
+                "$(record_value "$file" repository)" "$trigger" \
+                "$(record_value "$file" artifact)" "$(record_value "$file" artifact_sha256)" \
+                "$availability" "$(record_value "$file" acceptance_kind)" "$state" "$evidence_ref" \
+                >> "$scratch"
+        done
+    fi
+    printf '%s\n' '# cell_id	target	required	component	implementation	host_os	host_release	architecture	abi	libc	runtime	cpu	source_repository	source_revision	artifact	artifact_sha256	availability	evidence_kind	eligibility	disposition	evidence_ref'
+    sort "$scratch"
+    rm -f "$scratch"
+    trap - EXIT HUP INT TERM
 }
 
 target_line() {
@@ -344,6 +695,7 @@ reconcile() {
     if [ "$requested" != "$trigger" ]; then
         printf 'integrated source commit %s resolves to exact follower trigger %s\n' "$requested" "$trigger"
     fi
+    host_reconcile "$trigger"
     printf 'follower reconciliation passes for %s\n' "$trigger"
 }
 
@@ -362,17 +714,27 @@ rewrite_field() {
 }
 
 record_receipt() {
-    [ "$#" -eq 2 ] || fatal 'record JOB_ID RECEIPT_FILE'
-    id=$1 source=$2
+    [ "$#" -ge 2 ] && [ "$#" -le 3 ] ||
+        fatal 'record JOB_ID RECEIPT_FILE [HOST_RECEIPT_FILE]'
+    id=$1 source=$2 host_source=${3:-}
     [ -f "$source" ] || fatal "receipt not found: $source"
     file=$(job_by_id "$id")
-    mkdir -p "$receipts"
+    target=$(record_value "$file" follower_platform)
+    if host_target "$target"; then
+        [ -n "$host_source" ] || fatal "host receipt required for $id"
+        validate_host_receipt "$file" "$source" "$host_source" "$target"
+    elif [ -n "$host_source" ]; then
+        fatal "$id is not a host follower and cannot accept a host receipt"
+    fi
+    mkdir -p "$receipts" "$host_receipts"
     destination=$receipts/$id.tsv
+    host_destination=$host_receipts/$id.tsv
     backup=$file.backup.$$
     cp "$file" "$backup"
     cp "$source" "$destination"
+    if [ -n "$host_source" ]; then cp "$host_source" "$host_destination"; fi
     attempt=$(awk -F '\t' '$1 == "attempt_commit" { print $2; found=1 } END { if (!found) exit 1 }' "$destination") || {
-        rm -f "$destination" "$backup"
+        rm -f "$destination" "$host_destination" "$backup"
         fatal 'receipt lacks attempt_commit'
     }
     tmp=$file.new.$$
@@ -383,7 +745,7 @@ record_receipt() {
     tool=$(verifier)
     if ! "$tool" verify "$jobs" "$receipts" >/dev/null; then
         mv "$backup" "$file"
-        rm -f "$destination" "$tmp"
+        rm -f "$destination" "$host_destination" "$tmp"
         fatal "receipt does not satisfy $id"
     fi
     rm -f "$backup" "$tmp"
@@ -518,9 +880,11 @@ case ${1:-} in
     reconcile) shift; reconcile "$@" ;;
     pending) shift; pending "$@" ;;
     matrix) shift; matrix "$@" ;;
+    host-matrix) shift; host_matrix "$@" ;;
+    host-reconcile) shift; [ "$#" -eq 1 ] || fatal 'host-reconcile TRIGGER'; host_reconcile "$1" ;;
     record) shift; record_receipt "$@" ;;
     block) shift; mark_blocked "$@" ;;
     supersede-ancestors) shift; supersede_ancestors "$@" ;;
     blockers) shift; merge_blockers "$@" ;;
-    *) fatal 'usage: manage.sh affected|latest|resolve|prepare|reconcile|pending|matrix|record|block|supersede-ancestors|blockers ...' ;;
+    *) fatal 'usage: manage.sh affected|latest|resolve|prepare|reconcile|pending|matrix|host-matrix|host-reconcile|record|block|supersede-ancestors|blockers ...' ;;
 esac
