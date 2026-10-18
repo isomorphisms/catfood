@@ -53,6 +53,13 @@ Cat Food may expose a control-plane helper from its own checked-out version afte
 
 Device profiles identify model facts; ABI lanes identify artifacts. Neither establishes a physical-instance run. `package-restrictions.tsv` retains package-specific device requirements (currently the Mali-G57 acceptance runner).
 
+[`profiles/`](profiles/README.md) contains the source-bound machine-readable
+profiles for A1, C67, and TAB_P10. `./catfood android-profile` projects only the
+facts required by a named operation and fails on missing, stale, wrong-scope,
+wrong-instance, or conflicting evidence before effects. The separate
+`android-profile-request` adapter binds one maintained diagnostic request to
+the exact profile and approved-obligation bytes before command preparation.
+
 - [MIRO C67 physical profile](devices/miro-c67.md) — physical Android 14 /
   API 34, arm64-v8a with 32-bit compatibility, MT6765/Cortex-A53, PowerVR
   GE8320, 720x1600 at 60/90 Hz, and retained peripheral observations.

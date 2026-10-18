@@ -1,0 +1,11 @@
+# catfood-android-profile-v2
+# field<TAB>value<TAB>scope<TAB>state<TAB>material<TAB>source_path<TAB>source_sha256<TAB>note
+application_gl_context	UNKNOWN	application-context	unknown	if-required	-	-	no application-context observation retained
+device_class	tablet	model	known	always	AGENTS.md	a347787f3d77a30613725d56cd12d4014b15f2d4f8a2f3705f406030289d4766	tablet form factor
+firmware_fingerprint	UNKNOWN	firmware	unknown	if-required	-	-	current firmware is not retained in the model profile
+gpu_renderer	Mali-G57	model	known	always	AGENTS.md	a347787f3d77a30613725d56cd12d4014b15f2d4f8a2f3705f406030289d4766	stable retained model fact
+model_name	SVITOO TAB_P10	model	known	always	AGENTS.md	a347787f3d77a30613725d56cd12d4014b15f2d4f8a2f3705f406030289d4766	canonical descriptive model name
+primary_abi	arm64-v8a	model	known	always	AGENTS.md	a347787f3d77a30613725d56cd12d4014b15f2d4f8a2f3705f406030289d4766	primary Android userspace lane
+shizuku_readiness	UNKNOWN	session	unknown	if-required	-	-	no current tablet service observation retained
+soc	Allwinner A333	model	known	always	AGENTS.md	a347787f3d77a30613725d56cd12d4014b15f2d4f8a2f3705f406030289d4766	retained tablet platform fact
+target	tablet	model	known	always	AGENTS.md	a347787f3d77a30613725d56cd12d4014b15f2d4f8a2f3705f406030289d4766	Cat Food target selector

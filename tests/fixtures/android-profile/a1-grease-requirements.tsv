@@ -1,0 +1,10 @@
+schema	aici-requirement-projection-v1
+request_id	a1-c67
+request_body_sha256	607089cc9777c014d2bb7a788c3c7c6bba482f5eeb4da3869bd05b11efc314cd
+owner	dilapidated-shed/grease
+program	grease
+target	miro-a1
+obligation	target	companion_policy_owner=isomorphisms/catfood	req-a1-c67-companion-owner	executed_result	sources/issue-218-decision.txt	https://github.com/isomorphisms/ai-ci/issues/218#issuecomment-6020460105	9fb1837a7596e37b516c2693cb06cf78b9b929e09e49309dd6e3df80d23d7086	android-companions	isomorphisms/ai-ci	-	The approved STAR result fixes device-profile and directed companion-policy ownership.
+obligation	program	implementation_eligibility=non-cxx-only	req-grease-non-cxx	correction	sources/catfood-131-correction.txt	https://github.com/isomorphisms/catfood/issues/131	dcedafe6ad57c02eb9d325b2d2df6bb19392336dcdef2d3ed62eedfcb6eac858	grease-runtime	isomorphisms/catfood	req-grease-compiled-default	The later human correction makes C++ implementations toolchains executables and runtime dependencies ineligible.
+obligation	owner	leaf_build_owner=dilapidated-shed/grease	req-leaf-build-owner	direct_instruction	sources/issue-181-ownership.txt	https://github.com/isomorphisms/ai-ci/issues/181	55c8082cc9962ec8c7a381bc3ca71ef238e1f54f271d15cf0a673e2cd6be73fe	build-distribution	isomorphisms/ai-ci	-	The selected leaf owns its source build tests and publishable project artifact.
+obligation	owner	matrix_owner=isomorphisms/catfood	req-matrix-owner	direct_instruction	sources/issue-181-ownership.txt	https://github.com/isomorphisms/ai-ci/issues/181	55c8082cc9962ec8c7a381bc3ca71ef238e1f54f271d15cf0a673e2cd6be73fe	build-distribution	isomorphisms/ai-ci	-	The cross-project build and target matrix stays in Cat Food.

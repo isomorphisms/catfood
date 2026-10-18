@@ -1,0 +1,11 @@
+# catfood-android-profile-v2
+# field<TAB>value<TAB>scope<TAB>state<TAB>material<TAB>source_path<TAB>source_sha256<TAB>note
+application_gl_context	UNKNOWN	application-context	unknown	if-required	-	-	SurfaceFlinger does not establish an application context
+device_class	phone	model	known	always	docs/observations/miro-c67-hardware-2026-10-05.tsv	c83cca07851d2bccc063f7486191f048408b12441e76b15cafd372f8a2ea4df4	phone form factor
+firmware_fingerprint	MIRO/C67/Miro_C67:14/UP1A.231005.007/1727680044:user/release-keys	firmware	historical	if-required	docs/observations/miro-c67-hardware-2026-10-05.tsv	c83cca07851d2bccc063f7486191f048408b12441e76b15cafd372f8a2ea4df4	dated physical observation; refresh when operation requires current firmware
+gpu_renderer	PowerVR Rogue GE8320	model	known	always	docs/observations/miro-c67-hardware-2026-10-05.tsv	c83cca07851d2bccc063f7486191f048408b12441e76b15cafd372f8a2ea4df4	model fact; not application-context acceptance
+model_name	Miro C67	model	known	always	docs/observations/miro-c67-hardware-2026-10-05.tsv	c83cca07851d2bccc063f7486191f048408b12441e76b15cafd372f8a2ea4df4	observed model spelling
+primary_abi	arm64-v8a	model	known	always	docs/observations/miro-c67-hardware-2026-10-05.tsv	c83cca07851d2bccc063f7486191f048408b12441e76b15cafd372f8a2ea4df4	primary Android userspace lane
+shizuku_readiness	working	session	historical	if-required	docs/observations/miro-c67-hardware-2026-10-05.tsv	c83cca07851d2bccc063f7486191f048408b12441e76b15cafd372f8a2ea4df4	dated session observation; not perpetual readiness
+soc	MT6765	model	known	always	docs/observations/miro-c67-hardware-2026-10-05.tsv	c83cca07851d2bccc063f7486191f048408b12441e76b15cafd372f8a2ea4df4	observed SoC model
+target	c67	model	known	always	docs/observations/miro-c67-hardware-2026-10-05.tsv	c83cca07851d2bccc063f7486191f048408b12441e76b15cafd372f8a2ea4df4	Cat Food target selector

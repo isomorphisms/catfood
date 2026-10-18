@@ -1,0 +1,16 @@
+#!/usr/bin/env grease
+set -eu -o pipefail
+var directory = $(dirname "$0")
+var root = $(realpath "$directory/..")
+test $("$root/catfood" classify-android-target '' 'MIRO A1' armeabi-v7a) = phone
+test $("$root/catfood" classify-android-target Miro_C67 'Miro C67' arm64-v8a) = c67
+test $(env CATFOOD_TARGET=tablet "$root/catfood" classify-android-target Miro_C67 'Miro C67' arm64-v8a) = c67
+test $("$root/catfood" classify-android-target Other Other arm64-v8a) = termux
+var temporary = $(mktemp -d)
+if "$root/catfood" classify-android-target Miro_C67 TAB_P10 arm64-v8a > "$temporary/result" 2> "$temporary/error" { exit 1 }
+rg -F 'conflicting Android identity properties' "$temporary/error"
+if "$root/catfood" classify-android-target Miro_C67 'Miro C67' armeabi-v7a > "$temporary/result" 2> "$temporary/error" { exit 1 }
+rg -F 'Android identity/ABI mismatch' "$temporary/error"
+if "$root/catfood" classify-android-target Miro_C67 'Miro C67' > "$temporary/result" 2> "$temporary/error" { exit 1 }
+rg -F 'classify-android-target PRODUCT MODEL PRIMARY_ABI' "$temporary/error"
+echo 'PASS explicit-property classification; observed acquisition and physical acceptance remain separate'
