@@ -276,8 +276,19 @@ jobs:
           test "$VERSION_ID" = 24.04
           test "$(cc -dumpmachine)" = x86_64-linux-gnu
           test "$(getconf GNU_LIBC_VERSION | awk '{print $1}')" = glibc
-          cpu_identity=$(awk -F ': ' '$1 == "model name" {print $2; exit}' /proc/cpuinfo)
-          test -n "$cpu_identity"
+          # Linux pads the field name with tabs before the colon. Match that
+          # real layout instead of requiring the colon to follow the name.
+          cpu_identity=$(awk -F ':' '
+            $1 ~ /^[[:space:]]*model name[[:space:]]*$/ {
+              sub(/^[^:]*:[[:space:]]*/, "", $0)
+              print
+              exit
+            }
+          ' /proc/cpuinfo)
+          test -n "$cpu_identity" || {
+            echo 'GitHub host receipt lacks an observed CPU identity' >&2
+            exit 1
+          }
           storage_identity=$(df -P "$RUNNER_TEMP" | awk 'NR == 2 {print $1 ":" $6}')
           test -n "$storage_identity"
           receipt="$RUNNER_TEMP/$job_id.tsv"
