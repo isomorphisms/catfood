@@ -92,6 +92,22 @@ if [ -x "$workspace/bin/ithon" ] && ! "$workspace/bin/ithon" -c 'x ← 42; asser
     printf '%-22s arrow syntax smoke failed\n' ithon >&2
     failures=1
 fi
+# Amazon.jobs is a built host consumer of Idriç, not part of the compiler.
+# A missing executable remains NOT_BUILT; never call an unverified link ready.
+if [ -x "$workspace/bin/amazon-jobs" ]; then
+    if ! "$workspace/bin/amazon-jobs" --self-test >/dev/null 2>&1; then
+        printf '%-22s offline acceptance failed\n' amazon-jobs >&2
+        failures=1
+    else
+        printf '%-22s offline fixture passed (live not checked)\n' amazon-jobs
+    fi
+elif [ "${CATFOOD_REQUIRE_AMAZON_JOBS:-0}" = 1 ]; then
+    printf '%-22s required executable is not built\n' amazon-jobs >&2
+    failures=1
+else
+    printf '%-22s NOT_BUILT (Idriç/contrib acceptance pending)\n' amazon-jobs
+fi
+
 if [ -x "$workspace/bin/ib-smoke" ] && ! "$workspace/bin/ib-smoke" >/dev/null 2>&1; then
     printf '%-22s executable smoke failed\n' ib-smoke >&2
     failures=1
