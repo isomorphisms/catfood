@@ -3,6 +3,7 @@ set -eu
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 . "$root/android/target.sh"
+. "$root/android/content.sh"
 tools=${CATFOOD_TOOLS:-"$root/tools.tsv"}
 delivery=${CATFOOD_ANDROID_DELIVERY:-"$root/android/delivery.tsv"}
 packages=${CATFOOD_ANDROID_PACKAGES:-"$root/android/packages.tsv"}
@@ -58,6 +59,7 @@ function split_dependencies(value, owner, target,    count, i, values) {
             continue
         }
         dependency[owner SUBSEP values[i]] = target
+        reaches[owner SUBSEP values[i]] = 1
         depended_on[values[i]] = 1
     }
 }
@@ -80,6 +82,10 @@ BEGIN {
 
 FILENAME == packages {
     if ($0 ~ /^[[:space:]]*($|#)/) next
+    if (package_row_seen[$0]++) {
+        fail(packages ":" FNR ": duplicate package row")
+        next
+    }
     if (NF != 18) {
         fail(packages ":" FNR ": expected 18 tab-separated fields, found " NF)
         next
@@ -207,6 +213,16 @@ END {
         if (!direct_reference[id] && !depended_on[id]) fail(packages ": orphan package is not reachable from delivery.tsv: " id)
         if (package_commands[id] < 1) fail(packages ": package has no command rows: " id)
     }
+    # Validate the complete selected package graph.  The dependency rows have
+    # already been checked for missing and cross-lane nodes; transitive closure
+    # now rejects every cycle length rather than only direct self-reference.
+    for (middle in package_seen)
+        for (from in package_seen)
+            if (reaches[from SUBSEP middle])
+                for (to in package_seen)
+                    if (reaches[middle SUBSEP to]) reaches[from SUBSEP to] = 1
+    for (id in package_seen)
+        if (reaches[id SUBSEP id]) fail(packages ": package dependency cycle reaches " id)
     exit failed
 }
 ' "$packages" "$tools" "$delivery"
@@ -288,7 +304,9 @@ check_receipt() {
     END {
         require_field("schema")
         require_field("package")
-        if (value["schema"] != "catfood-android-evidence-v2")
+        if (value["schema"] != "catfood-android-evidence-v2" &&
+            value["schema"] != "catfood-android-evidence-v3" &&
+            value["schema"] != "catfood-android-evidence-v4")
             fail("unsupported schema: " value["schema"])
 
         package = value["package"]
@@ -343,8 +361,33 @@ check_receipt() {
         if (value["device_id"] !~ /^[[:alnum:]_.-]+$/ || value["device_id"] == "-") fail("invalid device_id")
         if (expected_target != "" && t != expected_target) fail("receipt belongs to another target")
         if (expected_device != "" && value["device_id"] != expected_device) fail("receipt belongs to another device instance")
-        if (value["physical_device_result"] == "PASS" && value["device_fingerprint"] == "-")
+        if (value["device_fingerprint"] == "" ||
+            (value["physical_device_result"] == "PASS" && value["device_fingerprint"] == "-"))
             fail("physical acceptance requires a device fingerprint")
+
+        if (value["schema"] == "catfood-android-evidence-v3" ||
+            value["schema"] == "catfood-android-evidence-v4") {
+            if (value["device_fingerprint"] == "-") fail("current installation requires a firmware fingerprint")
+            split("content_sha256 launcher_sha256 dependency_sha256 profile_sha256 installation_procedure_sha256", bindings, / /)
+            for (i in bindings) {
+                require_field(bindings[i]); allowed[bindings[i]]=1
+                if (length(value[bindings[i]]) != 64 || value[bindings[i]] ~ /[^0-9a-f]/) fail("invalid byte binding: " bindings[i])
+            }
+            require_field("evidence_scope"); allowed["evidence_scope"]=1
+            require_field("executor_path"); allowed["executor_path"]=1
+            if (value["evidence_scope"] != "synthetic" && value["evidence_scope"] != "physical-observation") fail("invalid evidence scope")
+        }
+        if (value["schema"] == "catfood-android-evidence-v3") {
+            require_field("plan_sha256"); allowed["plan_sha256"]=1
+            if (length(value["plan_sha256"]) != 64 || value["plan_sha256"] ~ /[^0-9a-f]/) fail("invalid byte binding: plan_sha256")
+        }
+        if (value["schema"] == "catfood-android-evidence-v4") {
+            split("approved_material_sha256 package_obligation_sha256", obligation_bindings, / /)
+            for (i in obligation_bindings) {
+                require_field(obligation_bindings[i]); allowed[obligation_bindings[i]]=1
+                if (length(value[obligation_bindings[i]]) != 64 || value[obligation_bindings[i]] ~ /[^0-9a-f]/) fail("invalid obligation binding: " obligation_bindings[i])
+            }
+        }
 
         allowed["schema"] = allowed["package"] = 1
         split("target package_lane device_target device_class device_id device_product device_model device_fingerprint abi mode source source_ref package_ref url sha256 termux_packages runtime_requires package_requires", identity, / /)
@@ -372,6 +415,30 @@ check_receipt() {
         printf '%s\n' 'receipt device identity does not match target' >&2
         return 1
     }
+}
+
+validate_evidence() {
+    cf_validated_receipt=$1
+    cf_validated_schema=$(cf_field "$cf_validated_receipt" schema)
+    case $cf_validated_schema in
+        catfood-android-evidence-v3|catfood-android-evidence-v4) ;;
+        *) printf '%s\n' 'historical receipt is a declaration; acceptance NOT_VERIFIED (use schema to inspect)' >&2; return 1 ;;
+    esac
+    [ "$(cf_field "$cf_validated_receipt" installation_procedure_sha256)" = "$(cf_procedure_hash)" ] || {
+        printf '%s\n' 'installation procedure changed; acceptance NOT_VERIFIED' >&2; return 1;
+    }
+    if [ "$(cf_field "$cf_validated_receipt" build_result)" = PASS ]; then
+        printf '%s\n' 'BLOCKED: build PASS requires independent authenticated producer decision' >&2; return 1
+    fi
+    if [ "$(cf_field "$cf_validated_receipt" installation_result)" = PASS ]; then
+        cf_validate_content "$cf_validated_receipt" || return
+    fi
+    for cf_stage in launch runtime emulator physical_device; do
+        if [ "$(cf_field "$cf_validated_receipt" "${cf_stage}_result")" = PASS ]; then
+            printf '%s\n' 'unverified execution claim: independent execution witness or fresh procedure required' >&2
+            return 1
+        fi
+    done
 }
 
 case "$command" in
@@ -405,13 +472,23 @@ case "$command" in
             printf 'Cat Food %s distribution manifest is ready for package/runtime acceptance\n' "$target"
         fi
         ;;
-    receipt)
+    schema|receipt)
         [ "$#" -ge 2 ] && [ "$#" -le 4 ] || { printf 'usage: %s receipt RECEIPT [TARGET [DEVICE_ID]]\n' "$0" >&2; exit 2; }
         check_receipt "$2" "${3:-}" "${4:-}"
-        printf '%s\n' 'Cat Food Android evidence receipt is valid'
+        if [ "$command" = receipt ]; then validate_evidence "$2"; fi
+        printf 'Cat Food Android %s is valid; runtime/physical acceptance NOT_VERIFIED\n' "$command"
+        ;;
+    authorize)
+        [ "$#" -eq 5 ] || { printf '%s\n' 'usage: check.sh authorize RECEIPT TARGET DEVICE_ID installation' >&2; exit 2; }
+        check_receipt "$2" "$3" "$4"
+        validate_evidence "$2"
+        [ "$5" = installation ] || { printf '%s\n' 'recorded runtime/physical PASS cannot authorize a fresh execution' >&2; exit 1; }
+        [ "$(cf_field "$2" installation_result)" = PASS ] || exit 1
+        cf_observe_receipt "$2"
+        printf 'installation\tPASS\nscope\t%s\nruntime\tNOT_VERIFIED\nphysical_device\tNOT_VERIFIED\n' "$(cf_field "$2" evidence_scope)"
         ;;
     *)
-        printf 'usage: %s [check | gaps phone|c67|tablet | ready phone|c67|tablet | receipt RECEIPT]\n' "$0" >&2
+        printf 'usage: %s [check | gaps phone|c67|tablet | ready phone|c67|tablet | schema|receipt RECEIPT [TARGET [DEVICE_ID]] | authorize RECEIPT TARGET DEVICE_ID installation]\n' "$0" >&2
         exit 2
         ;;
 esac
