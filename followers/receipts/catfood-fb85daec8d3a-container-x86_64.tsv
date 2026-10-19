@@ -1,0 +1,17 @@
+schema	aici-follower-receipt-v1
+job_id	catfood-fb85daec8d3a-container-x86_64
+repository	isomorphisms/catfood
+trigger_commit	fb85daec8d3a352874d8b24d9dd9a2214f4bf4ea
+follower_platform	container-x86_64
+follower_arch	x86_64
+acceptance_kind	runtime
+result	pass
+attempt_commit	fb85daec8d3a352874d8b24d9dd9a2214f4bf4ea
+os_runtime	Linux 9c35d172e23f 6.18.44 #1 SMP Sat Sep 26 20:02:31 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+build_command	-
+test_command	TMPDIR=/dev/shm/sun-r2 sh followers/accept-x86.sh container
+artifact	-
+artifact_sha256	-
+evidence_url	-
+recorded_at	2026-10-04T19:49:23.726Z
+note	Actual exact-source entrypoint, target profiles, all 14 IB-handoff cases, whole-inventory Android delivery fixtures and container selector passed. Does not claim provisioned full workbench, missing Ish packages, GitHub, published artifact validation or physical devices.

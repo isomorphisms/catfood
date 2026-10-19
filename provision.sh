@@ -7,21 +7,17 @@ LC_ALL=$catfood_locale
 export LANG LC_ALL
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+. "$root/android/target.sh"
 target=${CATFOOD_TARGET:-auto}
 if [ "$target" = auto ]; then
-    case ${PREFIX:-}:${TERMUX_VERSION:-} in
-        /data/data/com.termux/*:*|*:*?*)
-            machine=$(uname -m 2>/dev/null || printf '%s\n' unknown)
-            case $machine in
-                armv7*|armv8l|arm) target=phone ;;
-                aarch64|arm64) target=tablet ;;
-                *) target=termux ;;
-            esac
-            ;;
-        *) target=cloud ;;
-    esac
+    target=$(catfood_detect_target)
 fi
 case $target in hetzner) target=cloud ;; esac
+case $target in
+    phone|c67|tablet) catfood_android_require_device "$target" ;;
+    cloud|container) catfood_verify_workbench_target ;;
+    termux) printf "%s\n" "Generic Termux has no verified device profile; no provisioning performed" >&2; exit 2 ;;
+esac
 
 case $target in
     cloud)
@@ -32,12 +28,12 @@ case $target in
         if [ -w /opt ]; then default_workspace=/opt; else default_workspace=$HOME/opt; fi
         termux_target=0
         ;;
-    phone|tablet|termux)
+    phone|c67|tablet|termux)
         default_workspace=$HOME/opt
         termux_target=1
         ;;
     *)
-        printf 'CATFOOD_TARGET must be phone, tablet, container, cloud, termux, or hetzner; found: %s\n' "$target" >&2
+        printf 'CATFOOD_TARGET must be phone, c67, tablet, container, cloud, termux, or hetzner; found: %s\n' "$target" >&2
         exit 2
         ;;
 esac
@@ -60,7 +56,8 @@ fi
 # Android devices are consumers of host-built runtime packages. Keep this exit
 # before package managers, compiler bootstraps, repository feeds, and host builds.
 case $target in
-    phone|tablet)
+    phone|c67|tablet)
+        CATFOOD_ROOT=$workspace sh "$root/android/preserve-shizuku.sh" save
         if [ -n "${CATFOOD_CONFIG_DIR:-}" ]; then
             CATFOOD_CONFIG_DIR=$CATFOOD_CONFIG_DIR sh "$root/import-config.sh"
         fi
@@ -75,6 +72,9 @@ case $target in
                 sh "$root/android/install-crawlspace-bootstrap.sh"
             CATFOOD_ROOT=$workspace sh "$root/android/install-local-clients.sh"
             CATFOOD_ROOT=$workspace sh "$root/android/install-csvkit.sh"
+        fi
+        if [ "$target" = c67 ]; then
+            CATFOOD_ROOT=$workspace sh "$root/android/record-c67-runtime.sh"
         fi
         printf 'cat food %s runtime packages are current under %s\n' "$target" "$workspace"
         exit 0

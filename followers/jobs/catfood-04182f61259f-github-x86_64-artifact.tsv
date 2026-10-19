@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-04182f61259f-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	android/powervr-runners
+pr	41
+trigger_commit	04182f61259ff22d930ebcebadd0d175203942ba
+leader_platform	tablet
+leader_arch	aarch64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	Validate the exact published Android runner packages referenced by Cat Food trigger 04182f61259ff22d930ebcebadd0d175203942ba, including the unchanged phone package and corrected Mali-aware tablet package.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android package manifest changed for corrected tablet runner
+superseded_by	-
+follow_policy	exact

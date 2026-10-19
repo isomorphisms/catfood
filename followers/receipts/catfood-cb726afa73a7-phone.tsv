@@ -1,0 +1,17 @@
+schema	aici-follower-receipt-v1
+job_id	catfood-cb726afa73a7-phone
+repository	isomorphisms/catfood
+trigger_commit	cb726afa73a7b8484d4469790d8dab1945a511bb
+follower_platform	phone
+follower_arch	armv7
+acceptance_kind	physical-device
+result	pass
+attempt_commit	cb726afa73a7b8484d4469790d8dab1945a511bb
+os_runtime	Android 14; Foxx MIRO A1; armeabi-v7a; Termux; PowerVR Rogue GE8322
+build_command	-
+test_command	CATFOOD_TARGET=phone ./catfood; sh android/check.sh receipt $HOME/opt/receipts/phone-powervr-runner-phone.tsv; $HOME/opt/bin/powervr-accept
+artifact	powervr-runner-phone-armeabi-v7a.tar.gz
+artifact_sha256	714e5f706a05224ff4f43188a6fb043e7fa39f6a7f7f6ea7b0ef0dcb424502de
+evidence_url	-
+recorded_at	2026-09-18T03:23:53Z
+note	Physical ARMv7 phone run reported by the human against exact Cat Food trigger cb726afa73a7b8484d4469790d8dab1945a511bb. Cat Food reported its Android evidence receipt valid and no source build fallback; package-manager activity was blocked during the run. The installed powervr-accept command verified the package payload manifest, identified Imagination Technologies / PowerVR Rogue GE8322, recorded runner.exit 0, six shader compile/link PASS results, six framebuffer PASS results, the complete timing block, and final acceptance PASS. This receipt accepts only the phone follower and does not claim tablet acceptance.

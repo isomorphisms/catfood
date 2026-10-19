@@ -18,7 +18,7 @@ issh https://github.com/dilapidated-shed/issh.git master none
 crawlspace https://github.com/isomorphisms/crawlspace.git main none
 fieldmouse https://github.com/dilapidated-shed/fieldmouse.git edric-rewrite none
 idris-arm-backend https://github.com/dilapidated-shed/idris-arm-backend.git main none
-idris-shader-backend https://github.com/dilapidated-shed/idris-shader-backend.git main none
+idris-shader-backend https://github.com/fuego-ironworks/idris-shader-backend.git main none
 sent.idr https://github.com/dilapidated-shed/sent.idr.git main none
 programmers-keyboard https://github.com/isomorphisms/programmers-keyboard.git main none
 icu https://github.com/dilapidated-shed/icu.git icu none
@@ -60,3 +60,5 @@ ortho https://github.com/isomorphismes/ortho.git main none
 kleinian-groups https://github.com/isomorphismes/kleinian-groups.git master none
 theta https://github.com/isomorphismes/theta.git main none
 indras-pearls https://github.com/isomorphismes/indras-pearls.git main none
+ish https://github.com/dilapidated-shed/grease.git ish recursive
+reddit https://github.com/fuego-ironworks/idric-arm-thumb.git main none

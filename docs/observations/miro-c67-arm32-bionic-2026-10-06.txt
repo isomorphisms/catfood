@@ -1,0 +1,123 @@
+MIRO C67 ARM32 / Bionic runtime receipt
+Date: 2026-10-06
+Authority: Termux -> rish / Shizuku shell
+Android: 14 / API 34
+
+=== ABI / ZYGOTE ===
+ro.product.cpu.abi           arm64-v8a
+ro.product.cpu.abilist       arm64-v8a,armeabi-v7a,armeabi
+ro.product.cpu.abilist32     armeabi-v7a,armeabi
+ro.product.cpu.abilist64     arm64-v8a
+ro.zygote                    zygote64_32
+ro.build.version.release     14
+ro.build.version.sdk         34
+
+=== KERNEL ===
+Linux localhost 4.19.191 #1 SMP PREEMPT Tue Oct 29 17:19:47 CST 2024 aarch64 Toybox
+machine: aarch64
+
+=== RUNTIME PAGE SIZE ===
+getconf PAGESIZE: 4096
+KernelPageSize:        4 kB
+MMUPageSize:           4 kB
+
+=== 32/64-BIT BIONIC FILES ===
+/system/bin/linker -> /apex/com.android.runtime/bin/linker
+ELF ident bytes: 127 69 76 70 1 1
+
+/system/bin/linker64 -> /apex/com.android.runtime/bin/linker64
+ELF ident bytes: 127 69 76 70 2 1
+
+/system/lib/libc.so -> /apex/com.android.runtime/lib/bionic/libc.so
+ELF ident bytes: 127 69 76 70 1 1
+
+/system/lib64/libc.so -> /apex/com.android.runtime/lib64/bionic/libc.so
+ELF ident bytes: 127 69 76 70 2 1
+
+/system/bin/app_process32
+ELF ident bytes: 127 69 76 70 1 1
+
+/system/bin/app_process64
+ELF ident bytes: 127 69 76 70 2 1
+
+ELF byte 5 meaning: 1=ELF32, 2=ELF64
+
+=== LIVE ZYGOTES ===
+root           706     1 zygote64                    zygote64
+root           707     1 zygote                      zygote
+webview_zygote 25506 706 webview_zygote              webview_zygote
+
+=== DIRECT AARCH32 EXECUTION: linker32 ===
+/system/bin/linker --list-diagnostics
+exit=1
+error: expected absolute path: "--list-diagnostics"
+
+This is an argument-parser error from the 32-bit linker itself, not an ELF
+exec-format failure.
+
+=== LINKER CONFIG / BIONIC NAMESPACE OBSERVATION ===
+/linkerconfig/ld.config.txt was readable. Relevant observed entries included:
+dir.system = /system/bin/
+dir.system = /system/xbin/
+dir.system = /system_ext/bin/
+dir.product = /product/bin/
+dir.vendor = /odm/bin/
+dir.vendor = /vendor/bin/
+dir.unrestricted = /data/local/tmp
+namespace.default.isolated = true
+namespace.default.visible = true
+namespace.default.search.paths = /system/${LIB}
+namespace.default.search.paths += /system_ext/${LIB}
+namespace.default.permitted.paths += /apex/com.android.runtime/${LIB}/bionic
+
+=== RELEVANT PAGE/ABI PROPERTIES ===
+[init.svc.zygote]: [running]
+[init.svc.zygote_secondary]: [running]
+[ro.dalvik.vm.native.bridge]: [0]
+[ro.product.cpu.abilist]: [arm64-v8a,armeabi-v7a,armeabi]
+[ro.product.cpu.abilist32]: [armeabi-v7a,armeabi]
+[ro.product.cpu.abilist64]: [arm64-v8a]
+[ro.product.cpu.pagesize.max]: [4096]
+[ro.system.product.cpu.abilist]: [arm64-v8a,armeabi-v7a,armeabi]
+[ro.system.product.cpu.abilist32]: [armeabi-v7a,armeabi]
+[ro.system.product.cpu.abilist64]: [arm64-v8a]
+[ro.vendor.product.cpu.abilist]: [arm64-v8a,armeabi-v7a,armeabi]
+[ro.vendor.product.cpu.abilist32]: [armeabi-v7a,armeabi]
+[ro.vendor.product.cpu.abilist64]: [arm64-v8a]
+[ro.zygote]: [zygote64_32]
+[ro.zygote.preload.enable]: [0]
+
+=== APP_PROCESS32 ELF HEADER ===
+od -An -t u1 -N 20 /system/bin/app_process32
+
+127 69 76 70 1 1 1 0 0 0 0 0 0 0 0 0
+3 0 40 0
+
+Interpretation:
+- EI_CLASS = 1: ELF32
+- e_type = 3: ET_DYN
+- e_machine = 40: EM_ARM
+
+=== DIRECT DYNAMIC ARM32 LOAD ===
+/system/bin/app_process32
+Error changing dalvik-cache ownership : Permission denied
+Aborted
+exit=134
+
+=== LINKER32 LOADING APP_PROCESS32 ===
+/system/bin/linker /system/bin/app_process32
+Error changing dalvik-cache ownership : Permission denied
+Aborted
+exit=134
+
+Both app_process32 execution paths reached the Android runtime and aborted on a
+shell-UID dalvik-cache ownership permission failure. They did not fail at kernel
+ELF admission or dynamic loading.
+
+Retained conclusion:
+- AArch64 kernel with native AArch32 execution support.
+- No native bridge/translation layer is configured (ro.dalvik.vm.native.bridge=0).
+- 32-bit Bionic linker and libc are installed.
+- 32-bit app_process is EM_ARM and dynamically executes far enough to enter ART.
+- Both 32-bit and 64-bit zygotes are live.
+- Runtime/kernel/MMU page size is 4096 bytes.

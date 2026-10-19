@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-912ac987770d-phone
+repository	isomorphisms/catfood
+branch	android/powervr-runners
+pr	41
+trigger_commit	912ac987770dda208ddf377ccb0f99ee1dd3c4b9
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	powervr-runner-phone-armeabi-v7a.tar.gz
+artifact_sha256	714e5f706a05224ff4f43188a6fb043e7fa39f6a7f7f6ea7b0ef0dcb424502de
+follower_platform	phone
+follower_arch	armv7
+required	yes
+action	Run the current whole-inventory Cat Food phone acceptance, then run the exact packaged PowerVR acceptance runner on the physical ARMv7 phone and preserve the package-bound hardware receipt.
+acceptance_kind	physical-device
+acceptance_action	CATFOOD_TARGET=phone ./catfood; sh android/check.sh gaps phone; run powervr-accept on the physical ARMv7 PowerVR phone and verify package hash 714e5f706a05224ff4f43188a6fb043e7fa39f6a7f7f6ea7b0ef0dcb424502de plus all six compile/link and framebuffer passes.
+state	superseded
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device
+superseded_by	catfood-cb726afa73a7-phone
+follow_policy	exact

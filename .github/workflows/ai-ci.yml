@@ -21,6 +21,9 @@ jobs:
           ref: 237b3be5e10d15c51b9862b548c5c845e37f239d
           path: _ai-ci
           persist-credentials: false
+      - name: Test deterministic Android companion plans
+        shell: sh
+        run: sh tests/android-companion-plan.sh
       - name: Verify Catfood linkage contracts
         shell: sh
         run: |
