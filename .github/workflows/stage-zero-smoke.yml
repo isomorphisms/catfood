@@ -20,7 +20,7 @@ jobs:
             android/target.sh android/check.sh android/install.sh android/install-local-clients.sh android/bootstrap-crawlspace.sh android/install-crawlspace-bootstrap.sh \
             android/record-c67-runtime.sh \
             tests/check-manifest.sh tests/repository-identities.sh tests/entrypoint.sh tests/targets.sh tests/android-delivery.sh \
-            tests/c67-delivery.sh tests/android-local-clients.sh tests/android-crawlspace.sh tests/runtime-binaries.sh
+            tests/c67-delivery.sh tests/c67-grease-live-transfer-observation.sh tests/android-local-clients.sh tests/android-crawlspace.sh tests/runtime-binaries.sh
           do
             if [ -f "$script" ]; then
               dash -n "$script"
@@ -48,6 +48,9 @@ jobs:
       - name: Verify MIRO C67 Android delivery mapping
         shell: sh
         run: sh tests/c67-delivery.sh
+      - name: Validate the retained C67 Grease live-transfer observation
+        shell: sh
+        run: sh tests/c67-grease-live-transfer-observation.sh
       - name: Reject target and acceptance mutations
         shell: sh
         run: sh tests/target-mutations.sh
