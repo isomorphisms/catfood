@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-3bef020f98cf-github-x86_64
+repository	isomorphisms/catfood
+branch	harden-sdf-filing
+pr	https://github.com/isomorphisms/catfood/pull/116
+trigger_commit	3bef020f98cf67d74c9a81eecc9c4e50a2b284c0
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit 3bef020f98cf67d74c9a81eecc9c4e50a2b284c0 on github-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh github
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	github-only
+superseded_by	-
+follow_policy	exact
