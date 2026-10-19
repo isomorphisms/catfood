@@ -89,14 +89,14 @@ done
     trigger=$(git rev-parse HEAD)
 
     affected=$(sh followers/manage.sh affected "$trigger")
-    for target in phone tablet github-x86_64 container-x86_64 hetzner-x86_64; do
+    for target in phone c67 tablet github-x86_64 container-x86_64 hetzner-x86_64; do
         printf '%s\n' "$affected" | grep "^$target[[:space:]]" >/dev/null
     done
 
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
         prepare "$trigger" phone armv7 - phone/example 1 >/dev/null
     count=$(find followers/jobs -name '*.tsv' -type f | wc -l | tr -d ' ')
-    [ "$count" -eq 5 ]
+    [ "$count" -eq 6 ]
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh reconcile "$trigger" >/dev/null
     # The read-only renderer must retain the canonical verifier's columns.
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh pending > "$tmp/verified-pending"
@@ -150,7 +150,7 @@ EOF_RECEIPT
     ci_trigger=$(git rev-parse HEAD)
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
         prepare "$ci_trigger" phone armv7 - phone/example 2 >/dev/null
-    [ "$(find followers/jobs -name '*.tsv' -type f | wc -l | tr -d ' ')" -eq 6 ]
+    [ "$(find followers/jobs -name '*.tsv' -type f | wc -l | tr -d ' ')" -eq 7 ]
     sh followers/manage.sh supersede-ancestors "$ci_trigger" >/dev/null
     sh followers/stale.sh >/dev/null
     [ "$(sh followers/manage.sh stale-target "$trigger" "$ci_trigger" phone)" = no ]
@@ -192,8 +192,9 @@ EOF_RECEIPT
     git commit -qm android-artifact
     android_trigger=$(git rev-parse HEAD)
     android_affected=$(sh followers/manage.sh affected "$android_trigger")
-    [ "$(printf '%s\n' "$android_affected" | wc -l | tr -d ' ')" -eq 3 ]
+    [ "$(printf '%s\n' "$android_affected" | wc -l | tr -d ' ')" -eq 4 ]
     printf '%s\n' "$android_affected" | grep '^phone[[:space:]].*physical-device' >/dev/null
+    printf '%s\n' "$android_affected" | grep '^c67[[:space:]].*physical-device' >/dev/null
     printf '%s\n' "$android_affected" | grep '^tablet[[:space:]].*physical-device' >/dev/null
     printf '%s\n' "$android_affected" | grep '^github-x86_64-artifact[[:space:]].*artifact' >/dev/null
     if printf '%s\n' "$android_affected" | grep 'hetzner-x86_64' >/dev/null; then

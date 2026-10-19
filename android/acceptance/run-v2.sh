@@ -17,6 +17,10 @@ case ${TARGET:-} in
     *) printf 'invalid bundle target: %s\n' "${TARGET:-unset}" >&2; exit 2 ;;
 esac
 
+. "$payload/catfood/android/target.sh"
+catfood_android_require_device "$TARGET" || exit $?
+device_id=$(catfood_android_device_id) || exit $?
+
 stamp=$(date -u '+%Y%m%dT%H%M%SZ' 2>/dev/null || printf '%s' unknown)
 receipt_root=${ACCEPTANCE_RECEIPTS:-"$HOME/opt/receipts/device-acceptance-$TARGET-$stamp"}
 work="$root/.work.$$"
@@ -134,6 +138,8 @@ device_identity_case() {
     model=$(/system/bin/getprop ro.product.model | tr -d '\r')
     printf 'target=%s\nexpected_abi=%s\ndevice_abi=%s\nsdk=%s\nmodel=%s\n' \
         "$TARGET" "$EXPECTED_ABI" "$abi" "$sdk" "$model"
+    printf 'device_id=%s\n' "$device_id"
+    catfood_android_require_device "$TARGET" || return $?
     [ "$abi" = "$EXPECTED_ABI" ]
 }
 
@@ -269,8 +275,8 @@ EOF_FIXTURE
     printf 'grease\truntime\tpackage:fixture-phone\tpackage:fixture-tablet\tlegacy-migration-fixture\n' > "$manifest/delivery.tsv"
     {
         printf '# package\ttarget\tabi\tmode\tsource\tsource_ref\tpackage_ref\turl\tsha256\tcommand\tentrypoint\tmain_class\tjni_library\tjni_property\tinstall_requires\ttermux_packages\truntime_requires\tpackage_requires\n'
-        printf 'fixture-phone\tphone\tarmeabi-v7a\tarchive\tisomorphisms/catfood\t%s\t%s\thttps://invalid.example/fixture-phone.tar.gz\t%s\tgrease\tbin/grease\t-\t-\t-\ttar\t-\t-\t-\n' "$bundle_ref" "$bundle_ref" "$fixture_sha"
-        printf 'fixture-tablet\ttablet\tarm64-v8a\tarchive\tisomorphisms/catfood\t%s\t%s\thttps://invalid.example/fixture-tablet.tar.gz\t%s\tgrease\tbin/grease\t-\t-\t-\ttar\t-\t-\t-\n' "$bundle_ref" "$bundle_ref" "$fixture_sha"
+        printf 'fixture-phone\tarmeabi-v7a\tarmeabi-v7a\tarchive\tisomorphisms/catfood\t%s\t%s\thttps://invalid.example/fixture-phone.tar.gz\t%s\tgrease\tbin/grease\t-\t-\t-\ttar\t-\t-\t-\n' "$bundle_ref" "$bundle_ref" "$fixture_sha"
+        printf 'fixture-tablet\tarm64-v8a\tarm64-v8a\tarchive\tisomorphisms/catfood\t%s\t%s\thttps://invalid.example/fixture-tablet.tar.gz\t%s\tgrease\tbin/grease\t-\t-\t-\ttar\t-\t-\t-\n' "$bundle_ref" "$bundle_ref" "$fixture_sha"
     } > "$manifest/packages.tsv"
 
     package="fixture-$TARGET"

@@ -1,0 +1,3 @@
+device	abi	ndk_target	api	priority	profile	physical_acceptance
+MIRO_A1	armeabi-v7a	armv7a-linux-androideabi	21	primary	android/devices/miro-a1.md	PENDING
+MIRO_C67	arm64-v8a	aarch64-linux-android	21	paired	android/devices/miro-c67.md	PENDING

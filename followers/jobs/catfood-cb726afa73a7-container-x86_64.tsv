@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-cb726afa73a7-container-x86_64
+repository	isomorphisms/catfood
+branch	android/powervr-runners
+pr	41
+trigger_commit	cb726afa73a7b8484d4469790d8dab1945a511bb
+leader_platform	phone
+leader_arch	armv7
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	container-x86_64
+follower_arch	x86_64
+required	yes
+action	Run independent container x86_64 runtime acceptance against Cat Food commit cb726afa73a7b8484d4469790d8dab1945a511bb.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh container
+state	superseded
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable workbench manifest correction
+superseded_by	catfood-04182f61259f-container-x86_64
+follow_policy	exact

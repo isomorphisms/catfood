@@ -1,0 +1,3 @@
+target	device	abi	priority
+phone	MIRO_A1	armeabi-v7a	primary
+c67	MIRO_C67	arm64-v8a	paired

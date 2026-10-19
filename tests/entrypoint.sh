@@ -71,44 +71,20 @@ export CATFOOD_BINARY_PLATFORM=linux-x86_64
 
 termux_home=$temporary/termux-home
 mkdir -p "$termux_home"
-HOME=$termux_home \
-PREFIX=/data/data/com.termux/files/usr \
-TERMUX_VERSION=0.118.3 \
-PATH=$fake_bin:$PATH \
-CATFOOD_TEST_LOG=$log \
-CATFOOD_TARGET=termux \
-CATFOOD_MANIFEST=$manifest \
-CATFOOD_DEPTH=1 \
-CATFOOD_NO_PROFILE=1 \
-    sh "$root/catfood" >/dev/null
-
-test -d "$termux_home/opt/grease/.git"
-test -d "$termux_home/opt/catfood-fixture/.git"
-tab=$(printf '\t')
-grep -F "pkg${tab}install -y bash ca-certificates coreutils curl gawk git grep libiconv lua55 sed tar" "$log" >/dev/null
-test "$("$termux_home/opt/bin/jq" --version)" = "jq-9.8.7"
-test "$("$termux_home/opt/bin/mlr" --version)" = "mlr 9.8.7"
-test "$("$termux_home/opt/bin/lua" -e 'ignored')" = "catfood-lua=42"
-test -x "$termux_home/opt/bin/luac"
-if grep -F 'forbidden' "$log" >/dev/null; then
-    printf '%s\n' 'Termux entrypoint attempted a root/cloud package command' >&2
-    exit 1
+# Generic Termux is deliberately inert. No source checkout or package action
+# may occur before a known device profile is established.
+if HOME=$termux_home PREFIX=/data/data/com.termux/files/usr TERMUX_VERSION=0.118.3 \
+    PATH=$fake_bin:$PATH CATFOOD_TEST_LOG=$log CATFOOD_TARGET=termux \
+    sh "$root/catfood" >"$temporary/generic.out" 2>&1; then
+    printf '%s\n' 'generic Termux unexpectedly provisioned a workbench' >&2; exit 1
 fi
-
-git -C "$termux_home/opt/grease" remote set-url origin https://github.com/isomorphisms/grease
-git -C "$termux_home/opt/catfood-fixture" remote set-url origin https://github.com/isomorphisms/catfood
-HOME=$termux_home \
-PREFIX=/data/data/com.termux/files/usr \
-TERMUX_VERSION=0.118.3 \
-PATH=$fake_bin:$PATH \
-CATFOOD_TEST_LOG=$log \
-CATFOOD_TARGET=termux \
-CATFOOD_MANIFEST=$manifest \
-CATFOOD_DEPTH=1 \
-CATFOOD_NO_PACKAGES=1 \
-CATFOOD_NO_PROFILE=1 \
-    sh "$root/catfood" >/dev/null
-
+grep -F 'Generic Termux' "$temporary/generic.out" >/dev/null
+test ! -e "$termux_home/opt"
+test ! -s "$log"
+# Provision the existing source/checkout tests explicitly on this host.
+CATFOOD_ROOT=$termux_home/opt CATFOOD_MANIFEST=$manifest CATFOOD_DEPTH=1 \
+    sh "$root/bootstrap.sh" >/dev/null
+tab=$(printf '\t')
 cloud_root=$termux_home/opt
 mkdir -p "$cloud_root/bin"
 cat > "$cloud_root/bin/ysh" <<'EOF'
