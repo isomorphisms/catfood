@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-145be642165a-github-x86_64
+repository	isomorphisms/catfood
+branch	fix/flower-grease-runtime-pin
+pr	https://github.com/isomorphisms/catfood/pull/145
+trigger_commit	145be642165aa762850af3ccd8d5a12b33bf37d3
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit 145be642165aa762850af3ccd8d5a12b33bf37d3 on github-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh github
+state	superseded
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	github-only
+superseded_by	catfood-424660416f74-github-x86_64
+follow_policy	exact
