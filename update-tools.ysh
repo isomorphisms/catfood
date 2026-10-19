@@ -261,6 +261,8 @@ install_command_links() {
         "$workspace/Idric/idris2"
     link_first fieldmouse \
         "$workspace/fieldmouse/build/exec/fieldmouse"
+    link_first amazon-jobs \
+        "$workspace/idric-cli/build/exec/amazon-jobs"
     link_first icu \
         "$workspace/icu/build/exec/icu"
     link_first ib-smoke \

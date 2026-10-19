@@ -15,11 +15,11 @@ required	yes
 action	follower target for Cat Food commit c16dcf0ab5057cbfd9cc7b0fedad587300724873 on github-x86_64-artifact; fetch that exact commit, run the named acceptance action, and record a receipt.
 acceptance_kind	artifact
 acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
-state	pending
+state	superseded
 last_attempt_commit	-
 blocker	-
 evidence	-
 depends_on	-
 reason	android-artifact-and-device
-superseded_by	-
+superseded_by	catfood-eb1474f4a923-github-x86_64-artifact
 follow_policy	exact
