@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-18c413402e8e-container-x86_64
+repository	isomorphisms/catfood
+branch	inventory/billiard-a1-c67
+pr	https://github.com/isomorphisms/catfood/pull/138
+trigger_commit	18c413402e8e78555ee24cab5cba9e86e2950217
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	container-x86_64
+follower_arch	x86_64
+required	yes
+action	leader target for Cat Food commit 18c413402e8e78555ee24cab5cba9e86e2950217 on container-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh container
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	-
+follow_policy	exact
