@@ -1,6 +1,6 @@
 # csvkit
 
-Cat Food installs csvkit 2.2.0 as a Termux runtime helper on the Android phone and tablet.
+Cat Food offers csvkit 2.2.0 as an **optional** Termux runtime helper on the Android phone and tablet. Normal `./catfood` provisioning **does not** install Python or pip for csvkit. To request this specific optional helper, use `CATFOOD_INSTALL_CSVKIT=1 ./catfood` on a supported Android target. Previously installed csvkit files and commands remain in place when the option is omitted.
 
 It keeps the Python modules under `~/opt/packages/csvkit/2.2.0/site-packages` and exposes the upstream commands under `~/opt/bin`:
 
