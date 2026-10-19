@@ -265,6 +265,10 @@ install_command_links() {
         "$workspace/idric-cli/build/exec/amazon-jobs"
     link_first icu \
         "$workspace/icu/build/exec/icu"
+    # Only expose a successfully built Idriç application. Source inventory
+    # alone is not proof of a host executable or an Android deliverable.
+    link_first nhtsa-vin \
+        "$workspace/idric-cli/build/exec/nhtsa-vin"
     link_first ib-smoke \
         "$workspace/ib/src/build/exec/ib-smoke"
     link_first ick \
