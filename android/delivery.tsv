@@ -42,6 +42,7 @@ computer-science	reference	n/a	n/a	reference-source
 utilities-android-phone-user	runtime	gap:android-package-missing	gap:android-package-missing	android-runtime-applications
 
 billiard	runtime	gap:apk-not-produced	gap:apk-not-produced	paired-MIRO-A1-and-C67-rectangle-experiment
+flower	runtime	gap:apk-publication-missing	gap:apk-publication-missing	paired-A1-C67-signed-CI-test-candidates-not-published-to-Cat-Food
 algebraic-variety-explorer-mobile	runtime	gap:android-package-missing	gap:android-package-missing	mathematical-application
 learn-toki-pona	runtime	gap:android-package-missing	gap:android-package-missing	application
 game	runtime	gap:android-package-missing	gap:android-package-missing	application

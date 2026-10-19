@@ -43,6 +43,7 @@ utilities-android-phone-user https://github.com/Ashtray-Archer/utilities-android
 
 # Current applications, games, and mathematical experiments
 billiard https://github.com/isomorphisms/billiard.git main none
+flower https://github.com/isomorphismes/flower.git main none
 algebraic-variety-explorer-mobile https://github.com/isomorphismes/algebraic-variety-explorer-mobile.git surfer none
 learn-toki-pona https://github.com/place-of-honor/learn-toki-pona.git main none
 game https://github.com/place-of-honor/game.git main none
