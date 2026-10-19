@@ -6,13 +6,53 @@ import subprocess
 import hashlib
 import zipfile
 import json
+import time
 from pathlib import Path
 from builtins import ValueError, globals
 
 ICK ∈ str ← "e3c2a40b4edafc4d9caca55d1f7c094e6aab9589"
 ITHON ∈ str ← "d6e83969f82512e920fb17b44326cb54f31d015c"
-GREASE_SOURCE ∈ str ← "9a874c4e082d26f21b2cc807b5553e7e19d5f590"
-GREASE_ARCHIVE ∈ str ← "71e679fef031225716bbb4d6ea140ab17e9d44e7aa6bd4964e7bccbbed6ce323"
+GREASE_SOURCE ∈ str ← "8bad10b21e0fe7fc93e851d705dc9b63dbf9d8fd"
+GREASE_ARTIFACT ∈ int ← 12192502970
+GREASE_RUN ∈ int ← 38206821183
+GREASE_ARCHIVE ∈ str ← "295329ec3bb419d90364fcb5937eafe4306b03f68b7aaa63089dadde8082ffb5"
+GREASE_EXECUTABLE ∈ str ← "7e31cd05b7a9d8fb2a4a9e003a7f3fcb0159138506d17f0fb28da8cbe22aa85c"
+
+def verify_owner(artifact ∈ dict[str, object], owner_run ∈ dict[str, object], inherited ∈ str, now ∈ str) → None:
+    artifact_id ∈ int ← artifact.get("id", 0)
+    expired ∈ bool ← artifact.get("expired", True)
+    archive_digest ∈ str ← artifact.get("digest", "")
+    artifact_name ∈ str ← artifact.get("name", "")
+    if artifact_id != GREASE_ARTIFACT:
+        raise ValueError("Grease artifact identity mismatch")
+    expiration ∈ int ← 0
+    try:
+        expiration ← int(time.strftime("%Y%m%d%H%M%S", time.strptime(str(artifact.get("expires_at", "")), "%Y-%m-%dT%H:%M:%SZ")))
+    except ValueError:
+        raise ValueError("Grease owner artifact is expired or lacks expiry")
+    instant ∈ int ← int(time.strftime("%Y%m%d%H%M%S", time.strptime(now, "%Y-%m-%dT%H:%M:%SZ")))
+    if expired != False or expiration <= instant:
+        raise ValueError("Grease owner artifact is expired or lacks expiry")
+    if archive_digest != "sha256:" + GREASE_ARCHIVE:
+        raise ValueError("Grease owner archive digest mismatch")
+    if artifact_name != "grease-alias-diagnostics-" + GREASE_SOURCE:
+        raise ValueError("Grease owner artifact name mismatch")
+    empty ∈ dict[str, object] ← {}
+    workflow ∈ dict[str, object] ← artifact.get("workflow_run", empty)
+    run_id ∈ int ← workflow.get("id", 0)
+    source ∈ str ← workflow.get("head_sha", "")
+    repository_id ∈ int ← workflow.get("repository_id", 0)
+    if run_id != GREASE_RUN or source != GREASE_SOURCE or repository_id != 1335369896:
+        raise ValueError("Grease artifact run or source mismatch")
+    qualified_id ∈ int ← owner_run.get("id", 0)
+    qualified_source ∈ str ← owner_run.get("head_sha", "")
+    status ∈ str ← owner_run.get("status", "")
+    conclusion ∈ str ← owner_run.get("conclusion", "")
+    path ∈ str ← owner_run.get("path", "")
+    if qualified_id != GREASE_RUN or qualified_source != GREASE_SOURCE or status != "completed" or conclusion != "success" or path != ".github/workflows/grease-receipt.yml":
+        raise ValueError("Grease owner runtime qualification is not successful")
+    if inherited != "5651cf97a1b5042f24f14112a7ade9a1518eb0bc":
+        raise ValueError("Grease inherited source pin mismatch")
 
 def digest(data ∈ bytes) → str:
     value ∈ str ← hashlib.sha256(data).hexdigest()
@@ -42,7 +82,7 @@ def verify_source(work ∈ str, name ∈ str, revision ∈ str) → None:
     if observed != revision:
         raise ValueError("Owner checkout revision mismatch: " + name)
 
-def provision(work ∈ str) → None:
+def require_host(work ∈ str) → None:
     actions ∈ str ← os.environ.get("GITHUB_ACTIONS", "")
     system ∈ str ← platform.system()
     machine ∈ str ← platform.machine()
@@ -51,14 +91,28 @@ def provision(work ∈ str) → None:
     release ∈ str ← Path("/etc/os-release").read_text()
     if not ("ID=ubuntu" in release):
         raise ValueError("This profile requires observed Ubuntu")
-    verify_source(work, "ick", ICK)
-    verify_source(work, "ithon", ITHON)
     description ∈ str ← platform.platform()
     write(work + "/provision/host.txt", release + "\n" + description + "\n")
-    run(["sudo", "apt-get", "update"], work, work + "/provision/apt-update")
-    run(["sudo", "apt-get", "install", "-y", "build-essential", "flex", "bison", "texinfo", "libgmp-dev", "libmpfr-dev", "libmpc-dev", "libisl-dev", "libzstd-dev", "binutils-aarch64-linux-gnu", "gcc-aarch64-linux-gnu", "libc6-dev-arm64-cross", "qemu-user", "python3-venv"], work, work + "/provision/apt-install")
+
+def acquire_grease(work ∈ str) → None:
+    require_host(work)
+    acquire_grease_payload(work)
+
+def acquire_grease_payload(work ∈ str) → None:
     archive ∈ str ← work + "/provision/grease.zip"
-    run(["gh", "api", "/repos/dilapidated-shed/grease/actions/artifacts/11419782646/zip"], work, work + "/provision/grease-download")
+    artifact ∈ dict[str, object] ← json.loads(run(["gh", "api", "/repos/dilapidated-shed/grease/actions/artifacts/" + str(GREASE_ARTIFACT)], work, work + "/provision/grease-metadata"))
+    owner_run ∈ dict[str, object] ← json.loads(run(["gh", "api", "/repos/dilapidated-shed/grease/actions/runs/" + str(GREASE_RUN)], work, work + "/provision/grease-owner-run"))
+    tree ∈ dict[str, object] ← json.loads(run(["gh", "api", "/repos/dilapidated-shed/grease/git/trees/" + GREASE_SOURCE], work, work + "/provision/grease-owner-source"))
+    inherited ∈ str ← ""
+    entries ∈ list[dict[str, str]] ← tree.get("tree")
+    for entry in entries:
+        entry_path ∈ str ← entry["path"]
+        entry_mode ∈ str ← entry["mode"]
+        if entry_path == "source" and entry_mode == "160000":
+            inherited ← str(entry["sha"])
+    now ∈ str ← time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    verify_owner(artifact, owner_run, inherited, now)
+    run(["gh", "api", "/repos/dilapidated-shed/grease/actions/artifacts/" + str(GREASE_ARTIFACT) + "/zip"], work, work + "/provision/grease-download")
     Path(archive).write_bytes(Path(work + "/provision/grease-download/stdout.bin").read_bytes())
     archive_hash ∈ str ← digest(Path(archive).read_bytes())
     if archive_hash != GREASE_ARCHIVE:
@@ -74,20 +128,35 @@ def provision(work ∈ str) → None:
     executable ∈ str ← work + "/profile/grease-runtime/ysh"
     Path(executable).parent.mkdir(parents=True, exist_ok=True)
     Path(executable).write_bytes(zip.read(selected[0]))
+    if digest(Path(executable).read_bytes()) != GREASE_EXECUTABLE:
+        raise ValueError("Grease runtime executable digest mismatch")
     Path(executable).chmod(493)
     run(["sudo", "sysctl", "-w", "vm.mmap_rnd_bits=28"], work, work + "/provision/asan-host")
     launcher ∈ str ← work + "/profile/bin/grease"
     write(launcher, "#!" + executable + "\nsetglobal ENV.ASAN_OPTIONS = 'detect_leaks=0'\nexec " + executable + ' "$@"\n')
     Path(launcher).chmod(493)
     run([launcher, "-c", "write -- rhs-runtime"], work, work + "/provision/grease-smoke")
-    write(work + "/profile/grease.tsv", "source\t" + GREASE_SOURCE + "\ninherited_source\t5651cf97a1b5042f24f14112a7ade9a1518eb0bc\nartifact\t11419782646\narchive_sha256\t" + archive_hash + "\nexecutable_sha256\t" + digest(Path(executable).read_bytes()) + "\n")
+    write(work + "/profile/grease.tsv", "source\t" + GREASE_SOURCE + "\ninherited_source\t" + inherited + "\nartifact\t" + str(GREASE_ARTIFACT) + "\nowner_run\t" + str(GREASE_RUN) + "\nexpires_at\t" + str(artifact["expires_at"]) + "\narchive_sha256\t" + archive_hash + "\nexecutable_sha256\t" + digest(Path(executable).read_bytes()) + "\n")
+    print("Pinned Grease owner runtime acquired and smoke-executed")
+
+def acquire_model(work ∈ str) → None:
+    require_host(work)
     run(["python3", "-m", "venv", work + "/model-runtime"], work, work + "/provision/venv")
     interpreter ∈ str ← work + "/model-runtime/bin/python"
     run([interpreter, "-m", "pip", "install", "--only-binary=:all:", "torch==2.5.1+cpu", "--index-url", "https://download.pytorch.org/whl/cpu"], work, work + "/provision/torch")
     run([interpreter, "-m", "pip", "install", "--only-binary=:all:", "transformers==4.46.3"], work, work + "/provision/transformers")
     freeze ∈ str ← run([interpreter, "-m", "pip", "freeze", "--all"], work, work + "/provision/dependencies")
     write(work + "/profile/dependencies.txt", freeze)
-    print("Pinned Grease and foreign model runtime acquired")
+    print("Pinned foreign model runtime acquired")
+
+def provision(work ∈ str) → None:
+    require_host(work)
+    verify_source(work, "ick", ICK)
+    verify_source(work, "ithon", ITHON)
+    run(["sudo", "apt-get", "update"], work, work + "/provision/apt-update")
+    run(["sudo", "apt-get", "install", "-y", "build-essential", "flex", "bison", "texinfo", "libgmp-dev", "libmpfr-dev", "libmpc-dev", "libisl-dev", "libzstd-dev", "binutils-aarch64-linux-gnu", "gcc-aarch64-linux-gnu", "libc6-dev-arm64-cross", "qemu-user", "python3-venv"], work, work + "/provision/apt-install")
+    acquire_grease_payload(work)
+    acquire_model(work)
     # Existing owner materializer is inherited bootstrap source.
     run(["sh", work + "/ick/ick/materialize.sh", work + "/ick/gcc", work + "/ick-source"], work, work + "/provision/materialize")
     build ∈ str ← work + "/ick-build"
@@ -122,6 +191,10 @@ def main() → None:
     elif args[0] == "from-workspace-file":
         work ∈ str ← Path(args[1]).read_text().strip()
         provision(work)
+    elif args[0] == "grease":
+        acquire_grease(args[1])
+    elif args[0] == "model-runtime":
+        acquire_model(args[1])
     else:
         provision(args[0])
 

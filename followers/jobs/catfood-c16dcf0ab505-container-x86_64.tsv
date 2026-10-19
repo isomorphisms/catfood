@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-c16dcf0ab505-container-x86_64
+repository	isomorphisms/catfood
+branch	repair/native-grease-stage-zero-20261014
+pr	135
+trigger_commit	c16dcf0ab5057cbfd9cc7b0fedad587300724873
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	container-x86_64
+follower_arch	x86_64
+required	yes
+action	leader target for Cat Food commit c16dcf0ab5057cbfd9cc7b0fedad587300724873 on container-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh container
+state	superseded
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	catfood-90471095201b-container-x86_64
+follow_policy	exact

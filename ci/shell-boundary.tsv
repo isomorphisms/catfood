@@ -9,6 +9,9 @@ install-binaries.sh	stage-zero	sh	Installs verified prebuilt jq and Miller binar
 install-lua.sh	stage-zero	sh	Establishes the packaged Lua runtime before Grease can be assumed
 android/check.sh	stage-zero	sh	Validates total Android inventory coverage and package metadata
 android/target.sh	stage-zero	sh	Identity is checked before Grease delivery
+android/ensure-grease.sh	stage-zero	sh	Establish verified native Grease before any Grease procedure
+android/ensure-transfer-support.sh	stage-zero	sh	Acquire explicitly declared commodity Termux runtimes before Grease
+android/verify-grease-package.sh	stage-zero	sh	Verify pinned native payload before installation or execution
 android/record-c67-runtime.sh	stage-zero	sh	Records the exact delivered runtime probe
 tests/c67-delivery.sh	test	sh	Stage-zero shared-artifact and device-bound receipt probes
 tests/android-properties.sh	test	sh	Synthetic Android properties for bootstrap tests only
