@@ -61,4 +61,3 @@ def probe(source ∈ str, destination ∈ str, require_netbsd ∈ bool = False) 
     lines.append("delivery-lock\tUNKNOWN")
     lines.append("mailbox-mutation\tnone")
     return lines
-
