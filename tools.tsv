@@ -17,6 +17,8 @@ idric-cli https://github.com/dilapidated-shed/idric-cli.git cli none
 issh https://github.com/dilapidated-shed/issh.git master none
 crawlspace https://github.com/isomorphisms/crawlspace.git main none
 fieldmouse https://github.com/dilapidated-shed/fieldmouse.git edric-rewrite none
+micropython https://github.com/dilapidated-shed/micropython.git master recursive
+mujs https://github.com/ArtifexSoftware/mujs.git master none
 idris-arm-backend https://github.com/dilapidated-shed/idris-arm-backend.git main none
 idris-shader-backend https://github.com/fuego-ironworks/idris-shader-backend.git main none
 sent.idr https://github.com/dilapidated-shed/sent.idr.git main none
@@ -40,6 +42,8 @@ computer-science https://github.com/walnut-burgundy/computer-science.git how-lon
 utilities-android-phone-user https://github.com/Ashtray-Archer/utilities-android-phone-user.git main none
 
 # Current applications, games, and mathematical experiments
+billiard https://github.com/isomorphisms/billiard.git main none
+flower https://github.com/isomorphismes/flower.git main none
 algebraic-variety-explorer-mobile https://github.com/isomorphismes/algebraic-variety-explorer-mobile.git surfer none
 learn-toki-pona https://github.com/place-of-honor/learn-toki-pona.git main none
 game https://github.com/place-of-honor/game.git main none

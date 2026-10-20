@@ -135,6 +135,34 @@ done
         echo 'expired artifact availability was accepted' >&2
         exit 1
     fi
+    # These are synthetic metadata-reader controls, never live host evidence.
+    for bad_availability in \
+        until:2028-13-01T00:00:00Z until:2028-02-30T00:00:00Z \
+        until:2027-02-29T00:00:00Z until:2100-02-29T00:00:00Z \
+        until:2028-01-01T24:00:00Z \
+        until:2028-01-01T00:60:00Z until:2028-01-01T00:00:60Z \
+        until:zzzz-zz-zzTzz:zz:zzZ
+    do
+        awk -F '\t' -v OFS='\t' -v availability="$bad_availability" \
+            '$1=="sdf-greased" {$15="greased.tar"; $16="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; $17=availability; $19="eligible"; $20="accepted"} {print}' \
+            "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+        if CATFOOD_HOST_CELL_NOW=2026-10-18T00:00:00Z \
+            sh followers/manage.sh host-matrix > "$tmp/invalid-availability.log" 2>&1; then
+            printf 'invalid normalized host artifact availability was accepted: %s\n' "$bad_availability" >&2
+            exit 1
+        fi
+        grep -F 'invalid availability timestamp' "$tmp/invalid-availability.log" >/dev/null
+    done
+    awk -F '\t' -v OFS='\t' \
+        '$1=="sdf-greased" {$15="greased.tar"; $16="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; $17="until:2028-02-29T00:00:00Z"; $19="eligible"; $20="accepted"} {print}' \
+        "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+    CATFOOD_HOST_CELL_NOW=2026-10-18T00:00:00Z sh followers/manage.sh host-matrix >/dev/null
+    if CATFOOD_HOST_CELL_NOW=invalid-clock \
+        sh followers/manage.sh host-matrix > "$tmp/invalid-clock.log" 2>&1; then
+        echo 'invalid clock was accepted for host artifact availability' >&2
+        exit 1
+    fi
+    grep -F 'invalid host-cell clock' "$tmp/invalid-clock.log" >/dev/null
     awk -F '\t' -v OFS='\t' '$1=="sdf-greased" {$17="current"; $19="revoked"; $20="accepted"} {print}' \
         "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
     if sh followers/manage.sh host-matrix >/dev/null 2>&1; then

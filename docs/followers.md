@@ -50,6 +50,10 @@ and a different runtime or CPU identity cannot be silently reused. Evidence for
 an artifact-free job records `not-applicable`; artifact evidence records either
 `permanent` or a normalized future UTC expiry. Expiry is an acquisition
 prerequisite at reconciliation time, not a permanent publication claim.
+Normalized availability timestamps use four-digit Gregorian years, real
+calendar dates, UTC Z, and seconds 00 through 59. The metadata reader validates
+the calendar and the comparison clock before ordering timestamps; a future-
+looking malformed string cannot establish acquisition availability.
 
 `followers/host-cells.tsv` is the durable cross-project denominator. Its columns
 are `cell_id`, `target`, `required`, `component`, `implementation`, `host_os`,

@@ -21,12 +21,17 @@ jobs:
           repository: isomorphisms/ai-ci
           ref: 8410839b2e2197cfc51466972c478470332a3456
           path: _ai-ci
+      - name: Qualify the pinned ICK native compiler
+        id: ick
+        uses: isomorphisms/ai-ci/ick-host@903b2cb27ea572c9c6cb2ffa9f39e0fbf06ec9f8
       - name: Compile the follower verifier
         shell: sh
+        env:
+          ICK: ${{ steps.ick.outputs.compiler }}
         run: |
           printf 'CATFOOD_ROOT=%s/cat-food\nCATFOOD_PREFIX=%s/prefix\nCATFOOD_CACHE=%s/cache\n' \
             "$RUNNER_TEMP" "$RUNNER_TEMP" "$RUNNER_TEMP" >> "$GITHUB_ENV"
-          cc -std=c17 -Wall -Wextra -Werror -pedantic -O2 \
+          "$ICK" -fno-link-libatomic -std=c17 -Wall -Wextra -Werror -pedantic -O2 \
             -o "$RUNNER_TEMP/aici-followers" _ai-ci/src/aici_followers.c
       - name: Prove inference and receipt transitions
         shell: sh

@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-53f6f45b8413-tablet
+repository	isomorphisms/catfood
+branch	acceptance/c67-grease-transfer-20261009
+pr	https://github.com/isomorphisms/catfood/pull/129
+trigger_commit	53f6f45b84133057a604dc776b8011ba1d8f4762
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	tablet
+follower_arch	aarch64
+required	yes
+action	follower target for Cat Food commit 53f6f45b84133057a604dc776b8011ba1d8f4762 on tablet; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	physical-device
+acceptance_action	./catfood && sh android/check.sh gaps tablet
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	android-artifact-and-device
+superseded_by	-
+follow_policy	exact
