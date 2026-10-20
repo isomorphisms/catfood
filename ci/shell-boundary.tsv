@@ -42,3 +42,5 @@ tests/device-state.sh	test	sh	Stage-zero inventory regression fixtures
 tests/shizuku-state.sh	test	sh	Stage-zero snapshot corruption and precedence fixtures
 android/acceptance/reddit-installed.sh	test	sh	Inherited installed-runtime acceptance procedure pending Kitchen migration
 tests/android-reddit-artifact.sh	test	sh	Published-artifact verifier inherited from retired generation
+followers/manage.sh	stage-zero	sh	Follower receipt admission and reconciliation precede Grease workbench provisioning
+tests/followers.sh	test	sh	Offline pre-provisioning follower and host-cell refusal fixtures

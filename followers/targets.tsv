@@ -1,9 +1,11 @@
-# target	platform	architecture	profile	acceptance_kind	acceptance_action	concrete
-phone	android-termux	armv7	phone	physical-device	./catfood && sh android/check.sh gaps phone	yes
-c67	android-termux	aarch64	c67	physical-device	./catfood && sh android/check.sh gaps c67	yes
-tablet	android-termux	aarch64	tablet	physical-device	./catfood && sh android/check.sh gaps tablet	yes
-github-x86_64	github-actions	x86_64	container	runtime	sh followers/accept-x86.sh github	yes
-github-x86_64-artifact	github-actions	x86_64	artifact	artifact	validate exact published artifact identity, hash, metadata, extraction, and install contract	yes
-container-x86_64	linux-container	x86_64	container	runtime	sh followers/accept-x86.sh container	yes
-hetzner-x86_64	hetzner-linux	x86_64	cloud	runtime	sh followers/accept-x86.sh cloud	yes
-termux-generic	android-termux	unknown	termux	runtime	-	no
+# target	platform	architecture	profile	acceptance_kind	acceptance_action	concrete	host_os	host_release	host_abi	host_libc	host_runtime	host_cpu	maintenance	required_host_cells
+phone	android-termux	armv7	phone	physical-device	./catfood && sh android/check.sh gaps phone	yes	Android	14	armeabi-v7a	bionic	termux-runtime	SC9863A	yes	-
+c67	android-termux	aarch64	c67	physical-device	./catfood && sh android/check.sh gaps c67	yes	Android	14	arm64-v8a	bionic	termux-runtime	MT6765	yes	-
+tablet	android-termux	aarch64	tablet	physical-device	./catfood && sh android/check.sh gaps tablet	yes	Android	observed-at-run	arm64-v8a	bionic	termux-runtime	Allwinner-A333	yes	-
+github-x86_64	github-actions	x86_64	container	runtime	sh followers/accept-x86.sh github	yes	Linux	Ubuntu-24.04	x86_64-linux-gnu	glibc	github-hosted-runtime	observed-at-run	yes	-
+github-x86_64-artifact	github-actions	x86_64	artifact	artifact	validate exact published artifact identity, hash, metadata, extraction, and install contract	yes	Linux	Ubuntu-24.04	x86_64-linux-gnu	glibc	github-artifact-validation	observed-at-run	yes	-
+container-x86_64	linux-container	x86_64	container	runtime	sh followers/accept-x86.sh container	yes	Linux	observed-at-run	x86_64-linux-gnu	observed-at-run	container-runtime	observed-at-run	yes	-
+hetzner-x86_64	hetzner-linux	x86_64	cloud	runtime	sh followers/accept-x86.sh cloud	yes	Linux	observed-at-run	x86_64-linux-gnu	observed-at-run	persistent-host-runtime	observed-at-run	yes	-
+sdf	sdf-netbsd	amd64	sdf	runtime	CATFOOD_TARGET=sdf ./catfood	yes	NetBSD	9.3	x86_64-unknown-netbsd	netbsd-libc	sdf-login-runtime	Xeon-X5460	yes	sdf-icky-dmd,sdf-greased
+void-x86_64	void-linux	unknown	void	runtime	-	no	Void-Linux	unknown-current	unknown-current	unknown-current	unknown-current	unknown-current	conditional	void-current
+termux-generic	android-termux	unknown	termux	runtime	-	no	Android	unknown-current	unknown-current	bionic	termux-generic	unknown-current	no	-
