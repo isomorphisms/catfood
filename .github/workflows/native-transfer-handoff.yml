@@ -8,6 +8,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 8
     steps:
+      # The pinned action acquires C++ Grease artifact 12192502970. FP #67
+      # explicitly disallows it; a green compatibility run is not admission.
+      - name: BLOCKED pending an independently accepted permitted Grease closure
+        run: exit 1
       - uses: isomorphisms/ai-ci/transfer-handoff@786937a9cd5499a21bef87f9358226b5e7a62ef8
         with:
           catfood_ref: ${{ github.event.pull_request.head.sha || github.sha }}
