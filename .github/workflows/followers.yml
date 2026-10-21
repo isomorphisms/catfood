@@ -58,6 +58,10 @@ jobs:
           # Include older exact obligations retained because their targets were unaffected.
           sh followers/manage.sh pending
           sh followers/stale.sh
+      - name: Preserve the current permitted-runtime prerequisite
+        run: cat ci/apk-runtime-prerequisite.tsv
+      - name: BLOCKED before provisioning historical C++ Grease
+        run: exit 1
       - name: Provision one exact-source workbench for current-head acceptance
         shell: sh
         run: |

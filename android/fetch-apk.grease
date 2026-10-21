@@ -1,0 +1,50 @@
+# Fetch a published, admitted APK. Never install or launch an Android package.
+set -eu -o pipefail
+if (len(ARGV) !== 3) { echo 'usage: fetch-apk.grease CATFOOD_ROOT PACKAGE NEW_DIRECTORY'; exit 2 }
+var root = $1
+var package = $2
+var output = $3
+if (not root.startsWith('/') or not output.startsWith('/')) { echo 'FAIL: absolute paths required'; exit 2 }
+var manifest = "$root/android/packages.tsv"
+env CATFOOD_TOOLS="$root/tools.tsv" CATFOOD_ANDROID_DELIVERY="$root/android/delivery.tsv" CATFOOD_ANDROID_PACKAGES="$manifest" sh "$root/android/check.sh" check > /dev/null
+var count = $(awk -F '\t' -v wanted="$package" '$1==wanted {n++} END {print n+0}' "$manifest")
+if (count !== '1') { echo 'FAIL: APK package must have exactly one admitted row'; exit 2 }
+var mode = $(awk -F '\t' -v wanted="$package" '$1==wanted {print $4}' "$manifest")
+if (mode !== 'apk') { echo 'FAIL: selected package is not an APK'; exit 2 }
+var source = $(awk -F '\t' -v wanted="$package" '$1==wanted {print $5}' "$manifest")
+var revision = $(awk -F '\t' -v wanted="$package" '$1==wanted {print $6}' "$manifest")
+var packaging = $(awk -F '\t' -v wanted="$package" '$1==wanted {print $7}' "$manifest")
+var url = $(awk -F '\t' -v wanted="$package" '$1==wanted {print $8}' "$manifest")
+var digest = $(awk -F '\t' -v wanted="$package" '$1==wanted {print $9}' "$manifest")
+var filename = $(awk -F '\t' -v wanted="$package" '$1==wanted {print $11}' "$manifest")
+var abi = $(awk -F '\t' -v wanted="$package" '$1==wanted {print $3}' "$manifest")
+var tab = $(printf '\t')
+if test -L "$output" { echo 'FAIL: delivery directory is a symbolic link'; exit 2 }
+var expected_receipt = $(printf 'schema\tcatfood-apk-delivery-v1\npackage\t%s\nsource\t%s\nsource_ref\t%s\npackage_ref\t%s\nabi\t%s\nurl\t%s\nsha256\t%s\nartifact\t%s\nartifact_delivery\tPASS\ninstallation\tNOT_RUN\nlaunch\tNOT_RUN\nphysical_device\tNOT_RUN\n' "$package" "$source" "$revision" "$packaging" "$abi" "$url" "$digest" "$output/$filename")
+if test -e "$output" {
+  test -f "$output/receipt.tsv"
+  test ! -L "$output/receipt.tsv"
+  test -f "$output/$filename"
+  test ! -L "$output/$filename"
+  var actual_receipt = $(cat "$output/receipt.tsv")
+  if (actual_receipt !== expected_receipt) { echo 'FAIL: immutable delivery receipt differs'; exit 2 }
+  if command -v sha256sum > /dev/null {
+    printf '%s  %s\n' "$digest" "$output/$filename" | sha256sum -c -
+  } else {
+    test -x /system/bin/toybox
+    printf '%s  %s\n' "$digest" "$output/$filename" | /system/bin/toybox sha256sum -c -
+  }
+  echo "PASS: existing verified APK at $output/$filename"
+  exit 0
+}
+mkdir "$output"
+curl -fL --retry 2 "$url" -o "$output/payload.tmp"
+if command -v sha256sum > /dev/null {
+  printf '%s  %s\n' "$digest" "$output/payload.tmp" | sha256sum -c -
+} else {
+  test -x /system/bin/toybox
+  printf '%s  %s\n' "$digest" "$output/payload.tmp" | /system/bin/toybox sha256sum -c -
+}
+mv "$output/payload.tmp" "$output/$filename"
+printf '%s\n' "$expected_receipt" > "$output/receipt.tsv"
+echo "PASS: verified APK delivered to $output/$filename"

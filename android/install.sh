@@ -257,6 +257,11 @@ EOF_ROW
         printf '%s manifest target/ABI does not match device\n' "$package" >&2
         exit 3
     }
+    if [ "$mode" = apk ]; then
+        command -v grease >/dev/null 2>&1 || { printf '%s\n' 'APK delivery requires the existing Grease runtime' >&2; exit 127; }
+        grease "$root/android/fetch-apk.grease" "$root" "$package" "$workspace/downloads/$package-$sha256-apk"
+        continue
+    fi
     install_termux_packages "$termux_packages" "$package"
     require_commands "$install_requires"
     check_runtime_requirements "$runtime_requires" "$package"
@@ -447,7 +452,7 @@ EOF_WRAPPER
     fi
 done
 
-printf '\nCat Food %s installed all currently published packages.\n' "$target"
+printf '\nCat Food %s processed all published packages; APK installation is separately unverified.\n' "$target"
 unresolved=$(CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" \
     sh "$root/android/check.sh" gaps "$target")
 if [ -n "$unresolved" ]; then

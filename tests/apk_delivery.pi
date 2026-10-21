@@ -1,0 +1,124 @@
+"""Attack APK delivery through actual Grease and checked Ithon transport."""
+import argparse
+import hashlib
+import os
+import shutil
+import shlex
+import subprocess
+import tempfile
+from pathlib import Path
+from builtins import SystemExit
+
+ROOT ∈ object ← Path(__file__).resolve().parent.parent
+SOURCE ∈ str ← "1111111111111111111111111111111111111111"
+PACKAGING ∈ str ← "2222222222222222222222222222222222222222"
+WRONG_SOURCE ∈ str ← "3333333333333333333333333333333333333333"
+WRONG_DIGEST ∈ str ← "0000000000000000000000000000000000000000000000000000000000000000"
+
+def require(condition ∈ bool, message ∈ str) → None:
+    if not condition:
+        raise SystemExit("FAIL: " + message)
+
+def main() → None:
+    parser ∈ object ← argparse.ArgumentParser()
+    parser.add_argument("--grease", required=True)
+    parser.add_argument("--ithon", required=True)
+    args ∈ object ← parser.parse_args()
+    grease ∈ str ← args.grease
+    ithon ∈ str ← args.ithon
+    build ∈ object ← ROOT.joinpath("build")
+    build.mkdir(exist_ok=True)
+    output ∈ object ← Path(tempfile.mkdtemp(prefix="apk-delivery-",dir=build))
+    transport ∈ object ← output.joinpath("bin")
+    transport.mkdir()
+    transport_source ∈ str ← ROOT.joinpath("tests/fixtures/apk-curl.pi").read_text()
+    transport.joinpath("curl.pi").write_text(transport_source)
+    quoted_ithon ∈ str ← shlex.quote(ithon)
+    quoted_fixture ∈ str ← shlex.quote(str(transport.joinpath("curl.pi")))
+    transport.joinpath("curl").write_text("#!" + grease + "\nexec " + quoted_ithon + " " + quoted_fixture + " @ARGV\n")
+    transport.joinpath("curl").chmod(493)
+    payload ∈ bytes ← b"synthetic-APK-transport-payload; no Android acceptance\n"
+    output.joinpath("fixture").write_bytes(payload)
+    digest ∈ str ← hashlib.sha256(payload).hexdigest()
+    catalog ∈ object ← output.joinpath("catalog with spaces")
+    catalog.mkdir()
+    shutil.copytree(ROOT.joinpath("android"),catalog.joinpath("android"))
+    catalog.joinpath("tools.tsv").write_text("app https://github.com/fixture/app.git main none\n")
+    catalog.joinpath("android/delivery.tsv").write_text("grease\thost\tn/a\tn/a\tfixture\napp\truntime\tpackage:app-phone\tpackage:app-c67\tfixture\n")
+    packages ∈ object ← catalog.joinpath("android/packages.tsv")
+    rows ∈ list[str] ← []
+    for suffix in ["phone", "c67"]:
+        abi ∈ str ← "armeabi-v7a" if suffix == "phone" else "arm64-v8a"
+        row ∈ str ← "\t".join(["app-" + suffix,abi,abi,"apk","fixture/app",SOURCE,PACKAGING,
+            "https://fixture.invalid/" + suffix + ".apk",digest,"-","app.apk","-","-","-","curl","-","-","-"])
+        rows.append(row + "\n")
+    manifest ∈ str ← "".join(rows)
+    packages.write_text(manifest)
+    environment ∈ dict[str,str] ← os.environ.copy()
+    environment["PATH"] = str(transport) + ":" + environment["PATH"]
+    environment["APK_FIXTURE"] = str(output.joinpath("fixture"))
+    environment["ASAN_OPTIONS"] = "detect_leaks=0"
+    command ∈ list[str] ← [grease,str(ROOT.joinpath("android/fetch-apk.grease")),str(catalog)]
+    receipts ∈ list[str] ← ["case\tresult\n"]
+    for suffix in ["phone", "c67"]:
+        destination ∈ object ← output.joinpath(suffix)
+        for repeat in ["first", "repeat"]:
+            invocation ∈ list[str] ← command.copy()
+            invocation.extend(["app-" + suffix,str(destination)])
+            result ∈ object ← subprocess.run(invocation,env=environment,text=True,capture_output=True)
+            code ∈ int ← result.returncode
+            output.joinpath(suffix + "-" + repeat + ".stdout").write_text(result.stdout)
+            output.joinpath(suffix + "-" + repeat + ".stderr").write_text(result.stderr)
+            require(code == 0, suffix + " " + repeat)
+        delivered ∈ bytes ← destination.joinpath("app.apk").read_bytes()
+        require(delivered == payload, "exact delivered bytes")
+        receipt ∈ str ← destination.joinpath("receipt.tsv").read_text()
+        require("artifact_delivery\tPASS" in receipt and "installation\tNOT_RUN" in receipt
+                and "physical_device\tNOT_RUN" in receipt, "evidence boundary")
+        receipts.append(suffix + "-and-repeat\tPASS\n")
+    for name in ["wrong-hash","transport-failure","wrong-mode","missing-package","duplicate-package","relative-path","existing-directory","symlink","tampered-delivery","forged-receipt"]:
+        packages.write_text(manifest)
+        environment["APK_TRANSPORT_FAIL"] = "0"
+        selected ∈ str ← "app-phone"
+        target ∈ str ← str(output.joinpath(name))
+        if name == "wrong-hash":
+            packages.write_text(manifest.replace(digest,WRONG_DIGEST))
+        if name == "transport-failure":
+            environment["APK_TRANSPORT_FAIL"] = "1"
+        if name == "wrong-mode":
+            packages.write_text(manifest.replace("\tapk\t","\tfile\t"))
+        if name == "missing-package":
+            selected = "missing"
+        if name == "duplicate-package":
+            packages.write_text(manifest + rows[0])
+        if name == "relative-path":
+            target = "relative-destination"
+        if name == "existing-directory":
+            output.joinpath(name).mkdir()
+            output.joinpath(name,"precious").write_text("preserve\n")
+        if name == "symlink":
+            output.joinpath(name).symlink_to(output.joinpath("phone"),target_is_directory=True)
+        if name == "tampered-delivery":
+            target = str(output.joinpath("phone"))
+            output.joinpath("phone/app.apk").write_bytes(b"wrong")
+        if name == "forged-receipt":
+            target = str(output.joinpath("c67"))
+            selected = "app-c67"
+            receipt = output.joinpath("c67/receipt.tsv").read_text()
+            output.joinpath("c67/receipt.tsv").write_text(receipt.replace("source_ref\t" + SOURCE,"source_ref\t" + WRONG_SOURCE))
+        invocation = command.copy()
+        invocation.extend([selected,target])
+        result = subprocess.run(invocation,env=environment,text=True,capture_output=True)
+        code = result.returncode
+        output.joinpath(name + ".stdout").write_text(result.stdout)
+        output.joinpath(name + ".stderr").write_text(result.stderr)
+        require(code != 0, "incorrect delivery admitted: " + name)
+        receipts.append(name + "\tREJECTED\n")
+    preserved ∈ str ← output.joinpath("existing-directory/precious").read_text()
+    require(preserved == "preserve\n", "existing data preserved")
+    require(not output.joinpath("wrong-hash/app.apk").exists(), "wrong bytes received final filename")
+    output.joinpath("receipt.tsv").write_text("".join(receipts))
+    print("APK_DELIVERY PASS: both ABI lanes, safe repeats, ten rejecting controls; synthetic transport only")
+    print(str(output))
+
+main()

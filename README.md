@@ -30,6 +30,14 @@ A1, C67 and TAB_P10 use the same repository-side delivery architecture under [`a
 
 `android/packages.tsv` contains only published packages. Rows carry exact source and packaging commits, target ABI, URL, SHA-256, command entrypoints, and dependency declarations. A missing deliverable is not represented by a fake or `PENDING` package row; it remains a gap in `android/delivery.tsv`.
 
+Published APKs use `mode=apk`, command `-`, and one APK filename as entrypoint.
+`catfood fetch-apk PACKAGE NEW_DIRECTORY` uses the existing Grease runtime to
+download and verify their bytes. The receipt records artifact delivery and
+leaves installation, launch and physical execution NOT_RUN. Repeated fetches
+verify the existing immutable receipt and bytes; changed or unrelated files
+are refused. The normal Android feed delegates APK rows to the same helper.
+Android's package installer and physical acceptance remain separate actions.
+
 Release packages must contain stripped native runtime payloads. Strip releasable ELF executables and shared objects of debug and non-runtime symbol data before APK/archive assembly; keep unstripped binaries or symbol files only as separate debugging artifacts when needed. Release evidence should record the native payload size before and after stripping and the final package size so an accidentally unstripped artifact cannot silently become the shipped package.
 
 The device path is download → verify → install. It does not clone project repositories, install a compiler toolchain, bootstrap a compiler, or fall back to a local source build when a package is absent. The tablet's additional storage does not change this boundary.

@@ -92,7 +92,7 @@ FILENAME == packages {
     if (target != "armeabi-v7a" && target != "arm64-v8a") fail(packages ":" FNR ": invalid target: " target)
     if (target != abi)
         fail(packages ":" FNR ": ABI does not match target: " target " / " abi)
-    if (mode != "archive" && mode != "file" && mode != "dex-jni") fail(packages ":" FNR ": invalid mode: " mode)
+    if (mode != "archive" && mode != "file" && mode != "dex-jni" && mode != "apk") fail(packages ":" FNR ": invalid mode: " mode)
     if (source !~ /^[[:alnum:]_.-]+\/[[:alnum:]_.-]+$/) fail(packages ":" FNR ": source must be owner/repository: " source)
     if (!is_commit(source_ref)) fail(packages ":" FNR ": source_ref must be a full commit: " source_ref)
     if (!is_commit(package_ref)) fail(packages ":" FNR ": package_ref must be a full commit: " package_ref)
@@ -101,6 +101,8 @@ FILENAME == packages {
     if (command !~ /^[[:alnum:]_.-]+$/) fail(packages ":" FNR ": unsafe command: " command)
     if (entrypoint == "" || entrypoint !~ /^[[:alnum:]_.+\/-]+$/ || entrypoint ~ /^\// || entrypoint ~ /(^|\/)\.\.($|\/)/)
         fail(packages ":" FNR ": unsafe entrypoint: " entrypoint)
+    if (mode == "apk" && (entrypoint !~ /^[[:alnum:]_.+-]+[.]apk$/ || command != "-"))
+        fail(packages ":" FNR ": APK must name one APK file and no command")
     if (install_requires == "" || termux_packages == "" || runtime_requires == "" || package_requires == "")
         fail(packages ":" FNR ": dependency fields must be explicit; use - for none")
     if (install_requires != "-" && install_requires !~ /^[[:alnum:]_.+-]+(,[[:alnum:]_.+-]+)*$/)
@@ -125,10 +127,12 @@ FILENAME == packages {
         fail(packages ":" FNR ": non-DEX package must use - for DEX/JNI fields")
     }
 
-    command_key=target SUBSEP command
-    if (command_owner[command_key] != "" && command_owner[command_key] != id)
-        fail(packages ":" FNR ": command " command " has multiple packages for " target)
-    command_owner[command_key] = id
+    if (mode != "apk") {
+        command_key=target SUBSEP command
+        if (command_owner[command_key] != "" && command_owner[command_key] != id)
+            fail(packages ":" FNR ": command " command " has multiple packages for " target)
+        command_owner[command_key] = id
+    }
 
     if (package_seen[id]) {
         common = target FS abi FS mode FS source FS source_ref FS package_ref FS url FS digest FS main_class FS jni_library FS jni_property FS install_requires FS termux_packages FS runtime_requires FS package_requires
