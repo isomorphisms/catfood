@@ -64,3 +64,4 @@ kleinian-groups	runtime	gap:android-package-missing	gap:android-package-missing	
 theta	runtime	gap:android-package-missing	gap:android-package-missing	mathematical-application
 indras-pearls	runtime	gap:android-package-missing	gap:android-package-missing	mathematical-application
 reddit	runtime	package:reddit-phone	package:reddit-tablet	prebuilt-DEX-JNI-command
+young-tableaux	runtime	gap:apk-publication-missing	gap:apk-publication-missing	paired-MIRO-A1-and-C67-Young-Tableaux
