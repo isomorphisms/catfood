@@ -1,0 +1,13 @@
+key	value
+status	BLOCKED
+blocker	compatible_cpp_free_grease_not_independently_accepted
+policy	https://github.com/isomorphisms/flexible-pipes/issues/67
+runtime_owner	dilapidated-shed/grease
+acquisition_owner	isomorphisms/catfood
+acceptance_owner	isomorphisms/ai-ci
+shared_gate	https://github.com/isomorphisms/flexible-pipes/pull/52
+source_candidate	implemented; permitted-runtime execution NOT_RUN
+compatibility_tests	both ABI fixtures, safe repeats, ten rejecting controls; used disallowed historical C++ runtime and are NOT_ELIGIBLE for admission
+published_apk_rows	NONE
+physical_A1	NOT_RUN
+physical_C67	NOT_RUN

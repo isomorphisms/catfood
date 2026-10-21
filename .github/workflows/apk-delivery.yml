@@ -1,0 +1,23 @@
+name: Verified APK delivery admission
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  prerequisite:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Show the current owner prerequisite
+        run: cat ci/apk-runtime-prerequisite.tsv
+      - name: BLOCKED pending an independently accepted permitted Grease closure
+        run: exit 1
+      - name: Preserve the exact-head admission boundary
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: apk-delivery-prerequisite-${{ github.event.pull_request.head.sha || github.sha }}
+          path: ci/apk-runtime-prerequisite.tsv
+          if-no-files-found: error

@@ -12,6 +12,7 @@ usage: ./catfood [--target]
        ./catfood where [tool]
        ./catfood register TOOL ROLE PATH
        ./catfood plan-android-build APPLICATION_CONTRACT phone|c67 SOURCE_SHA
+       ./catfood fetch-apk PACKAGE NEW_DIRECTORY
        ./catfood inspect|record|compare|packages|report
 
 Feed the selected Cat Food target.
@@ -448,6 +449,11 @@ case ${1:-} in
             exit 2
         fi
         exec sh "$root/android/plan-build.sh" "$2" "$3" "$4"
+        ;;
+    fetch-apk)
+        [ "$#" -eq 3 ] || { usage >&2; exit 2; }
+        command -v grease >/dev/null 2>&1 || { printf '%s\n' 'Cat Food APK delivery requires the existing Grease runtime' >&2; exit 127; }
+        exec grease "$root/android/fetch-apk.grease" "$root" "$2" "$3"
         ;;
     inspect|record|compare|packages|report)
         exec sh "$root/device-state.sh" "$@"

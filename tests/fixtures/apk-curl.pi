@@ -1,0 +1,15 @@
+"""Synthetic transport only. Real publication is checked separately."""
+import os
+import sys
+from pathlib import Path
+from builtins import SystemExit
+
+failed ∈ str ← os.environ.get("APK_TRANSPORT_FAIL", "0")
+if failed == "1":
+    raise SystemExit(7)
+all_arguments ∈ list[str] ← sys.argv
+arguments ∈ list[str] ← all_arguments[1:]
+index ∈ int ← arguments.index("-o")
+output ∈ str ← arguments[index + 1]
+fixture ∈ str ← os.environ.get("APK_FIXTURE", "")
+Path(output).write_bytes(Path(fixture).read_bytes())
