@@ -47,7 +47,7 @@ Overrides:
   CATFOOD_BUILD_TOOLS=0|1
   CATFOOD_INSTALL_YSH=0|1
   CATFOOD_SDF_RUNTIME_ROOT=$HOME/opt
-  CATFOOD_SDF_FEED=core|all
+  CATFOOD_SDF_FEED=grease|core|all  # default grease; core adds Idriç
   CATFOOD_CHECKOUTS=/path/to/machine-local-checkouts.tsv
 EOF
 }
