@@ -38,6 +38,8 @@ jobs:
           dash -n sdf/preflight.sh
           dash -n sdf/provision.sh
           dash -n sdf/doctor.sh
+          dash -n sdf/install-grease.sh
+          dash -n sdf/check-grease.sh
           dash -n tests/sdf-target.sh
           dash -n ci/repositories.sh
           dash -n tests/repository-identities.sh
