@@ -12,10 +12,11 @@ invocation; do not infer them from a login banner, or reuse Linux artifacts.
 - `~/opt/packages`, `~/opt/downloads`, `~/opt/receipts`: runtime
   packages, downloads and plaintext receipts, respectively.
 
-Existing `~/code`, `~/opt/bin/grease`, `greasecpp`, `oils-for-unix`,
-`Mail`, `mail`, `~/opt/mbox`, and other personal directories are not
-moved, deleted or overwritten. Conflicting source paths, branches and stable
-commands fail closed. Shell startup files are not edited. SDF is a shared
+Existing personal directories, including `Mail`, `mail` and `~/opt/mbox`,
+are not moved, deleted or overwritten. Previous Grease command launchers in
+`~/opt/bin` and `~/bin` are backed up in their original directories **only
+after the new native package passes its tests**. Other conflicting paths
+fail closed. Shell startup files are not edited. SDF is a shared
 system: one build job by default, at reduced scheduling priority.
 
 ## First SDF run: Grease first (inside an already-connected SDF shell)
@@ -34,6 +35,22 @@ if [ ! -e "$HOME/code/catfood" ]; then
         https://github.com/isomorphisms/catfood.git \
         "$HOME/code/catfood"
 fi
+CATFOOD_TARGET=sdf CATFOOD_SDF_FEED=grease sh "$HOME/code/catfood/catfood"
+```
+
+This defaults to the native NetBSD 9.3 Grease C++ package; it verifies the
+pinned archive checksum, checks source and release identity, executes aliases,
+unalias and arithmetic with the unpacked binary, and then activates
+`~/opt/bin/grease` and the existing `~/bin/grease` launcher if present.
+Its installed executable can be rechecked independently:
+
+```sh
+CATFOOD_TARGET=sdf sh "$HOME/code/catfood/sdf/check-grease.sh"
+```
+
+When proceeding to the compiler later, run the stronger read-only preflight:
+
+```sh
 CATFOOD_TARGET=sdf sh "$HOME/code/catfood/sdf/preflight.sh"
 ```
 
@@ -60,8 +77,8 @@ This fetches the Idriç source under `~/code/Idric`, builds the pinned
 threaded Chez 10.4.1 for `ta6nb`, bootstraps Idriç, runs its existing
 focused tests, and adds `edric`, `idris2`, `catfood-update` and
 `catfood-doctor` under `~/opt/bin` **only after successful execution**.
-It does not replace any existing Grease executable. A checksum-bearing
-compiler receipt is written to `~/opt/receipts/idric-netbsd-amd64.tsv` only
+It runs the verified Grease phase first and never substitutes an older
+Grease or unqualified D binary. A checksum-bearing compiler receipt is written to `~/opt/receipts/idric-netbsd-amd64.tsv` only
 after native compilation and test completion.
 
 To feed **all** Cat Food inventory sources rather than only Idriç, explicitly
@@ -96,10 +113,11 @@ and others still require target-specific build/acquisition contracts.
 - NetBSD/amd64 platform, Chez machine type `ta6nb`, source revision,
   compiler digest, bootstrap and focused tests are distinct receipt fields.
 - A complete toolset requires actual runtime checks for every intended
-  command; the current SDF work is an **Idriç-first implementation**, not
-  that acceptance.
-- The synthetic Linux CI test exercises refusal behavior; it is **not** a
-  native SDF run. Submit actual SDF output/receipt before promotion.
+  command; the current SDF work is a **Grease-first implementation** with
+  separately qualified Idriç work, not that acceptance.
+- The synthetic Linux CI test exercises refusal behavior, while a distinct
+  NetBSD 9.3 VM workflow tests native package installation. Neither is a
+  live SDF account run. Submit actual SDF output/receipt before promotion.
 - No live mailbox writes. The preflight never inspects mailbox messages or
   alters case-distinct `Mail` and `mail`.
 - `CATFOOD_SDF_IDRIC_BRANCH` is a temporary, explicit qualification
