@@ -8,10 +8,13 @@ catfood_verify_sdf_target || exit $?
 
 source_root=${CATFOOD_ROOT:-$HOME/code}
 runtime_root=${CATFOOD_SDF_RUNTIME_ROOT:-$HOME/opt}
-mode=${1:-core}
-case "$mode" in core|full) ;; *)
-    printf 'usage: catfood-doctor [core|full]\n' >&2; exit 2 ;;
+mode=${1:-grease}
+case "$mode" in grease|core|full) ;; *)
+    printf 'usage: catfood-doctor [grease|core|full]\n' >&2; exit 2 ;;
 esac
+if [ "$mode" = grease ]; then
+    exec sh "$root/sdf/check-grease.sh"
+fi
 printf 'schema\tcatfood-sdf-doctor-v1\n'
 printf 'host\t%s\n' "$(hostname 2>/dev/null || printf unknown)"
 printf 'platform\t%s\t%s\n' "$(uname -s)" "$(uname -m)"
@@ -43,16 +46,10 @@ for name in grease greasecpp greased edric idris2 fieldmouse icu ib-smoke \
     check_stable "$name"
 done
 
-if [ -x "$bin/grease" ]; then
-    smoke=$("$bin/grease" -c 'var answer = 6 * 7; write -- "grease=$answer"' 2>/dev/null || :)
-    if [ "$smoke" = grease=42 ]; then
-        printf 'smoke:grease\tPASS\n'
-    else
-        printf 'smoke:grease\tFAIL\n'
-        core_failure=1
-    fi
+if sh "$root/sdf/check-grease.sh"; then
+    printf 'smoke:grease\tPASS\n'
 else
-    printf 'smoke:grease\tBLOCKED (stable command missing)\n'
+    printf 'smoke:grease\tFAIL\n' >&2
     core_failure=1
 fi
 
