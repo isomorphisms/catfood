@@ -23,7 +23,7 @@ case $(uname -r) in 9.3|9.3.*) ;; *) fail "NetBSD $(uname -r) is not the pinned 
 case $url in https://github.com/dilapidated-shed/grease/releases/download/*) ;; *)
     fail 'unexpected release origin' ;; esac
 
-runtime=$CATFOOD_SDF_RUNTIME_ROOT
+runtime=${CATFOOD_SDF_RUNTIME_ROOT:-}
 if [ -z "$runtime" ]; then runtime=$HOME/opt; fi
 case $runtime in /*) ;; *) fail 'runtime root must be absolute' ;; esac
 bin=$runtime/bin
