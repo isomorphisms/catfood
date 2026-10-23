@@ -86,7 +86,7 @@ sh "$HOME/code/catfood/sdf/doctor.sh" full
 
 The full doctor reports missing, host-only and unverified commands rather
 than treating a source clone or similarly named system executable as a
-success. Missing `jq`, `mlr`, `lua`, `R`, `ithon`, `icu`, `ick`
+success. Full mode fails closed until every runtime is independently qualified. Missing `jq`, `mlr`, `lua`, `R`, `ithon`, `icu`, `ick`
 and others still require target-specific build/acquisition contracts.
 
 ## Evidence and limitations
