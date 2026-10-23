@@ -7,6 +7,8 @@ on:
       - 'sdf/install-grease.sh'
       - 'sdf/check-grease.sh'
       - 'sdf/grease-release.tsv'
+      - 'sdf/README.md'
+      - 'tests/sdf-target.sh'
       - 'sdf/provision.sh'
       - 'sdf/doctor.sh'
       - 'android/target.sh'
