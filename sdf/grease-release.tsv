@@ -1,0 +1,2 @@
+# tool	platform	grease_revision	oils_revision	archive_name	archive_sha256	url
+greasecpp	netbsd-9.3-amd64	c9caca81a549b24568799233f9bc33c5da713ba4	5651cf97a1b5042f24f14112a7ade9a1518eb0bc	grease-netbsd-9.3-amd64.tar.gz	07f7396943241346601dba4ef36531a131096d168e60f44d8eb6ed60b9ccd849	https://github.com/dilapidated-shed/grease/releases/download/netbsd-9.3-amd64-c9caca81a549/grease-netbsd-9.3-amd64.tar.gz

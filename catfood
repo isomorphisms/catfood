@@ -22,11 +22,13 @@ The target is detected automatically when possible:
   tablet     observed TAB_P10 Android tablet; install arm64-v8a runtime packages only
   container  disposable Debian/Ubuntu workbench; select explicitly
   cloud      persistent Debian/Ubuntu/Hetzner workbench
+  sdf        explicit NetBSD/amd64 SDF workbench; no root or apt
 
 Compatibility targets:
   termux     generic Termux source workbench when architecture is unknown/forced
   hetzner    alias for cloud
   CATFOOD_TARGET=cloud|termux remains valid
+  CATFOOD_TARGET=sdf explicitly selects the SDF workbench
 
 Help:
   ./catfood help          list every Cat Food tool
@@ -44,6 +46,8 @@ Overrides:
   CATFOOD_ROOT=/path/to/workspace
   CATFOOD_BUILD_TOOLS=0|1
   CATFOOD_INSTALL_YSH=0|1
+  CATFOOD_SDF_RUNTIME_ROOT=$HOME/opt
+  CATFOOD_SDF_FEED=grease|core|all  # default grease; core adds Idriç
   CATFOOD_CHECKOUTS=/path/to/machine-local-checkouts.tsv
 EOF
 }
@@ -185,8 +189,11 @@ lookup_workspace() {
         phone|c67|tablet|termux)
             printf '%s\n' "$HOME/opt"
             ;;
+        sdf)
+            printf '%s\n' "$HOME/code"
+            ;;
         *)
-            printf 'CATFOOD_TARGET must be phone, c67, tablet, container, cloud, termux, or hetzner; found: %s\n' "$lookup_target" >&2
+            printf 'CATFOOD_TARGET must be phone, c67, tablet, container, cloud, sdf, termux, or hetzner; found: %s\n' "$lookup_target" >&2
             return 2
             ;;
     esac
@@ -462,7 +469,7 @@ fi
 
 case $target in
     hetzner) target=cloud ;;
-    phone|c67|tablet|container|cloud|termux) ;;
+    phone|c67|tablet|container|cloud|termux|sdf) ;;
     *)
         printf 'CATFOOD_TARGET must be phone, c67, tablet, container, cloud, termux, or hetzner; found: %s\n' "$target" >&2
         exit 2
@@ -472,6 +479,7 @@ esac
 case $target in
     phone|c67|tablet) catfood_android_verify_device_target "$target" ;;
     cloud|container) catfood_verify_workbench_target ;;
+    sdf) catfood_verify_sdf_target ;;
 esac
 
 if [ "$show_target" -eq 1 ]; then
@@ -499,9 +507,20 @@ case $target in
         CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-0}
         CATFOOD_INSTALL_YSH=${CATFOOD_INSTALL_YSH:-0}
         ;;
+    sdf)
+        CATFOOD_ROOT=${CATFOOD_ROOT:-$HOME/code}
+        CATFOOD_SDF_RUNTIME_ROOT=${CATFOOD_SDF_RUNTIME_ROOT:-$HOME/opt}
+        CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-1}
+        CATFOOD_INSTALL_YSH=0
+        export CATFOOD_SDF_RUNTIME_ROOT
+        ;;
 esac
 
 CATFOOD_TARGET=$target
 export CATFOOD_TARGET CATFOOD_ROOT CATFOOD_BUILD_TOOLS CATFOOD_INSTALL_YSH
+
+if [ "$target" = sdf ]; then
+    exec sh "$root/sdf/provision.sh"
+fi
 
 exec sh "$root/provision.sh"
