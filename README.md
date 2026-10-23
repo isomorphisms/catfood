@@ -72,6 +72,19 @@ Cat Food also owns a small platform-binary feed in [`runtime-binaries.tsv`](runt
 
 Lua is a Cat Food support runtime rather than an Android product row. Known Android runtime targets acquire the packaged `lua55` runtime and expose stable `lua` and `luac` commands under the Cat Food bin directory; they do not compile Lua on the device. Debian/Ubuntu workbenches acquire `lua5.4` plus `liblua5.4-dev` from the host package manager, then expose the same stable command names. `install-lua.sh` runs an interpreter smoke, a `luac` parse smoke, and writes `receipts/lua.tsv`.
 
+## SDF / NetBSD toolchain
+
+SDF is an explicit unprivileged NetBSD/amd64 workbench target. It does not
+use Linux packages or the Android source/runtime path. Source checkouts
+belong in `~/code`, stable commands in `~/opt/bin`, with plaintext
+receipts in `~/opt/receipts`. Existing files are preserved.
+
+Run `CATFOOD_TARGET=sdf sh ./catfood` from an SDF Cat Food checkout only
+after reading the [SDF installation and qualification guide](sdf/README.md).
+The initial supported build path is pinned threaded Chez Scheme plus Idriç.
+`CATFOOD_SDF_FEED=all` feeds the declared source inventory but **does not**
+make each tool runnable; `sh sdf/doctor.sh full` reports the remaining gaps.
+
 ## Fresh Hetzner / Ubuntu workbench
 
 ```sh
