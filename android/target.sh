@@ -156,3 +156,22 @@ catfood_android_device_id() {
     case $cf_id in ''|-|*[!a-zA-Z0-9_.-]*) return 2 ;; esac
     printf '%s\n' "$cf_id"
 }
+
+# Explicit SDF selection is a deployment role, never the fallback for unknown Unix.
+# Other NetBSD hosts are not silently identified as an SDF account.
+catfood_verify_sdf_target() {
+    case ${PREFIX:-}:${TERMUX_VERSION:-} in
+        /data/data/com.termux/*:*|*:*?*)
+            printf '%s\n' 'SDF target cannot be selected on an Android runtime consumer' >&2
+            return 2 ;;
+    esac
+    cf_sdf_system=$(uname -s 2>/dev/null || printf '%s\n' unknown)
+    cf_sdf_machine=$(uname -m 2>/dev/null || printf '%s\n' unknown)
+    case "$cf_sdf_system:$cf_sdf_machine" in
+        NetBSD:amd64|NetBSD:x86_64) return 0 ;;
+        *)
+            printf 'SDF target requires observed NetBSD/amd64; found %s/%s\n' \
+                "$cf_sdf_system" "$cf_sdf_machine" >&2
+            return 2 ;;
+    esac
+}
