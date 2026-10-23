@@ -8,9 +8,9 @@ catfood_verify_sdf_target || exit $?
 
 source_root=${CATFOOD_ROOT:-$HOME/code}
 runtime_root=${CATFOOD_SDF_RUNTIME_ROOT:-$HOME/opt}
-feed=${CATFOOD_SDF_FEED:-core}
+feed=${CATFOOD_SDF_FEED:-grease}
 depth=${CATFOOD_DEPTH:-1}
-case "$feed" in core|all) ;; *)
+case "$feed" in grease|core|all) ;; *)
     printf 'CATFOOD_SDF_FEED must be core or all, found %s\n' "$feed" >&2
     exit 2 ;;
 esac
@@ -20,7 +20,14 @@ if [ "$source_root" = "$runtime_root" ]; then
     exit 2
 fi
 
-# Inspection, prerequisite validation and manifest checks happen before writes.
+# Grease is always fed first. The small runtime-only lane requires neither
+# source clones nor the compiler dependencies of the later Idriç workbench.
+sh "$root/sdf/install-grease.sh"
+if [ "$feed" = grease ]; then
+    exec sh "$root/sdf/check-grease.sh"
+fi
+
+# Compiler/full-feed paths still require a separate stronger host preflight.
 sh "$root/sdf/preflight.sh"
 sh "$root/check-manifest.sh"
 mkdir -p "$source_root" "$runtime_root/bin" "$runtime_root/packages" \
