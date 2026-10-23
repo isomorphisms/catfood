@@ -1,0 +1,71 @@
+name: SDF Grease NetBSD package installation
+
+on:
+  pull_request:
+    paths:
+      - 'catfood'
+      - 'sdf/install-grease.sh'
+      - 'sdf/check-grease.sh'
+      - 'sdf/grease-release.tsv'
+      - 'sdf/provision.sh'
+      - 'sdf/doctor.sh'
+      - 'android/target.sh'
+      - '.github/workflows/sdf-grease-netbsd.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  grease-netbsd-9_3-amd64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout exact PR head
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+
+      - name: Install pinned package and verify actual execution on NetBSD
+        uses: vmactions/netbsd-vm@c8a0d7ddb84619a7a8cc4e652efa7950b3fd9f92
+        with:
+          release: '9.3'
+          arch: x86_64
+          sync: rsync
+          run: |
+            set -eu
+            test "$(uname -s)" = NetBSD
+            test "$(uname -r)" = 9.3
+            test "$(uname -m)" = amd64
+
+            test_home="$GITHUB_WORKSPACE/.sdf-test-home"
+            test_root="$GITHUB_WORKSPACE/.sdf-test-runtime"
+            mkdir -p "$test_home/bin" "$test_root/bin"
+            printf '%s\n' '#!/bin/sh' 'echo old-grease' > "$test_home/bin/grease"
+            printf '%s\n' '#!/bin/sh' 'echo old-grease' > "$test_root/bin/grease"
+            chmod 0700 "$test_home/bin/grease" "$test_root/bin/grease"
+            export HOME="$test_home"
+            export CATFOOD_TARGET=sdf
+            export CATFOOD_SDF_RUNTIME_ROOT="$test_root"
+
+            sh sdf/install-grease.sh
+            sh sdf/check-grease.sh
+            test -f "$test_root/receipts/grease-netbsd-9.3-amd64.tsv"
+            test -x "$test_root/bin/grease"
+            test -x "$test_home/bin/grease"
+            test -L "$test_root/bin/grease"
+            test -L "$test_root/bin/greasecpp"
+            test -L "$test_root/bin/oils-for-unix"
+            ls "$test_home/bin"/grease.before-* >/dev/null
+            ls "$test_root/bin"/grease.before-* >/dev/null
+            "$test_home/bin/grease" -c 'var number = 6 * 7; write -- "answer=$number"' |
+                grep -Fqx answer=42
+
+            # The same exact package installs idempotently without another backup.
+            old_backup_count=$(ls "$test_root/bin"/grease.before-* | wc -l | tr -d ' ')
+            sh sdf/install-grease.sh
+            sh sdf/check-grease.sh
+            new_backup_count=$(ls "$test_root/bin"/grease.before-* | wc -l | tr -d ' ')
+            test "$old_backup_count" = "$new_backup_count"
+            printf '%s\n' 'PASS: pinned native Grease selected and prior SDF launchers preserved'
