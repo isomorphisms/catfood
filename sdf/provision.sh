@@ -133,7 +133,8 @@ write_management_wrapper catfood-doctor "$root/sdf/doctor.sh"
 
 if [ "${CATFOOD_BUILD_TOOLS:-1}" = 0 ]; then
     printf '%s\n' 'SDF source feed complete; compiler build deliberately skipped'
-    sh "$root/sdf/doctor.sh"
+    # A requested source-only feed is useful despite missing compiler output.
+    sh "$root/sdf/doctor.sh" || :
     exit 0
 fi
 
