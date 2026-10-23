@@ -125,7 +125,7 @@ if [ "$mode" = full ] && [ "$full_gaps" -ne 0 ]; then
     exit 1
 fi
 if [ "$mode" = full ]; then
-    printf 'status\tPRESENT_NOT_ALL_VERIFIED\n'
+    # A symlink is not semantic acceptance of a tool: unqualified fails closed.\n    printf 'status\tNOT_QUALIFIED_FULL\n'\n    exit 1
 else
     printf 'status\tCORE_COMPILER_VERIFIED; OTHER_TOOLS_UNVERIFIED\n'
 fi
