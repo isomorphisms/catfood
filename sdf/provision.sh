@@ -32,6 +32,10 @@ feed_repository() {
     branch=$3
     submodules=$4
     destination=$source_root/$name
+    if [ "$name" = Idric ] && [ -n "${CATFOOD_SDF_IDRIC_BRANCH:-}" ]; then
+        # Explicit qualification of a pending compiler portability PR.
+        branch=$CATFOOD_SDF_IDRIC_BRANCH
+    fi
 
     if [ -e "$destination/.git" ]; then
         actual=$(git -C "$destination" remote get-url origin 2>/dev/null || :)
@@ -49,7 +53,7 @@ feed_repository() {
             printf '%s: local edits present; preserving checkout without update\n' "$name" >&2
             return 1
         fi
-        git -C "$destination" fetch --depth "$depth" origin "$branch"
+        git -C "$destination" fetch --prune origin "$branch"
         git -C "$destination" merge --ff-only FETCH_HEAD
     elif [ -e "$destination" ] || [ -L "$destination" ]; then
         printf '%s: existing non-checkout path left untouched: %s\n' \
