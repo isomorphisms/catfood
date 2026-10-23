@@ -81,7 +81,9 @@ receipts in `~/opt/receipts`. Existing files are preserved.
 
 Run `CATFOOD_TARGET=sdf sh ./catfood` from an SDF Cat Food checkout only
 after reading the [SDF installation and qualification guide](sdf/README.md).
-The initial supported build path is pinned threaded Chez Scheme plus Idriç.
+The default SDF operation installs the SHA-256-pinned NetBSD 9.3 native
+Grease C++ release first, preserving the previous launchers. Select
+`CATFOOD_SDF_FEED=core` to then bootstrap pinned Chez Scheme and Idriç.
 `CATFOOD_SDF_FEED=all` feeds the declared source inventory but **does not**
 make each tool runnable; `sh sdf/doctor.sh full` reports the remaining gaps.
 
