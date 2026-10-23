@@ -35,6 +35,10 @@ jobs:
           dash -n tests/runtime-binaries.sh
           dash -n tests/lua.sh
           dash -n tests/entrypoint.sh
+          dash -n sdf/preflight.sh
+          dash -n sdf/provision.sh
+          dash -n sdf/doctor.sh
+          dash -n tests/sdf-target.sh
           dash -n ci/repositories.sh
           dash -n tests/repository-identities.sh
       - name: Verify transferred repository identity and updates
@@ -63,6 +67,9 @@ jobs:
       - name: Exercise cloud and generic Termux entrypoints
         shell: sh
         run: sh tests/entrypoint.sh
+      - name: Reject unsupported SDF hosts without mutation
+        shell: sh
+        run: sh tests/sdf-target.sh
       - name: Feed toolchain with POSIX sh
         shell: sh
         env:
