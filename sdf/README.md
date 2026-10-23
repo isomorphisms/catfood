@@ -18,7 +18,7 @@ moved, deleted or overwritten. Conflicting source paths, branches and stable
 commands fail closed. Shell startup files are not edited. SDF is a shared
 system: one build job by default, at reduced scheduling priority.
 
-## First SDF run (inside an already-connected SDF shell)
+## First SDF run: Grease first (inside an already-connected SDF shell)
 
 This branch is a qualification candidate, not a proven installation. Check
 `~/code/catfood` before cloning; never replace a preexisting checkout.
@@ -39,9 +39,9 @@ CATFOOD_TARGET=sdf sh "$HOME/code/catfood/sdf/preflight.sh"
 
 Review the preflight output before starting a compiler build. It observes
 commands and paths, including the unknown version of `python`, but does not
-modify anything. It requires `git`, `cc`, GNU `gmake`, `tar`, SHA-256
-verification and `curl` or `wget`. No `gh`, Python, sudo, root, apt or
-Linux binary is assumed.
+modify anything. The compiler preflight requires `git`, `cc`, GNU `gmake`, `tar`, SHA-256
+verification and `curl` or `wget`. Grease's binary release installer does
+not require a compiler. No `gh`, Python, sudo, root, apt or Linux binary is assumed.
 
 The pinned Idriç NetBSD portability work is currently on the draft
 [Idriç PR #145](https://github.com/isomorphisms/Idric/pull/145).
@@ -50,6 +50,7 @@ is on the default `Idriç` branch:
 
 ```sh
 CATFOOD_TARGET=sdf \
+CATFOOD_SDF_FEED=core \
 CATFOOD_SDF_IDRIC_BRANCH=platform/netbsd-chez-bootstrap \
 CATFOOD_JOBS=1 \
 sh "$HOME/code/catfood/catfood"
@@ -68,8 +69,8 @@ request the larger clone set:
 
 ```sh
 CATFOOD_TARGET=sdf \
-CATFOOD_SDF_IDRIC_BRANCH=platform/netbsd-chez-bootstrap \
 CATFOOD_SDF_FEED=all \
+CATFOOD_SDF_IDRIC_BRANCH=platform/netbsd-chez-bootstrap \
 CATFOOD_JOBS=1 \
 sh "$HOME/code/catfood/catfood"
 ```
@@ -80,6 +81,7 @@ This is potentially large on a shared host. It feeds the manifest; it does
 The installed command inventory is checked without changing the machine:
 
 ```sh
+sh "$HOME/code/catfood/sdf/doctor.sh" grease
 sh "$HOME/code/catfood/sdf/doctor.sh" core
 sh "$HOME/code/catfood/sdf/doctor.sh" full
 ```
@@ -104,3 +106,20 @@ and others still require target-specific build/acquisition contracts.
   override. Once the compiler PR is integrated, change branches only after
   checking the SDF worktree is clean; provisioning will never silently
   switch an existing checkout.
+
+## Grease login configuration
+
+The new native Grease executable is **not** a guarantee that an already
+running interactive `ysh` has switched to it. Check `command -v grease`,
+`command -v ysh`, `$SHELL`, `~/bin/grease` and `~/opt/bin/grease`
+separately. In a YSH config that uses `alias`, the alias must appear
+after `shopt -s ysh:all`. The installer does not modify personal rc
+files or use `chsh`. Existing YSH login configuration may still invoke
+a different Oils executable.
+
+The NetBSD 9.3 Grease package is built from Grease revision
+`c9caca81a549b24568799233f9bc33c5da713ba4` with pinned Oils
+revision `5651cf97a1b5042f24f14112a7ade9a1518eb0bc`. Its archive
+SHA-256 is declared in `sdf/grease-release.tsv`. NetBSD 11 or another
+release must have a separate package; do not run this ABI's binary there.
+`greased` (D) is explicitly NOT accepted as a replacement.
