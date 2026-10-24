@@ -52,6 +52,40 @@ A shell-side install or inspection step must therefore consume one of:
 If none is known, the location is unresolved. Do not issue a path-specific
 command and then interpret its failure as evidence about the artifact.
 
+### 2026-10-24: MIRO C67 ChordReader APK path and SELinux incident
+
+User-reported source location on this C67: Termux
+`~/storage/downloads/chordreader-arm64-v8a.apk`. The user also created
+`~/downloads -> storage/downloads` **inside Termux**. Do not rename this
+location "external SD" or treat that symlink as present in the Android shell.
+
+Two different install attempts failed for different reasons:
+
+1. `rish -c 'pm install -r ~/downloads/chordreader-arm64-v8a.apk'`
+   resolved the path as `//downloads/chordreader-arm64-v8a.apk`: the
+   Shizuku-provided shell does **not** expand `~` to Termux's home.
+2. `rish -c 'pm install -r /sdcard/Download/chordreader-arm64-v8a.apk'`
+   reached Android's package-manager shell command but failed with
+   `avc: denied { read }`: `system_server` was forbidden to read the
+   shared-storage `fuse` file directly. This is a file-access/SELinux
+   failure, not evidence of an invalid APK or wrong signing certificate.
+
+Candidate repair, **not yet executed/accepted on the physical C67**:
+use the Shizuku shell to stage the APK from Android's shared Downloads
+into `/data/local/tmp`, make it readable, then give that staged path to
+the package manager:
+
+```sh
+rish -c 'cp /sdcard/Download/chordreader-arm64-v8a.apk /data/local/tmp/ && chmod 644 /data/local/tmp/chordreader-arm64-v8a.apk && pm install -r /data/local/tmp/chordreader-arm64-v8a.apk'
+```
+
+The reported Termux path is device-specific; the corresponding
+`/sdcard/Download` Android-shell path should be checked on-device if
+the copy fails, rather than inferred to be universally valid. The
+physical handset's unique instance, successful staging/install, and
+launch/runtime acceptance have **not** yet been observed. Do not
+classify this as a ChordReader build failure or a completed installation.
+
 ## Acceptance boundary
 
 Build/package success and physical installation remain separate evidence.
