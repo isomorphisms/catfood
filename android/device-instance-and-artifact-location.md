@@ -81,10 +81,17 @@ rish -c 'cp /sdcard/Download/chordreader-arm64-v8a.apk /data/local/tmp/ && chmod
 
 The reported Termux path is device-specific; the corresponding
 `/sdcard/Download` Android-shell path should be checked on-device if
-the copy fails, rather than inferred to be universally valid. The
-physical handset's unique instance, successful staging/install, and
-launch/runtime acceptance have **not** yet been observed. Do not
-classify this as a ChordReader build failure or a completed installation.
+the copy fails, rather than inferred to be universally valid. **Follow-up user report (2026-10-24):** the exact proposed
+`rish -c 'cp ... /data/local/tmp/ && chmod 644 ... && pm install -r ...'`
+command succeeded on the user's physical MIRO C67, and the ChordReader
+development program launches and shows its UI. Record this as **user-reported
+physical installation PASS and launch PASS** for the C67 candidate, not
+independent collection of device receipts or verified on-device APK digest.
+Search behavior was also exercised: the program hands its search to an
+external browser (reported DDG), not IB/ICU. This is a product integration
+requirement, not an APK installation failure. The handset's unique instance
+identifier, signer/installed-byte readback, and full feature/runtime acceptance
+remain **NOT_VERIFIED**. Never upgrade these reports to broader acceptance.
 
 ## Acceptance boundary
 
