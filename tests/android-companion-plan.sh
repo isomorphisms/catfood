@@ -18,6 +18,8 @@ EOF
 sh "$root/android/plan-build.sh" "$contract" phone "$ref" > "$tmp/a1.tsv"
 sh "$root/android/plan-build.sh" "$contract" phone "$ref" > "$tmp/replay.tsv"
 cmp "$tmp/a1.tsv" "$tmp/replay.tsv"
+grep -Fx 'artifact_kind	device-specific' "$tmp/a1.tsv"
+grep -Fx 'packaging	split' "$tmp/a1.tsv"
 grep -Fx 'launcher_label	zero & infinity' "$tmp/a1.tsv"
 grep -Fx 'phone	MIRO_A1	armeabi-v7a	required	not_run' "$tmp/a1.tsv"
 grep -Fx 'c67	MIRO_C67	arm64-v8a	required	not_run' "$tmp/a1.tsv"
@@ -26,6 +28,18 @@ grep -Fx 'c67	MIRO_C67	arm64-v8a	required	not_run' "$tmp/c67.tsv"
 if grep -q '^phone	' "$tmp/c67.tsv"; then
     echo 'reverse A1 obligation invented for C67-only request' >&2; exit 1
 fi
+grep -Fx 'packaging	split' "$tmp/c67.tsv"
+sh "$root/catfood" plan-android-build "$contract" c67 "$ref" > "$tmp/cli.tsv"
+cmp "$tmp/c67.tsv" "$tmp/cli.tsv"
+sh "$root/catfood" plan-android-build "$contract" c67 "$ref" universal > "$tmp/universal.tsv"
+grep -Fx 'artifact_kind	universal' "$tmp/universal.tsv"
+grep -Fx 'packaging	shared' "$tmp/universal.tsv"
+grep -Fx 'phone	MIRO_A1	armeabi-v7a	required	not_run' "$tmp/universal.tsv"
+grep -Fx 'c67	MIRO_C67	arm64-v8a	required	not_run' "$tmp/universal.tsv"
+if sh "$root/catfood" plan-android-build "$contract" c67 "$ref" automatic >"$tmp/out" 2>"$tmp/err"; then
+    echo 'unknown artifact kind accepted' >&2; exit 1
+fi
+grep -F 'artifact kind must be device-specific or universal' "$tmp/err"
 sed 's/^arm64-v8a	supported$/arm64-v8a	incompatible/' "$contract" > "$tmp/incompatible.tsv"
 sh "$root/android/plan-build.sh" "$tmp/incompatible.tsv" phone "$ref" > "$tmp/inc.tsv"
 grep -Fx 'c67	MIRO_C67	arm64-v8a	incompatible	not_run' "$tmp/inc.tsv"

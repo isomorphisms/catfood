@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-9f0867f32bf6-phone
+repository	isomorphisms/catfood
+branch	repair/device-scoped-apk-146
+pr	148
+trigger_commit	9f0867f32bf6b4393950369349112898728bc87c
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	phone
+follower_arch	armv7
+required	yes
+action	Fetch exact Cat Food source 9f0867f32bf6b4393950369349112898728bc87c; qualify the named target through its maintained acceptance action after permitted runtime admission. Planning fixtures do not accept this follower.
+acceptance_kind	physical-device
+acceptance_action	./catfood && sh android/check.sh gaps phone
+state	blocked
+last_attempt_commit	-
+blocker	Permitted Grease closure and integrated producer/artifact acceptance remain unavailable; this target was not accepted.
+evidence	-
+depends_on	-
+reason	Shared CLI and Android planning change; Cat Food #146, FP #234 and AI-CI #304 retain end-to-end delivery requirements.
+superseded_by	-
+follow_policy	exact

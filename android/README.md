@@ -61,5 +61,19 @@ The current target/delivery branch carries the exact PowerVR and Reddit packages
 Maintained applications normally produce paired A1+C67 builds using
 `application-targets.tsv`, with A1 primary. `conversation-targets.tsv` retains
 program-specific build details and is mechanically checked against that policy.
+The build planner defaults named-device requests to `artifact_kind=device-specific`
+and `packaging=split`, even if the application contract prefers a shared APK.
+Each required row specifies its own ABI: A1 gets `armeabi-v7a`, C67 gets
+`arm64-v8a`. A C67-only request does not create an A1 obligation. The optional
+final `universal` argument to `plan-android-build` explicitly selects shared
+packaging and all supported maintained application targets. It does not add
+emulator architectures to the maintained target matrix.
+
+This is a planning boundary. Finished signed APK inspection, source/signature
+provenance, producer propagation, and direct delivery remain separately required
+under Cat Food #146, Flexible Pipes #234, and AI-CI #304. A plan is not an APK
+or an accepted delivery receipt. The independent companion verifier must replay
+the explicit artifact kind before universal plans can be admitted; the previous
+three-argument replay intentionally cannot accept the new universal plan.
 Old v1 receipts remain historical; reinstall to produce current v2 installation
 evidence. No launch/runtime/physical result is carried forward implicitly.
