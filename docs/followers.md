@@ -12,7 +12,15 @@ Git integration can create a different commit identity for source state that alr
 
 Resolution is deliberately fail-closed. No matching exact trigger stays red. More than one matching trigger stays red. A merge or later commit that changes any non-control source file stays red. The resolver therefore does not manufacture a receipt or claim that the integration commit itself ran on a follower; it identifies the exact source commit whose already-declared follower work describes the same product state.
 
-`followers/targets.tsv` is the concrete maintained target registry. `termux-generic` remains a compatibility selector rather than a concrete independently accepted machine. If it becomes a maintained concrete environment, give it a real acceptance action and promote it in the registry rather than treating generic Termux selection as proof.
+`followers/targets.tsv` is the concrete maintained target registry. Its first
+seven columns preserve the original target contract. The host-scope columns add
+the exact OS, release, ABI, libc, runtime, CPU, maintenance status, and required
+host-cell identifiers. `observed-at-run` means that a live receipt must supply a
+nonempty value; `unknown-current` stays unresolved and can never support an
+accepted cell. `termux-generic` remains a compatibility selector rather than a
+concrete independently accepted machine. If it becomes a maintained concrete
+environment, give it a real acceptance action and promote it in the registry
+rather than treating generic Termux selection as proof.
 
 `followers/impact-rules.tsv` maps changed paths to affected targets. Rules are first-match and conservative:
 
@@ -30,6 +38,51 @@ Jobs live under `followers/jobs/`; receipts live under `followers/receipts/`. Th
 
 A job carries the exact trigger commit, leader, follower, architecture, required action, acceptance kind, artifact identity/hash where applicable, state, blocker, evidence, dependencies, and supersession. A passing receipt must match the exact source/follower/acceptance/artifact identity before a job can become `accepted`.
 
+For non-Android targets, `record` and `reconcile` also invoke the host-cell
+reader. A canonical AICI v1 receipt remains unchanged; a separate
+`catfood-host-receipt-v1` sidecar under `followers/host-receipts/` carries the
+additional scope. The sidecar must name its target; observed OS, release, architecture,
+ABI, libc, runtime, and CPU; account, hostname, and storage identity; exact
+source revision; evidence and observation kinds; qualification state; artifact
+identity and digest; and artifact availability. A GitHub runner receipt therefore
+cannot satisfy Hetzner, a NetBSD 11 run cannot satisfy the SDF NetBSD 9.3 cell,
+and a different runtime or CPU identity cannot be silently reused. Evidence for
+an artifact-free job records `not-applicable`; artifact evidence records either
+`permanent` or a normalized future UTC expiry. Expiry is an acquisition
+prerequisite at reconciliation time, not a permanent publication claim.
+Normalized availability timestamps use four-digit Gregorian years, real
+calendar dates, UTC Z, and seconds 00 through 59. The metadata reader validates
+the calendar and the comparison clock before ordering timestamps; a future-
+looking malformed string cannot establish acquisition availability.
+
+`followers/host-cells.tsv` is the durable cross-project denominator. Its columns
+are `cell_id`, `target`, `required`, `component`, `implementation`, `host_os`,
+`host_release`, `architecture`, `abi`, `libc`, `runtime`, `cpu`,
+`source_repository`, `source_revision`, `artifact`, `artifact_sha256`,
+`availability`, `evidence_kind`, `eligibility`, `disposition`, and
+`evidence_ref`. Required cell IDs are also named by the target registry, so
+deleting a maintained cell fails reconciliation rather than shrinking the
+matrix. `host-matrix [TRIGGER]` renders these retained records plus exact
+follower jobs for the trigger in this same stable 21-column form.
+
+The retained SDF records deliberately separate four claims:
+
+- ICKY/GDC compiler-runtime qualification is blocked at exact source
+  `22b41425cb478754346637db87ebd42e43b42863`;
+- the YSH D work at `c5c71c4c8f89e37b22b1d4b19271e75eb913a129`
+  is only a partial translation;
+- usable complete Grease remains missing at
+  `a4afd4eb2bd5f872ca050d62d433d1056e73946e`;
+- the preserved `greasecpp` NetBSD artifact is historical and ineligible under
+  the current no-C++ correction, even though its archive and SHA-256 remain
+  inspectable.
+
+The Void cell is conditional and unresolved. Its retired branch record points
+to the successor issue but does not invent current OS, ABI, libc, runtime, CPU,
+or artifact requirements. Neither historical SDF observations nor incomplete
+hosted probes authorize install, activation, Android acceptance, or a current
+usable Grease claim.
+
 Build, runtime, artifact, physical-device, and publication acceptance are separate evidence kinds. `unsupported`, `blocked`, and `not run` are not green. Conditional `n/a` requires an explicit reason.
 
 For architecture-specific Cat Food artifacts, record the artifact name and SHA-256 in the follower job. A receipt for a different artifact cannot satisfy it. All physical Android targets are runtime-only consumers in the normal Cat Food path: missing ARMv7 or AArch64 output stays explicit rather than turning either device into a source build farm. Android delivery gaps do not authorize unrelated experimental compiler/backend gates, and Android capacity does not substitute for x86, Hetzner, or GitHub acceptance.
@@ -46,7 +99,10 @@ AICI_FOLLOWERS=/path/to/aici-followers sh followers/manage.sh \
 AICI_FOLLOWERS=/path/to/aici-followers sh followers/manage.sh reconcile <source-commit>
 AICI_FOLLOWERS=/path/to/aici-followers sh followers/manage.sh pending <source-commit>
 AICI_FOLLOWERS=/path/to/aici-followers sh followers/manage.sh matrix <source-commit>
-AICI_FOLLOWERS=/path/to/aici-followers sh followers/manage.sh record <job-id> <receipt-file>
+sh followers/manage.sh host-matrix [source-commit]
+AICI_FOLLOWERS=/path/to/aici-followers sh followers/manage.sh host-reconcile <source-commit>
+AICI_FOLLOWERS=/path/to/aici-followers sh followers/manage.sh \
+  record <job-id> <receipt-file> [host-receipt-file]
 sh followers/manage.sh block <job-id> '<reason>' [last-attempt-commit]
 sh followers/stale.sh
 ```
@@ -76,7 +132,9 @@ Use `pending` without a trigger to see all retained debt. In `blockers`,
 `current_trigger` is the exact obligation still current for that row's target;
 it can remain older than the latest repository source commit.
 
-`reconcile` resolves integration commits and checks inferred jobs and targets.
+`reconcile` resolves integration commits and checks inferred jobs, targets, the
+static host denominator, and accepted host receipts through the same real
+consumer path. `host-reconcile` exposes that host-specific check directly.
 `stale.sh` fails when affected ancestor work lacks explicit supersession.
 Unchanged-target debt remains pending; neither a branch move nor a CI pass
 erases it.

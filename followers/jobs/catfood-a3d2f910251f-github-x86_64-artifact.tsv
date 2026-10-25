@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-a3d2f910251f-github-x86_64-artifact
+repository	isomorphisms/catfood
+branch	amazon-jobs-idric-registry-20261014
+pr	139
+trigger_commit	a3d2f910251fcfa534f13aba8a9f49776e7af548
+leader_platform	github-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64-artifact
+follower_arch	x86_64
+required	yes
+action	Validate the exact Android artifact contract for Cat Food source a3d2f910251fcfa534f13aba8a9f49776e7af548 under the current host-scope policy; record exact artifact identity, digest, metadata, extraction, and install evidence.
+acceptance_kind	artifact
+acceptance_action	validate exact published artifact identity, hash, metadata, extraction, and install contract
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	host-scope-policy
+superseded_by	-
+follow_policy	exact
