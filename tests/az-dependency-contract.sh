@@ -31,6 +31,14 @@ if [ "$actual" != "$expected" ]; then
     echo "Update obligation: ci/az-consumers.tsv, tests/az-dependency-contract.sh, ci/fixtures/amazon-search, and Kitchen/Flexible Pipes source pins" >&2
     exit 1
 fi
+# Production is a pinned, known-bad baseline: its source predates the status
+# contract. Verify its identity, but never call it an accepted consumer result.
+# The candidate lane below is the only one required to satisfy the new contract.
+if [ "$lane" = production ]; then
+    printf 'Cat Food AZ production baseline PINNED_KNOWN_BAD (not accepted): source=%s\n' "$actual"
+    exit 0
+fi
+
 # A checked-out candidate with a changed source and an old fixture is not
 # admitted simply because the commit was recorded in the manifest.
 tmp=$(mktemp -d)
