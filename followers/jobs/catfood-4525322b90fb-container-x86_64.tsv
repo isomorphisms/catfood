@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-4525322b90fb-container-x86_64
+repository	isomorphisms/catfood
+branch	recovery/tabp10-hardware-storage
+pr	156
+trigger_commit	4525322b90fbe81c415581233e4bfd2d26acfb1d
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	container-x86_64
+follower_arch	x86_64
+required	yes
+action	leader target for Cat Food commit 4525322b90fbe81c415581233e4bfd2d26acfb1d on container-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh container
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	-
+follow_policy	exact
