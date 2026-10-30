@@ -1,2 +1,2 @@
 # tool	canonical_repository	production_branch	production_sha	candidate_branch	candidate_sha	consumer_contract
-az	Ashtray-Archer/az	main	249c02b5669c1f6c9682fa5848b1b946e147a7ce	sun/amazon-shopping-260-20261030	3afd067ce918ec33ff1fb6faa45ad3bdc2341661	tests/az-dependency-contract.sh
+az	Ashtray-Archer/az	main	249c02b5669c1f6c9682fa5848b1b946e147a7ce	sun/amazon-shopping-260-20261030	55dd2bdf1a4c90716e237ea242533b04a84d8a11	tests/az-dependency-contract.sh
