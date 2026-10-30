@@ -1,0 +1,41 @@
+name: AZ upstream consumer contract
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "23 13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  amazon-az:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      # Production reads the moving branch, not a fixed checkout SHA:
+      # the manifest test rejects a dependency change until reviewed.
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: Ashtray-Archer/az
+          ref: main
+          path: _az/production
+          persist-credentials: false
+      # Candidate is explicitly not Cat Food's released/default dependency.
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: Ashtray-Archer/az
+          ref: 3afd067ce918ec33ff1fb6faa45ad3bdc2341661
+          path: _az/candidate
+          persist-credentials: false
+      - name: Verify manifest and both AZ consumer contracts
+        run: |
+          dash -n tests/az-dependency-contract.sh
+          sh tests/az-dependency-contract.sh production _az/production
+          sh tests/az-dependency-contract.sh candidate _az/candidate
