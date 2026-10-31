@@ -22,13 +22,17 @@ awk -F '\t' '
             ($1 == "c67" && $2 == "MIRO_C67" && $3 == "arm64-v8a" && $4 == "paired")) {
             abi[$2]=$3; priority[$2]=$4; count++; next
         }
+        # Tablet is a separate active build target, not a conversation phone.
+        if ($1 == "tablet" && $2 == "TAB_P10" && $3 == "arm64-v8a" && $4 == "active") {
+            count++; next
+        }
         exit 1
     }
     FILENAME == ARGV[2] {
         if (NF != 7 || !($1 in abi) || abi[$1] != $2 || priority[$1] != $5 || conversation[$1]++) exit 1
         conversations++
     }
-    END {if (count != 2 || conversations != 2) exit 1}
+    END {if (count != 3 || conversations != 2) exit 1}
 ' "$root/android/application-targets.tsv" "$root/android/conversation-targets.tsv" || {
     printf '%s\n' 'A1-primary/C67-paired producer policy mismatch' >&2
     exit 1
