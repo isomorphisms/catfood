@@ -54,8 +54,20 @@ sed 's/^packaging	shared$/packaging	gradle/' "$contract" > "$tmp/bad-shape.tsv"
 reject 'packaging must be shared or split' "$tmp/bad-shape.tsv"
 sed 's/^arm64-v8a	supported$/arm64-v8a	PASS/' "$contract" > "$tmp/forged.tsv"
 reject 'invalid arm64-v8a support decision' "$tmp/forged.tsv"
-if sh "$root/android/plan-build.sh" "$contract" tablet "$ref" >/dev/null 2>&1; then
-    echo 'tablet was silently used as a C67 request' >&2; exit 1
+# TAB_P10 has its own target row and must not inherit C67 acceptance.
+sh "$root/android/plan-build.sh" "$contract" tablet "$ref" > "$tmp/tablet.tsv"
+grep -Fx 'requested_target	tablet' "$tmp/tablet.tsv"
+grep -Fx 'tablet	TAB_P10	arm64-v8a	required	not_run' "$tmp/tablet.tsv"
+grep -Fx "source_sha	$ref" "$tmp/tablet.tsv"
+if awk -F '\t' '$1=="phone" || $1=="c67" { found=1 } END {exit !found}' "$tmp/tablet.tsv"; then
+    echo 'tablet plan incorrectly included phone obligations' >&2; exit 1
+fi
+sh "$root/android/plan-build.sh" "$tmp/incompatible.tsv" tablet "$ref" > "$tmp/tablet-incompatible.tsv"
+grep -Fx 'tablet	TAB_P10	arm64-v8a	blocked	not_run' "$tmp/tablet-incompatible.tsv"
+sh "$root/android/plan-build.sh" "$tmp/unknown.tsv" tablet "$ref" > "$tmp/tablet-unknown.tsv"
+grep -Fx 'tablet	TAB_P10	arm64-v8a	blocked	not_run' "$tmp/tablet-unknown.tsv"
+if sh "$root/android/plan-build.sh" "$contract" unobserved "$ref" >/dev/null 2>&1; then
+    echo 'unknown device request was admitted' >&2; exit 1
 fi
 if sh "$root/android/plan-build.sh" "$contract" phone main >/dev/null 2>&1; then
     echo 'moving application ref was accepted' >&2; exit 1

@@ -1,4 +1,5 @@
 # repository	package_id	approved_default_launcher_label
 isomorphismes/wegert	org.isomorphisms.wegert	zero & infinity
+isomorphisms/fastchat	org.isomorphisms.fastchat.diskstreaming.arena	FastChat live disk
 isomorphisms/billiard	org.isomorphisms.billiard	Billiard
 isomorphisms/rough.framebuffer	org.isomorphisms.roughframebuffer	Rough Mathematical Art

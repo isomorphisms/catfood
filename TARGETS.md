@@ -75,8 +75,10 @@ not a requirement inferred from either phone's observed Android release.
 Flexible Pipes owns execution of paired producer jobs. This matrix is not a
 publication receipt or physical acceptance.
 
-The candidate read-only operation `./catfood plan-android-build CONTRACT phone|c67
-EXACT_SOURCE_SHA` resolves A1/C67 obligations against this matrix. It retains
+The candidate read-only operation `./catfood plan-android-build CONTRACT phone|c67|tablet
+EXACT_SOURCE_SHA` resolves A1/C67 obligations and a separate TAB_P10-only
+obligation against this matrix. The independent tablet request keeps
+`acceptance=not_run` regardless of ABI support. It retains
 required, incompatible and unresolved companion cells without claiming that a
 build ran. See `docs/android-companion-builds.md`. Its output must be checked
 and bound by the shared AICI/Flexible Pipes producer before publication.
