@@ -6,11 +6,12 @@ permissions:
 jobs:
   acceptance:
     runs-on: ubuntu-24.04
-    timeout-minutes: 8
+    timeout-minutes: 120
     steps:
-      - uses: isomorphisms/ai-ci/transfer-handoff@786937a9cd5499a21bef87f9358226b5e7a62ef8
+      # Reference-only YSH oracle; this does not accept production Grease or tablet execution.
+      - uses: isomorphisms/ai-ci/transfer-handoff@b9a2c72251efe383e02c986684fed68edc774d7e
         with:
           catfood_ref: ${{ github.event.pull_request.head.sha || github.sha }}
           kitchen_ref: 32c3bf2d7c6268b50f1e48395dc972cfbafec7a9
           fp_ref: 146408ab64fe52c62edaa414126cae5ec952b3ca
-          aici_ref: 786937a9cd5499a21bef87f9358226b5e7a62ef8
+          aici_ref: b9a2c72251efe383e02c986684fed68edc774d7e
