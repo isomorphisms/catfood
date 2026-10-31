@@ -8,6 +8,7 @@ state_home=${XDG_STATE_HOME:-"$HOME/.local/state"}
 device_state=${CATFOOD_DEVICE_STATE:-"$state_home/catfood/device"}
 manager_state=${CATFOOD_MANAGER_STATE:-"$state_home/catfood/manager"}
 . "$root/android/target.sh"
+. "$root/android/inspect-hardware.sh"
 tab=$(printf '\t')
 
 usage() {
@@ -55,9 +56,7 @@ hash_file() {
 }
 
 prop() {
-    if command -v getprop >/dev/null 2>&1; then
-        getprop "$1" 2>/dev/null | tr -d '\r' | head -n 1
-    fi
+    catfood_android_getprop "$1" 2>/dev/null | tr -d '\r' | head -n 1
 }
 
 detect_target() {
@@ -128,44 +127,66 @@ validate_inventory() {
 
 inspect_device() {
     target=$(detect_target)
+    case $target in
+        phone|c67|tablet) catfood_android_require_device "$target" ;;
+        termux)
+            [ -n "$(prop ro.product.model)$(prop ro.product.device)" ] &&
+            [ -n "$(prop ro.product.cpu.abi)" ] || {
+                printf '%s\n' 'Inventory requires observed Android device identity and primary ABI' >&2
+                return 2
+            }
+            ;;
+        *) return 2 ;;
+    esac
     id=$(device_id)
     observed_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
     stamp=$(printf '%s' "$observed_at" | tr ':+' '--')
     abi=${CATFOOD_DEVICE_ABI:-}
     [ -n "$abi" ] || abi=$(prop ro.product.cpu.abi)
 
+    umask 077
     mkdir -p "$device_state/inspections"
-    inventory=$device_state/.inventory.$$
-    android_packages=$device_state/.android-packages.$$
-    termux_packages=$device_state/.termux-packages.$$
+    inspection_tmp=$(mktemp -d "$device_state/.inspection.XXXXXX")
+    inventory=$inspection_tmp/inventory.tsv
+    android_packages=$inspection_tmp/android-packages.tsv
+    termux_packages=$inspection_tmp/termux-packages.tsv
     : > "$android_packages"
     : > "$termux_packages"
-    trap 'rm -f "$inventory" "$android_packages" "$termux_packages"' EXIT HUP INT TERM
+    trap 'rm -rf "$inspection_tmp"' EXIT HUP INT TERM
 
     android_packages_evidence=unavailable
     android_packages_sha256=-
     if command -v pm >/dev/null 2>&1; then
-        pm list packages -3 2>/dev/null |
-        sed -n 's/^package://p' |
-        LC_ALL=C sort -u > "$android_packages"
-        android_packages_evidence=pm-user
-        if android_packages_sha256=$(hash_file "$android_packages"); then
-            android_packages_evidence=pm-user+sha256
+        if command -v timeout >/dev/null 2>&1 &&
+           timeout 8 pm list packages -3 > "$inspection_tmp/pm.out" 2> "$inspection_tmp/pm.err" &&
+           ! grep -Eiq 'permission denial|permission denied' "$inspection_tmp/pm.out" "$inspection_tmp/pm.err" &&
+           awk 'NF && $0 !~ /^package:[[:alnum:]_.]+\r?$/ {bad=1} END {exit bad}' "$inspection_tmp/pm.out"; then
+            sed -n 's/^package://p' "$inspection_tmp/pm.out" | LC_ALL=C sort -u > "$android_packages"
+            android_packages_evidence=pm-user
+            if android_packages_sha256=$(hash_file "$android_packages"); then
+                android_packages_evidence=pm-user+sha256
+            else
+                android_packages_sha256=-
+            fi
         else
-            android_packages_sha256=-
+            android_packages_evidence=pm-failed
         fi
     fi
 
     termux_packages_evidence=unavailable
     termux_packages_sha256=-
     if command -v dpkg-query >/dev/null 2>&1; then
-        dpkg-query -W -f='${Package}\t${Version}\n' 2>/dev/null |
-        LC_ALL=C sort -u > "$termux_packages"
-        termux_packages_evidence=dpkg-query
-        if termux_packages_sha256=$(hash_file "$termux_packages"); then
-            termux_packages_evidence=dpkg-query+sha256
+        if command -v timeout >/dev/null 2>&1 &&
+           timeout 8 dpkg-query -W -f='${Package}\t${Version}\n' > "$inspection_tmp/dpkg.out" 2> "$inspection_tmp/dpkg.err"; then
+            LC_ALL=C sort -u "$inspection_tmp/dpkg.out" > "$termux_packages"
+            termux_packages_evidence=dpkg-query
+            if termux_packages_sha256=$(hash_file "$termux_packages"); then
+                termux_packages_evidence=dpkg-query+sha256
+            else
+                termux_packages_sha256=-
+            fi
         else
-            termux_packages_sha256=-
+            termux_packages_evidence=dpkg-query-failed
         fi
     fi
 
@@ -186,6 +207,8 @@ inspect_device() {
         row meta abi "$abi" getprop
         row meta android_packages_sha256 "$android_packages_sha256" "$android_packages_evidence"
         row meta termux_packages_sha256 "$termux_packages_sha256" "$termux_packages_evidence"
+
+        catfood_inspect_hardware "$inspection_tmp"
 
         for receipt in "$workspace/receipts/$target-"*.tsv; do
             [ -f "$receipt" ] || continue
@@ -223,10 +246,11 @@ inspect_device() {
     } > "$inventory"
 
     validate_inventory "$inventory"
-    cp "$inventory" "$device_state/inventory.tsv"
-    cp "$inventory" "$device_state/inspections/$stamp.tsv"
-    cat "$inventory"
-    rm -f "$inventory" "$android_packages" "$termux_packages"
+    history=$(mktemp "$device_state/inspections/$stamp.XXXXXX.tsv")
+    cp "$inventory" "$history"
+    mv "$inventory" "$device_state/inventory.tsv"
+    cat "$history"
+    rm -rf "$inspection_tmp"
     trap - EXIT HUP INT TERM
 }
 
