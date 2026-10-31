@@ -3,12 +3,12 @@
 set -eu
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 fail() { printf 'catfood Android plan: %s\n' "$*" >&2; exit 2; }
-[ "$#" -eq 3 ] || fail 'usage: plan-build.sh APPLICATION_CONTRACT phone|c67 SOURCE_SHA'
+[ "$#" -eq 3 ] || fail 'usage: plan-build.sh APPLICATION_CONTRACT phone|c67|tablet SOURCE_SHA'
 contract=$1
 requested=$2
 source_sha=$3
 [ -f "$contract" ] || fail "missing application contract: $contract"
-case "$requested" in phone|c67) ;; *) fail "unknown requested target: $requested" ;; esac
+case "$requested" in phone|c67|tablet) ;; *) fail "unknown requested target: $requested" ;; esac
 printf '%s\n' "$source_sha" | grep -Eq '^[0123456789abcdef]{40}$' ||
     fail 'source SHA must be an exact lowercase 40-character commit'
 command -v sha256sum >/dev/null 2>&1 || fail 'sha256sum is required'
@@ -74,7 +74,9 @@ awk -F '\t' '
     seen[$1]++ {exit 2}
     $1=="phone" && !($2=="MIRO_A1" && $3=="armeabi-v7a" && $4=="primary") {exit 2}
     $1=="c67" && !($2=="MIRO_C67" && $3=="arm64-v8a" && $4=="paired") {exit 2}
-    END {if (seen["phone"]!=1 || seen["c67"]!=1) exit 2}
+    $1=="tablet" && !($2=="TAB_P10" && $3=="arm64-v8a" && $4=="active") {exit 2}
+    $1!="phone" && $1!="c67" && $1!="tablet" {exit 2}
+    END {if (seen["phone"]!=1 || seen["c67"]!=1 || seen["tablet"]!=1) exit 2}
 ' "$matrix" || fail 'invalid Cat Food Android target matrix'
 contract_sha=$(sha256sum "$contract" | awk '{print $1}')
 matrix_sha=$(sha256sum "$matrix" | awk '{print $1}')
@@ -92,8 +94,12 @@ printf 'min_sdk\t%s\n' "$min_sdk"
 printf 'packaging\t%s\n' "$packaging"
 printf 'requested_target\t%s\n' "$requested"
 printf 'target\tdevice\tabi\tobligation\tacceptance\n'
-for target in phone c67; do
-    if [ "$requested" = c67 ] && [ "$target" = phone ]; then continue; fi
+# Tablet is an independently requested physical target sharing the ARM64
+# *build* lane, never an alias for C67 installation or acceptance.
+for target in phone c67 tablet; do
+    case "$requested:$target" in
+        phone:tablet|c67:phone|c67:tablet|tablet:phone|tablet:c67) continue ;;
+    esac
     row=$(awk -F '\t' -v t="$target" '$1==t {print $2 "\t" $3}' "$matrix")
     abi=$(printf '%s\n' "$row" | cut -f2)
     status=$(field "$abi")
