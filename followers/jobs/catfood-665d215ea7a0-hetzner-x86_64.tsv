@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-665d215ea7a0-hetzner-x86_64
+repository	isomorphisms/catfood
+branch	sun/amazon-shopping-260-20261030
+pr	155
+trigger_commit	665d215ea7a05949fa7397d8dfb653004fe620cb
+leader_platform	github-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	hetzner-x86_64
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit 665d215ea7a05949fa7397d8dfb653004fe620cb on hetzner-x86_64; fetch exact source and execute the acceptance action before claiming acceptance.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh cloud
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	AZ source and contract changes; exact-source Hetzner workbench acceptance
+superseded_by	-
+follow_policy	exact
