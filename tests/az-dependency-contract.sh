@@ -92,4 +92,54 @@ grep -Fx "$(printf 'status\tCHALLENGE')" "$AZ_SEARCH_STATUS_FILE" >/dev/null ||
 link=$(bash "$checkout/bin/az" link B000CCFXYY)
 [ "$link" = 'https://www.amazon.com/dp/B000CCFXYY?tag=macguyver03-20' ] ||
     { echo "AZ search contract drift: affiliate-link contract changed" >&2; exit 1; }
-printf 'Cat Food AZ %s contract fixture PASS: source=%s (Bash simulation, not live)\n' "$lane" "$actual"
+# A candidate that passes the host fixture still needs the exact Android
+# runtime package bytes for both ABI lanes. C67 consumes the arm64-v8a lane,
+# but has independent device acceptance.
+actual_digest=$(sha256sum "$checkout/bin/az" | awk '{print $1}')
+verify_android_pins() {
+    awk -F '\t' -v rev="$expected" -v digest="$actual_digest" '
+    $1 == "az-phone" || $1 == "az-tablet" {
+        target=$1
+        abi=(target == "az-phone" ? "armeabi-v7a" : "arm64-v8a")
+        dep=(target == "az-phone" ? "grease-phone" : "grease-tablet")
+        url="https://raw.githubusercontent.com/Ashtray-Archer/az/" rev "/bin/az"
+        if (++seen[target] != 1 || NF != 18 ||
+            $2 != abi || $3 != abi || $4 != "file" ||
+            $5 != "Ashtray-Archer/az" ||
+            $6 != rev || $7 != rev || $8 != url ||
+            $9 != digest || $10 != "az" || $11 != "bin/az" ||
+            $18 != dep) {
+            print "AZ Android package drift: " target " is not bound to the accepted source bytes" > "/dev/stderr"
+            invalid=1
+        }
+        found++
+    }
+    END {
+        if (found != 2 || seen["az-phone"] != 1 || seen["az-tablet"] != 1) {
+            print "AZ Android package drift: exactly one package per ABI lane required" > "/dev/stderr"
+            invalid=1
+        }
+        if (invalid) exit 1
+    }' "$1"
+}
+verify_android_pins "$root/android/packages.tsv" || exit 1
+sh "$root/android/check.sh" check >/dev/null
+
+# Reject a plausible-looking package that retains a valid 64-hex digest
+# but no longer matches the actual approved AZ source bytes.
+awk -F '\t' 'BEGIN {OFS="\t"} $1 == "az-phone" {$9="0000000000000000000000000000000000000000000000000000000000000000"} {print}' \
+    "$root/android/packages.tsv" > "$tmp/digest-mutant.tsv"
+if verify_android_pins "$tmp/digest-mutant.tsv" >/dev/null 2>&1; then
+    echo "AZ Android package drift: altered SHA-256 was admitted" >&2
+    exit 1
+fi
+# A transferred or unrelated source URL is not equivalent to canonical,
+# revision-pinned publication provenance.
+awk -F '\t' 'BEGIN {OFS="\t"} $1 == "az-tablet" {$8="https://raw.githubusercontent.com/isomorphisms/az/" $6 "/bin/az"} {print}' \
+    "$root/android/packages.tsv" > "$tmp/origin-mutant.tsv"
+if verify_android_pins "$tmp/origin-mutant.tsv" >/dev/null 2>&1; then
+    echo "AZ Android package drift: noncanonical package URL was admitted" >&2
+    exit 1
+fi
+
+printf 'Cat Food AZ %s contract fixture PASS: source=%s sha256=%s (Bash simulation, not physical Android)\n' "$lane" "$actual" "$actual_digest"
