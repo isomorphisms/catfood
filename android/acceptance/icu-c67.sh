@@ -31,6 +31,10 @@ printf 'target\tc67\nmodel\t%s\nproduct\t%s\nabi\t%s\nsdk\t%s\n' \
     "$(catfood_android_getprop ro.product.cpu.abi)" \
     "$(catfood_android_getprop ro.build.version.sdk)" > "$evidence/device.tsv"
 pass device_identity "$evidence/device.tsv"
+[ "$(catfood_android_getprop ro.build.version.sdk)" = 34 ] || {
+    blocked android_api 'Expected Android API 34 on the MIRO C67'
+    exit 3
+}
 
 sh "$root/android/check.sh" check > "$evidence/manifest.log" 2>&1 || {
     fail manifest "$evidence/manifest.log"
@@ -104,8 +108,8 @@ case_run() {
         failed=1
     elif [ "$expected" = ok ] && [ "$code" -eq 0 ]; then
         pass "$name" "$output"
-    elif [ "$expected" = reject ] && [ "$code" -ne 0 ]; then
-        pass "$name" "$diagnostic (exit $code)"
+    elif [ "$expected" = http500 ] && [ "$code" -eq 10 ]; then
+        pass "$name" "$diagnostic (HTTP failure exit $code)"
     else
         fail "$name" "exit $code (expected $expected); $diagnostic"
         failed=1
@@ -180,17 +184,22 @@ PY
     else
         base="http://127.0.0.1:$(cat "$portfile")"
         case_run http_get ok get "$base/get"
-        [ "$(cat "$evidence/http_get.body")" = 'hello ICU' ] || { fail http_bytes 'wrong GET bytes'; failed=1; }
+        if [ "$(cat "$evidence/http_get.body")" = 'hello ICU' ]; then pass http_bytes 'exact GET bytes';
+        else fail http_bytes 'wrong GET bytes'; failed=1; fi
         case_run http_redirect ok get "$base/redirect"
-        [ "$(cat "$evidence/http_redirect.body")" = 'hello ICU' ] || { fail redirect_bytes 'wrong redirected bytes'; failed=1; }
+        if [ "$(cat "$evidence/http_redirect.body")" = 'hello ICU' ]; then pass redirect_bytes 'exact redirected bytes';
+        else fail redirect_bytes 'wrong redirected bytes'; failed=1; fi
         case_run http_chunked ok get "$base/chunked"
-        [ "$(cat "$evidence/http_chunked.body")" = 'hello' ] || { fail chunked_bytes 'wrong decoded bytes'; failed=1; }
+        if [ "$(cat "$evidence/http_chunked.body")" = 'hello' ]; then pass chunked_bytes 'exact decoded bytes';
+        else fail chunked_bytes 'wrong decoded bytes'; failed=1; fi
         case_run http_post_utf8 ok post "$base/echo" 'café π'
-        [ "$(cat "$evidence/http_post_utf8.body")" = 'café π' ] || { fail post_bytes 'wrong UTF-8 response'; failed=1; }
+        if [ "$(cat "$evidence/http_post_utf8.body")" = 'café π' ]; then pass post_bytes 'exact UTF-8 response';
+        else fail post_bytes 'wrong UTF-8 response'; failed=1; fi
         case_run http_binary ok get "$base/binary"
         binary_hex=$(od -An -t x1 "$evidence/http_binary.body" | tr -d ' \n')
-        [ "$binary_hex" = '000102ff0a0d0080' ] || { fail binary_bytes "unexpected binary hex: $binary_hex"; failed=1; }
-        case_run http_500 reject get "$base/error"
+        if [ "$binary_hex" = '000102ff0a0d0080' ]; then pass binary_bytes 'exact binary octets';
+        else fail binary_bytes "unexpected binary hex: $binary_hex"; failed=1; fi
+        case_run http_500 http500 get "$base/error"
     fi
     kill "$fixture_pid" 2>/dev/null || :
     wait "$fixture_pid" 2>/dev/null || :
