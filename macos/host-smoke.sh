@@ -53,7 +53,7 @@ cat > "$scratch/main.c" <<'EOF_C'
 #include <stdio.h>
 int main(void) {
     if (CFStringGetLength(CFSTR("catfood")) != 7) return 3;
-    printf("catfood-macos=%d\\n", 6 * 7);
+    printf("catfood-macos=%d\n", 6 * 7);
     return 0;
 }
 EOF_C
