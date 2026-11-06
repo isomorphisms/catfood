@@ -45,5 +45,10 @@ if CATFOOD_TARGET=macos-arm64 CATFOOD_ROOT="$workspace" \
     exit 1
 fi
 grep -F 'macOS SDK not available' "$workspace/err" >/dev/null
+grep -Fqx "attempt_status$(printf '\t')NOT_VERIFIED" "$receipt"
+if grep -Fq "native_execution_result$(printf '\t')PASS" "$receipt"; then
+    printf '%s\n' 'stale successful receipt survived a failed SDK rerun' >&2
+    exit 1
+fi
 
 printf '%s\n' 'macOS ARM64 native compiler/framework/runtime smoke PASS'
