@@ -16,7 +16,6 @@ case $target in hetzner) target=cloud ;; esac
 case $target in
     phone|c67|tablet) catfood_android_require_device "$target" ;;
     cloud|container) catfood_verify_workbench_target ;;
-    macos-arm64) catfood_verify_macos_target ;;
     termux) printf "%s\n" "Generic Termux has no verified device profile; no provisioning performed" >&2; exit 2 ;;
     macos-arm64)
         # Never enter the Linux/Termux acquisition or compiler build path.
