@@ -1,0 +1,68 @@
+section	key	value	evidence	notes
+source	collected_utc	2026-10-19T11:45:18Z	report_header	user-supplied capture
+source	byte_count	98809	local_file	original transcript size
+source	sha256	fb580def033f6ed1f006b3d418e9c7ee767386cdaa5d9fe642ce4328742076d6	local_file	full transcript not committed
+os	product	macOS	sw_vers	
+os	version	15.7.9	sw_vers	
+os	build	24G830	sw_vers	
+kernel	version	Darwin 24.6.0	uname	
+process	architecture	arm64	report	
+process	rosetta_translation	0	sysctl	
+identity	machine	MacBook Pro	system_profiler	
+identity	model_identifier	Mac16,8	system_profiler	
+identity	model_number	Z1FF000JMY/A	system_profiler	
+soc	chip	Apple M4 Pro	system_profiler	
+cpu	physical_cores	14	sysctl	
+cpu	logical_cores	14	sysctl	
+cpu	performance_cores	10	sysctl	
+cpu	efficiency_cores	4	sysctl	
+cpu	performance_l1i_bytes	196608	sysctl	per core
+cpu	performance_l1d_bytes	131072	sysctl	per core
+cpu	performance_l2_bytes	16777216	sysctl	shared per 5 performance cores
+cpu	efficiency_l1i_bytes	131072	sysctl	per core
+cpu	efficiency_l1d_bytes	65536	sysctl	per core
+cpu	efficiency_l2_bytes	4194304	sysctl	shared per 4 efficiency cores
+cpu	byteorder	1234	sysctl	little endian
+cpu	page_bytes	16384	sysctl	
+cpu	cacheline_bytes	128	sysctl	
+cpu	feat_fp16	1	sysctl	kernel-reported
+cpu	feat_bf16	1	sysctl	kernel-reported
+cpu	feat_ebf16	0	sysctl	kernel-reported
+cpu	feat_i8mm	1	sysctl	kernel-reported
+cpu	feat_sme	1	sysctl	kernel-reported
+cpu	feat_sme2	1	sysctl	kernel-reported
+cpu	feat_bti	1	sysctl	kernel-reported
+cpu	feat_pauth	1	sysctl	kernel-reported
+cpu	feat_lse2	1	sysctl	kernel-reported
+memory	installed_bytes	51539607552	sysctl	48 GiB
+memory	usable_bytes	50655789056	sysctl	
+gpu	chip	Apple M4 Pro	system_profiler	
+gpu	cores	20	system_profiler	
+gpu	metal_version	Metal 3	system_profiler	reported support
+gpu	iokit_accelerator	AGXAcceleratorG16X	ioreg	
+gpu	driver	com.apple.AGXG16X 329.2	kextstat	
+gpu	metal_direct_probe	compile_failed	probe.swift	Swift type-check failure; not GPU failure
+display	internal_resolution_px	3024x1964	system_profiler	Liquid Retina XDR
+display	external_name	LG HDR 4K	system_profiler	
+display	external_resolution_px	3840x2160	system_profiler	
+display	external_ui_mode	1920x1080@30.00Hz	system_profiler	reported UI scaling
+developer	active_directory	/Library/Developer/CommandLineTools	xcode-select	
+developer	clang	Apple clang 17.0.0	clang --version	
+developer	swift	6.2.1	swift --version	
+developer	macos_sdk	26.1	report	CLT macOS SDK
+developer	xcodebuild	unavailable_with_selected_CLT	xcodebuild	full Xcode installation unknown
+developer	cmake	4.4.3	cmake --version	
+developer	homebrew	7.0.9	brew --version	
+developer	ninja	missing	command -v	capture time
+developer	pkg_config	missing	command -v	capture time
+framework	appkit	available	report	
+framework	metal	available	report	
+framework	metalkit	available	report	
+framework	quartzcore	available	report	
+framework	coregraphics	available	report	
+framework	coretext	available	report	
+framework	webkit	available	report	
+framework	foundation	available	report	
+storage	root_volume_total_gib	926	df	mutable snapshot
+storage	root_volume_available_gib	156	df	mutable snapshot
+support	macos_provisioner	unsupported	catfood main at 2026-11-06	not established by this report

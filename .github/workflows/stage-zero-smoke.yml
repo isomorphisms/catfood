@@ -20,7 +20,8 @@ jobs:
             android/target.sh android/check.sh android/install.sh android/install-local-clients.sh android/bootstrap-crawlspace.sh android/install-crawlspace-bootstrap.sh \
             android/record-c67-runtime.sh \
             tests/check-manifest.sh tests/repository-identities.sh tests/entrypoint.sh tests/targets.sh tests/android-delivery.sh \
-            tests/c67-delivery.sh tests/c67-grease-live-transfer-observation.sh tests/android-local-clients.sh tests/android-crawlspace.sh tests/runtime-binaries.sh
+            tests/c67-delivery.sh tests/c67-grease-live-transfer-observation.sh tests/android-local-clients.sh tests/android-crawlspace.sh tests/runtime-binaries.sh \
+            macos/provision.sh macos/host-smoke.sh tests/macos-targets.sh tests/macos-host.sh
           do
             if [ -f "$script" ]; then
               dash -n "$script"
@@ -42,6 +43,9 @@ jobs:
       - name: Verify named target profiles
         shell: sh
         run: sh tests/targets.sh
+      - name: Reject invalid macOS host selection and provisioning
+        shell: sh
+        run: sh tests/macos-targets.sh
       - name: Verify whole-inventory Android delivery contracts
         shell: sh
         run: sh tests/android-delivery.sh

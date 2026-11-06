@@ -17,6 +17,11 @@ case $target in
     phone|c67|tablet) catfood_android_require_device "$target" ;;
     cloud|container) catfood_verify_workbench_target ;;
     termux) printf "%s\n" "Generic Termux has no verified device profile; no provisioning performed" >&2; exit 2 ;;
+    macos-arm64)
+        # Never enter the Linux/Termux acquisition or compiler build path.
+        # The macOS lane owns its preflight, native smoke, and optional feed.
+        exec sh "$root/macos/provision.sh"
+        ;;
 esac
 
 case $target in

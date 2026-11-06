@@ -11,6 +11,7 @@ acceptance evidence, and workbench role separate.
 | `termux` | unknown | unknown | unassigned | Generic observation only; provisioning refuses |
 | `container` | explicitly selected disposable Debian/Ubuntu environment | host | host-specific | Build/workbench |
 | `cloud` | Debian/Ubuntu Linux; Hetzner is a concrete instance | host | host-specific | Build/workbench |
+| `macos-arm64` | native Darwin/ARM64; M4 Pro is one recorded instance | host | Mach-O arm64 | Compiler/framework host smoke only; core project builds unqualified |
 
 `hetzner` remains a selector alias for `cloud`; selecting it does not prove
 which host was reached. Architecture alone never identifies an Android model.
@@ -80,3 +81,18 @@ EXACT_SOURCE_SHA` resolves A1/C67 obligations against this matrix. It retains
 required, incompatible and unresolved companion cells without claiming that a
 build ran. See `docs/android-companion-builds.md`. Its output must be checked
 and bound by the shared AICI/Flexible Pipes producer before publication.
+
+## Native macOS host lane and physical M4 Pro observation
+
+`macos-arm64` positively identifies native Darwin/ARM64 and cannot stand
+in for `cloud`, `container`, or Android `arm64-v8a`. The
+[bounded host implementation](macos/README.md) compiles, links and executes
+an ARM64 CoreFoundation smoke with a distinct evidence receipt. Full
+workbench builds, dependency acquisition, and physical-machine qualification
+remain pending.
+
+The supplied MacBook Pro (`Mac16,8`, M4 Pro, macOS 15.7.9 at 2026-10-19)
+is recorded in [its profile](hosts/macbook-pro-mac16-8.md) and
+[observation ledger](docs/observations/macbook-pro-mac16-8-2026-10-19.tsv).
+This physical machine is not the GitHub Apple Silicon runner, and the
+separate direct Metal capability probe failed during Swift compilation.

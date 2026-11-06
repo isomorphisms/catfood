@@ -19,6 +19,7 @@ The entrypoint selects a device profile or workbench role:
 - `tablet`: observed TAB_P10 tablet, ARM64 Android runtime delivery;
 - `container`: disposable Debian/Ubuntu workbench, selected explicitly;
 - `cloud`: persistent Debian/Ubuntu workbench, including Hetzner.
+- `macos-arm64`: native Apple Silicon workbench, bounded SDK/Clang/CoreFoundation smoke (full project builds unqualified).
 
 `termux` is generic/unknown Android identity; provisioning stops until a known profile is established. `hetzner` is an alias for `cloud`. See [TARGETS.md](TARGETS.md).
 
@@ -71,6 +72,21 @@ Crawl Space is delivered as a pinned Android runtime. The current package is exa
 Cat Food also owns a small platform-binary feed in [`runtime-binaries.tsv`](runtime-binaries.tsv). It currently pins jq 1.8.2 and Miller 6.21.0 (`mlr`) from their upstream release assets for Linux ARMv7, AArch64, x86-64, and RISC-V 64. Each asset is bound to an exact SHA-256 and must pass its version probe after installation. The ARMv7 phone, AArch64 tablet, and x86-64 Linux targets therefore consume prebuilt binaries rather than compiling these utilities locally or relying on a target package-manager version. The RISC-V row is binary availability only; it does not create or imply a maintained RISC-V acceptance target.
 
 Lua is a Cat Food support runtime rather than an Android product row. Known Android runtime targets acquire the packaged `lua55` runtime and expose stable `lua` and `luac` commands under the Cat Food bin directory; they do not compile Lua on the device. Debian/Ubuntu workbenches acquire `lua5.4` plus `liblua5.4-dev` from the host package manager, then expose the same stable command names. `install-lua.sh` runs an interpreter smoke, a `luac` parse smoke, and writes `receipts/lua.tsv`.
+
+## Native Apple Silicon host lane (initial stage)
+
+The [M4 Pro MacBook Pro profile](hosts/macbook-pro-mac16-8.md) and its
+[dated observation ledger](docs/observations/macbook-pro-mac16-8-2026-10-19.tsv)
+are retained alongside a bounded `macos-arm64` workbench path.
+
+On native Darwin/ARM64, `./catfood --target` reports `macos-arm64`.
+Running `./catfood` verifies the selected macOS SDK and builds/executes
+a source-pinned ARM64 Mach-O program linked to CoreFoundation. See
+[macOS details](macos/README.md). This is a native compiler/runtime smoke,
+not acceptance of the whole Cat Food toolchain. The optional
+`CATFOOD_MACOS_FEED=1 ./catfood` feeds sources, without core builds,
+Linux runtime packages or Homebrew installation. Linux `cloud` and
+`container` selectors remain invalid on Darwin.
 
 ## Fresh Hetzner / Ubuntu workbench
 

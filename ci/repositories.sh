@@ -5,8 +5,8 @@ catfood_repository_aliases=$root/repository-aliases.tsv
 validate_repository_aliases() {
     awk -F '\t' '
         /^[[:space:]]*($|#)/ { next }
-        NF != 3 || $1 !~ /^https:\/\/github[.]com\/[^/]+\/[^/]+$/ ||
-        $2 !~ /^https:\/\/github[.]com\/[^/]+\/[^/]+$/ ||
+        NF != 3 || $1 !~ /^https:\/\/github[.]com\/[^\/]+\/[^\/]+$/ ||
+        $2 !~ /^https:\/\/github[.]com\/[^\/]+\/[^\/]+$/ ||
         $3 !~ /^[0-9]+$/ || $1 == $2 {
             print "invalid repository alias at line " NR > "/dev/stderr"
             failed = 1

@@ -1,0 +1,45 @@
+name: macos-arm64-host-smoke
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  native-macos-host:
+    runs-on: macos-15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify real Apple Silicon runner identity
+        shell: sh
+        run: |
+          test "$(uname -s)" = Darwin
+          test "$(uname -m)" = arm64
+      - name: Check macOS POSIX shell syntax
+        shell: sh
+        run: |
+          sh -n catfood
+          sh -n provision.sh
+          sh -n android/target.sh
+          sh -n macos/provision.sh
+          sh -n macos/host-smoke.sh
+          sh -n tests/macos-targets.sh
+          sh -n tests/macos-host.sh
+      - name: Check fail-closed target and provisioning overrides
+        shell: sh
+        run: sh tests/macos-targets.sh
+      - name: Compile, inspect and execute the actual native host probe
+        shell: sh
+        run: sh tests/macos-host.sh
+      - name: Re-test using Command Line Tools without full Xcode
+        shell: sh
+        env:
+          DEVELOPER_DIR: /Library/Developer/CommandLineTools
+        run: |
+          test -d "$DEVELOPER_DIR/SDKs/MacOSX.sdk"
+          sh tests/macos-host.sh

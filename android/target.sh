@@ -72,18 +72,48 @@ catfood_detect_android_target() {
     catfood_android_profile "$cf_product" "$cf_model" "$cf_abi"
 }
 catfood_detect_target() {
-    case ${PREFIX:-}:${TERMUX_VERSION:-} in
-        /data/data/com.termux/*:*|*:*?*) catfood_detect_android_target ;;
-        *)
-            # Positive-host rule from the existing SDF work.
-            cf_system=$(uname -s 2>/dev/null || printf '%s\n' unknown)
-            if [ "$cf_system" = Linux ] && [ -r /etc/os-release ] &&
-                grep -Eq '^ID=("?(debian|ubuntu)"?)$' /etc/os-release; then
-                printf '%s\n' cloud
+    cf_system=$(uname -s 2>/dev/null || printf '%s\n' unknown)
+    case $cf_system in
+        Darwin)
+            cf_machine=$(uname -m 2>/dev/null || printf '%s\n' unknown)
+            if [ "$cf_machine" = arm64 ]; then
+                printf '%s\n' macos-arm64
             else
-                printf '%s\n' 'unsupported automatic Cat Food host; Debian/Ubuntu Linux evidence required' >&2
+                printf 'unsupported macOS Cat Food host architecture: %s (need native arm64)\n' "$cf_machine" >&2
                 return 2
             fi
+            ;;
+        Linux)
+            case ${PREFIX:-}:${TERMUX_VERSION:-} in
+                /data/data/com.termux/*:*|*:*?*) catfood_detect_android_target ;;
+                *)
+                    if [ -r /etc/os-release ] &&
+                        grep -Eq '^ID=("?(debian|ubuntu)"?)$' /etc/os-release; then
+                        printf '%s\n' cloud
+                    else
+                        printf '%s\n' 'unsupported automatic Cat Food host; Debian/Ubuntu Linux evidence required' >&2
+                        return 2
+                    fi
+                    ;;
+            esac
+            ;;
+        *)
+            printf '%s\n' 'unsupported automatic Cat Food host; Debian/Ubuntu Linux evidence required' >&2
+            return 2
+            ;;
+    esac
+}
+catfood_verify_macos_target() {
+    cf_system=$(uname -s 2>/dev/null || printf '%s\n' unknown)
+    cf_machine=$(uname -m 2>/dev/null || printf '%s\n' unknown)
+    if [ "$cf_system" != Darwin ] || [ "$cf_machine" != arm64 ]; then
+        printf 'macos-arm64 requires observed native Darwin/arm64, found %s/%s\n' "$cf_system" "$cf_machine" >&2
+        return 2
+    fi
+    case ${PREFIX:-}:${TERMUX_VERSION:-} in
+        /data/data/com.termux/*:*|*:*?*)
+            printf '%s\n' 'Android/Termux identity cannot select a macOS build host' >&2
+            return 2
             ;;
     esac
 }

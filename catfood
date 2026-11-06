@@ -22,11 +22,13 @@ The target is detected automatically when possible:
   tablet     observed TAB_P10 Android tablet; install arm64-v8a runtime packages only
   container  disposable Debian/Ubuntu workbench; select explicitly
   cloud      persistent Debian/Ubuntu/Hetzner workbench
+  macos-arm64 native Darwin/ARM64 host (bounded source-pinned compiler smoke)
 
 Compatibility targets:
   termux     generic Termux source workbench when architecture is unknown/forced
   hetzner    alias for cloud
   CATFOOD_TARGET=cloud|termux remains valid
+  macOS source feed is opt-in: CATFOOD_MACOS_FEED=1 (no core build yet)
 
 Help:
   ./catfood help          list every Cat Food tool
@@ -42,6 +44,7 @@ Local checkout lookup:
 Overrides:
   CATFOOD_TARGET=phone|c67|tablet|container|cloud|termux|hetzner
   CATFOOD_ROOT=/path/to/workspace
+  CATFOOD_MACOS_FEED=0|1
   CATFOOD_BUILD_TOOLS=0|1
   CATFOOD_INSTALL_YSH=0|1
   CATFOOD_CHECKOUTS=/path/to/machine-local-checkouts.tsv
@@ -182,11 +185,11 @@ lookup_workspace() {
                 printf '%s\n' "$HOME/opt"
             fi
             ;;
-        phone|c67|tablet|termux)
+        phone|c67|tablet|termux|macos-arm64)
             printf '%s\n' "$HOME/opt"
             ;;
         *)
-            printf 'CATFOOD_TARGET must be phone, c67, tablet, container, cloud, termux, or hetzner; found: %s\n' "$lookup_target" >&2
+            printf 'CATFOOD_TARGET must be phone, c67, tablet, macos-arm64, container, cloud, termux, or hetzner; found: %s\n' "$lookup_target" >&2
             return 2
             ;;
     esac
@@ -462,9 +465,9 @@ fi
 
 case $target in
     hetzner) target=cloud ;;
-    phone|c67|tablet|container|cloud|termux) ;;
+    phone|c67|tablet|macos-arm64|container|cloud|termux) ;;
     *)
-        printf 'CATFOOD_TARGET must be phone, c67, tablet, container, cloud, termux, or hetzner; found: %s\n' "$target" >&2
+        printf 'CATFOOD_TARGET must be phone, c67, tablet, macos-arm64, container, cloud, termux, or hetzner; found: %s\n' "$target" >&2
         exit 2
         ;;
 esac
@@ -472,6 +475,7 @@ esac
 case $target in
     phone|c67|tablet) catfood_android_verify_device_target "$target" ;;
     cloud|container) catfood_verify_workbench_target ;;
+    macos-arm64) catfood_verify_macos_target ;;
 esac
 
 if [ "$show_target" -eq 1 ]; then
@@ -493,6 +497,14 @@ case $target in
         CATFOOD_NO_PROFILE=${CATFOOD_NO_PROFILE:-1}
         CATFOOD_DEPTH=${CATFOOD_DEPTH:-1}
         export CATFOOD_NO_PROFILE CATFOOD_DEPTH
+        ;;
+    macos-arm64)
+        CATFOOD_ROOT=${CATFOOD_ROOT:-$HOME/opt}
+        CATFOOD_BUILD_TOOLS=${CATFOOD_BUILD_TOOLS:-0}
+        CATFOOD_INSTALL_YSH=0
+        CATFOOD_NO_PROFILE=${CATFOOD_NO_PROFILE:-1}
+        CATFOOD_LOCALE=${CATFOOD_LOCALE:-C}
+        export CATFOOD_NO_PROFILE CATFOOD_LOCALE
         ;;
     phone|c67|tablet|termux)
         CATFOOD_ROOT=${CATFOOD_ROOT:-$HOME/opt}

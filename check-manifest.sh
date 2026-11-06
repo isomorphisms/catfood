@@ -33,7 +33,7 @@ awk '
         failed = 1
     }
 
-    $2 !~ /^https:\/\/github[.]com\/[^/]+\/[^/]+[.]git$/ {
+    $2 !~ /^https:\/\/github[.]com\/[^\/]+\/[^\/]+[.]git$/ {
         printf "%s:%d: repository must be an explicit GitHub HTTPS .git URL: %s\n", FILENAME, NR, $2 > "/dev/stderr"
         failed = 1
     }
