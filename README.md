@@ -72,6 +72,15 @@ Cat Food also owns a small platform-binary feed in [`runtime-binaries.tsv`](runt
 
 Lua is a Cat Food support runtime rather than an Android product row. Known Android runtime targets acquire the packaged `lua55` runtime and expose stable `lua` and `luac` commands under the Cat Food bin directory; they do not compile Lua on the device. Debian/Ubuntu workbenches acquire `lua5.4` plus `liblua5.4-dev` from the host package manager, then expose the same stable command names. `install-lua.sh` runs an interpreter smoke, a `luac` parse smoke, and writes `receipts/lua.tsv`.
 
+## Observed macOS host
+
+The supplied [M4 Pro MacBook Pro hardware profile](hosts/macbook-pro-mac16-8.md)
+and [dated observation ledger](docs/observations/macbook-pro-mac16-8-2026-10-19.tsv)
+are retained for a future distinct Apple Silicon workbench lane. Cat Food does
+not currently provision macOS. The Debian/Ubuntu `cloud` and `container`
+selectors must not be forced on Darwin; recorded hardware and development tools
+are not build or runtime acceptance.
+
 ## Fresh Hetzner / Ubuntu workbench
 
 ```sh
