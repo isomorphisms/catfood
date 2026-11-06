@@ -36,3 +36,10 @@ jobs:
       - name: Compile, inspect and execute the actual native host probe
         shell: sh
         run: sh tests/macos-host.sh
+      - name: Re-test using Command Line Tools without full Xcode
+        shell: sh
+        env:
+          DEVELOPER_DIR: /Library/Developer/CommandLineTools
+        run: |
+          test -d "$DEVELOPER_DIR/SDKs/MacOSX.sdk"
+          sh tests/macos-host.sh
