@@ -6,6 +6,19 @@ root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 catfood_verify_macos_target
 
 workspace=${CATFOOD_ROOT:-$HOME/opt}
+# A new invocation invalidates a prior successful current-state receipt before
+# any tool or SDK preflight. Historical CI/source receipts remain separate.
+umask 077
+mkdir -p "$workspace/receipts"
+receipt="$workspace/receipts/macos-host-smoke.tsv"
+temporary="$receipt.tmp.$$"
+{
+    printf 'schema\tcatfood-macos-host-smoke-v1\n'
+    printf 'attempt_status\tNOT_VERIFIED\n'
+    printf 'compile_link_result\tNOT_VERIFIED\n'
+    printf 'native_execution_result\tNOT_VERIFIED\n'
+} > "$temporary"
+mv "$temporary" "$receipt"
 for name in git xcrun sw_vers mktemp lipo; do
     command -v "$name" >/dev/null 2>&1 || {
         printf 'macOS host smoke needs %s\n' "$name" >&2
@@ -86,6 +99,7 @@ temporary="$receipt.tmp.$$"
 trap 'rm -rf "$scratch"; rm -f "$temporary"' 0 HUP INT TERM
 {
     printf 'schema\tcatfood-macos-host-smoke-v1\n'
+    printf 'attempt_status\tPASS\n'
     printf 'source_commit\t%s\n' "$source_commit"
     printf 'source_tree\tclean\n'
     printf 'host_os\tDarwin\n'
