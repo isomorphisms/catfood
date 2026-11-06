@@ -76,16 +76,14 @@ acceptance is implied by these observations.
 
 ## Cat Food integration boundary
 
-The current `./catfood` target selectors are Android devices, explicit
-Debian/Ubuntu Linux workbenches, and generic Termux. They do **not** include
-macOS. Automatic unknown-host selection and an explicit Linux-workbench
-override must remain fail-closed on Darwin; do not route this Mac into
-`cloud`, `container`, or the Android `arm64-v8a` package lane simply
-because the processor is ARM64.
+Cat Food now has an [initial `macos-arm64` host lane](../macos/README.md):
+positive Darwin/ARM64 selection, a native CoreFoundation compiler/link/runtime
+smoke and a separate host receipt. This is **not** evidence that the user's
+physical M4 Pro ran the new code; the uploaded hardware profile remains a
+dated observation.
 
-This profile supplies host facts for a *future* distinct macOS workbench lane.
-Before claiming support, that lane needs positive Darwin/ARM64 selection,
-macOS-specific dependency acquisition, exact-source compiler/link receipts,
-native Mach-O and platform API verification, an actual execution smoke,
-and platform-specific artifact/acceptance records. Do not infer iOS
-build/deployment qualification from macOS hardware or SDK presence.
+Darwin cannot be forced into Linux `cloud`/`container` or Android
+`arm64-v8a` paths. Native core-project builds, macOS dependency
+acquisition, full runtime acceptance, and independent physical M4 Pro
+qualification remain pending. An iOS cross-target producer requires
+separate implementation and acceptance.
