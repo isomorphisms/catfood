@@ -80,3 +80,14 @@ EXACT_SOURCE_SHA` resolves A1/C67 obligations against this matrix. It retains
 required, incompatible and unresolved companion cells without claiming that a
 build ran. See `docs/android-companion-builds.md`. Its output must be checked
 and bound by the shared AICI/Flexible Pipes producer before publication.
+
+## Observed macOS host (not a maintained target)
+
+A user-supplied Apple Silicon MacBook Pro (`Mac16,8`, M4 Pro, native ARM64,
+macOS 15.7.9 at 2026-10-19) is recorded in
+[`hosts/macbook-pro-mac16-8.md`](hosts/macbook-pro-mac16-8.md) and its
+[source-digested observation ledger](docs/observations/macbook-pro-mac16-8-2026-10-19.tsv).
+It is **not** a selector in the table above and does not satisfy Linux cloud
+or container workbench acceptance. macOS dependency acquisition, host
+compilation, native Mach-O execution and any future iOS cross-target qualification
+remain separate unimplemented work; the direct Metal capability probe did not compile.
