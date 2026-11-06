@@ -72,18 +72,123 @@ catfood_detect_android_target() {
     catfood_android_profile "$cf_product" "$cf_model" "$cf_abi"
 }
 catfood_detect_target() {
-    case ${PREFIX:-}:${TERMUX_VERSION:-} in
-        /data/data/com.termux/*:*|*:*?*) catfood_detect_android_target ;;
-        *)
-            # Positive-host rule from the existing SDF work.
-            cf_system=$(uname -s 2>/dev/null || printf '%s\n' unknown)
-            if [ "$cf_system" = Linux ] && [ -r /etc/os-release ] &&
-                grep -Eq '^ID=("?(debian|ubuntu)"?)$' /etc/os-release; then
-                printf '%s\n' cloud
+    # Classify the kernel first. ARM64 Darwin is a separate host ABI, not an
+    # Android arm64-v8a consumer or a Debian/Ubuntu cloud workbench.
+    cf_system=$(uname -s 2>/dev/null || printf '%s\n' unknown)
+    case $cf_system in
+        Darwin)
+            cf_machine=$(uname -m 2>/dev/null || printf '%s\n' unknown)
+            if [ "$cf_machine" = arm64 ]; then
+                printf '%s\n' macos-arm64
             else
-                printf '%s\n' 'unsupported automatic Cat Food host; Debian/Ubuntu Linux evidence required' >&2
+                printf 'unsupported macOS Cat Food host architecture: %s (need native arm64)\n' "$cf_machine" >&2
                 return 2
             fi
+            ;;
+        Linux)
+            case ${PREFIX:-}:${TERMUX_VERSION:-} in
+                /data/data/com.termux/*:*|*:*?*) catfood_detect_android_target ;;
+                *)
+                    # Positive-host rule from the existing SDF work.
+                    if [ -r /etc/os-release ] &&
+                        grep -Eq '^ID=("?(debian|ubuntu)"?)catfood_android_verify_device_target() {
+    cf_requested=$1
+    cf_observed=$(catfood_detect_android_target) || return $?
+    case $cf_requested in phone|c67|tablet) ;; *) return 2 ;; esac
+    if [ "$cf_observed" != termux ] && [ "$cf_requested" != "$cf_observed" ]; then
+        printf 'Android target mismatch: requested %s, observed %s\n' "$cf_requested" "$cf_observed" >&2
+        return 2
+    fi
+    cf_abi=$(catfood_android_getprop ro.product.cpu.abi 2>/dev/null || :)
+    cf_expected=$(catfood_android_expected_abi "$cf_requested")
+    if [ -n "$cf_abi" ] && [ "$cf_abi" != "$cf_expected" ]; then
+        printf 'Android target ABI mismatch: expected %s, observed %s\n' "$cf_expected" "$cf_abi" >&2
+        return 2
+    fi
+    # No properties means a planning override, never installation evidence.
+    if [ "$cf_observed" = termux ]; then
+        cf_product=$(catfood_android_getprop ro.product.device 2>/dev/null || :)
+        cf_model=$(catfood_android_getprop ro.product.model 2>/dev/null || :)
+        if [ -n "$cf_product$cf_model" ]; then
+            printf '%s\n' 'unknown Android identity cannot satisfy a known device target' >&2
+            return 2
+        fi
+    fi
+}
+catfood_android_require_device() {
+    catfood_android_verify_device_target "$1" || return $?
+    cf_observed=$(catfood_detect_android_target) || return $?
+    if [ "$cf_observed" != "$1" ]; then
+        printf '%s\n' 'Android delivery requires observed device identity' >&2
+        return 2
+    fi
+    cf_abi=$(catfood_android_getprop ro.product.cpu.abi 2>/dev/null || :)
+    cf_expected=$(catfood_android_expected_abi "$1")
+    if [ "$cf_abi" != "$cf_expected" ]; then
+        printf '%s\n' 'Android delivery requires observed primary ABI' >&2
+        return 2
+    fi
+    if [ -n "${CATFOOD_DEVICE_ABI:-}" ] && [ "$CATFOOD_DEVICE_ABI" != "$cf_abi" ]; then
+        printf '%s\n' 'CATFOOD_DEVICE_ABI contradicts observed ABI' >&2
+        return 2
+    fi
+}
+catfood_verify_workbench_target() {
+    case ${PREFIX:-}:${TERMUX_VERSION:-} in
+        /data/data/com.termux/*:*|*:*?*)
+            printf '%s\n' 'Android runtime consumer cannot be selected as a build workbench' >&2
+            return 2 ;;
+    esac
+    cf_model=$(catfood_android_getprop ro.product.model 2>/dev/null || :)
+    if [ -n "$cf_model" ] || [ "$(uname -s)" != Linux ] ||
+        ! grep -Eq '^ID=("?(debian|ubuntu)"?)$' /etc/os-release; then
+        printf '%s\n' 'workbench target requires observed Debian/Ubuntu Linux host' >&2
+        return 2
+    fi
+}
+catfood_android_device_id() {
+    # Local per-installation identity, shared with inventory; never copy between
+    # handsets. This alias is not a hardware serial or attestation.
+    cf_id_file=${CATFOOD_DEVICE_ID_FILE:-${CATFOOD_DEVICE_STATE:-${XDG_STATE_HOME:-$HOME/.local/state}/catfood/device}/device-id}
+    cf_id=${CATFOOD_DEVICE_ID:-}
+    if [ -z "$cf_id" ] && [ -r "$cf_id_file" ]; then cf_id=$(cat "$cf_id_file"); fi
+    if [ -z "$cf_id" ]; then
+        [ -r /proc/sys/kernel/random/uuid ] || return 2
+        cf_id=$(cat /proc/sys/kernel/random/uuid)
+        (umask 077; mkdir -p "$(dirname -- "$cf_id_file")"; printf '%s\n' "$cf_id" > "$cf_id_file")
+    fi
+    case $cf_id in ''|-|*[!a-zA-Z0-9_.-]*) return 2 ;; esac
+    printf '%s\n' "$cf_id"
+}
+ /etc/os-release; then
+                        printf '%s\n' cloud
+                    else
+                        printf '%s\n' 'unsupported automatic Cat Food host; Debian/Ubuntu Linux evidence required' >&2
+                        return 2
+                    fi
+                    ;;
+            esac
+            ;;
+        *)
+            printf '%s\n' 'unsupported automatic Cat Food host; Debian/Ubuntu Linux evidence required' >&2
+            return 2
+            ;;
+    esac
+}
+catfood_verify_macos_target() {
+    # Overrides cannot confer macOS authority on Android/Linux or an Intel /
+    # Rosetta-translated process. macOS version/model are observations, not
+    # the definition of the generic Darwin/ARM64 build-host lane.
+    cf_system=$(uname -s 2>/dev/null || printf '%s\n' unknown)
+    cf_machine=$(uname -m 2>/dev/null || printf '%s\n' unknown)
+    if [ "$cf_system" != Darwin ] || [ "$cf_machine" != arm64 ]; then
+        printf 'macos-arm64 requires observed native Darwin/arm64, found %s/%s\n' "$cf_system" "$cf_machine" >&2
+        return 2
+    fi
+    case ${PREFIX:-}:${TERMUX_VERSION:-} in
+        /data/data/com.termux/*:*|*:*?*)
+            printf '%s\n' 'Android/Termux identity cannot select a macOS build host' >&2
+            return 2
             ;;
     esac
 }
