@@ -19,6 +19,7 @@ The entrypoint selects a device profile or workbench role:
 - `tablet`: observed TAB_P10 tablet, ARM64 Android runtime delivery;
 - `container`: disposable Debian/Ubuntu workbench, selected explicitly;
 - `cloud`: persistent Debian/Ubuntu workbench, including Hetzner.
+- `macos-arm64`: native Apple Silicon workbench, bounded SDK/Clang/CoreFoundation smoke (full project builds unqualified).
 
 `termux` is generic/unknown Android identity; provisioning stops until a known profile is established. `hetzner` is an alias for `cloud`. See [TARGETS.md](TARGETS.md).
 
@@ -72,14 +73,20 @@ Cat Food also owns a small platform-binary feed in [`runtime-binaries.tsv`](runt
 
 Lua is a Cat Food support runtime rather than an Android product row. Known Android runtime targets acquire the packaged `lua55` runtime and expose stable `lua` and `luac` commands under the Cat Food bin directory; they do not compile Lua on the device. Debian/Ubuntu workbenches acquire `lua5.4` plus `liblua5.4-dev` from the host package manager, then expose the same stable command names. `install-lua.sh` runs an interpreter smoke, a `luac` parse smoke, and writes `receipts/lua.tsv`.
 
-## Observed macOS host
+## Native Apple Silicon host lane (initial stage)
 
-The supplied [M4 Pro MacBook Pro hardware profile](hosts/macbook-pro-mac16-8.md)
-and [dated observation ledger](docs/observations/macbook-pro-mac16-8-2026-10-19.tsv)
-are retained for a future distinct Apple Silicon workbench lane. Cat Food does
-not currently provision macOS. The Debian/Ubuntu `cloud` and `container`
-selectors must not be forced on Darwin; recorded hardware and development tools
-are not build or runtime acceptance.
+The [M4 Pro MacBook Pro profile](hosts/macbook-pro-mac16-8.md) and its
+[dated observation ledger](docs/observations/macbook-pro-mac16-8-2026-10-19.tsv)
+are retained alongside a bounded `macos-arm64` workbench path.
+
+On native Darwin/ARM64, `./catfood --target` reports `macos-arm64`.
+Running `./catfood` verifies the selected macOS SDK and builds/executes
+a source-pinned ARM64 Mach-O program linked to CoreFoundation. See
+[macOS details](macos/README.md). This is a native compiler/runtime smoke,
+not acceptance of the whole Cat Food toolchain. The optional
+`CATFOOD_MACOS_FEED=1 ./catfood` feeds sources, without core builds,
+Linux runtime packages or Homebrew installation. Linux `cloud` and
+`container` selectors remain invalid on Darwin.
 
 ## Fresh Hetzner / Ubuntu workbench
 
