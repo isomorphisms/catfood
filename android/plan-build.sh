@@ -3,10 +3,12 @@
 set -eu
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 fail() { printf 'catfood Android plan: %s\n' "$*" >&2; exit 2; }
-[ "$#" -eq 3 ] || fail 'usage: plan-build.sh APPLICATION_CONTRACT phone|c67 SOURCE_SHA'
+[ "$#" -eq 3 ] || [ "$#" -eq 4 ] || fail 'usage: plan-build.sh APPLICATION_CONTRACT phone|c67 SOURCE_SHA [device-specific|universal]'
 contract=$1
 requested=$2
 source_sha=$3
+artifact_kind=${4:-device-specific}
+case "$artifact_kind" in device-specific|universal) ;; *) fail 'artifact kind must be device-specific or universal' ;; esac
 [ -f "$contract" ] || fail "missing application contract: $contract"
 case "$requested" in phone|c67) ;; *) fail "unknown requested target: $requested" ;; esac
 printf '%s\n' "$source_sha" | grep -Eq '^[0123456789abcdef]{40}$' ||
@@ -62,6 +64,12 @@ approved_label=$(awk -F '\t' -v repository="$repository" -v package="$package" '
     fail "launcher identity changed against Cat Food policy: $launcher_label"
 printf '%s\n' "$min_sdk" | grep -Eq '^[0-9]+$' || fail 'invalid minimum SDK'
 case "$packaging" in shared|split) ;; *) fail 'packaging must be shared or split' ;; esac
+# A leaf's shared-package preference is not authority to add native payloads
+# to a named-device delivery. Universal packaging requires a separate request.
+case "$artifact_kind" in
+    device-specific) packaging=split ;;
+    universal) packaging=shared ;;
+esac
 for abi in armeabi-v7a arm64-v8a; do
     value=$(field "$abi")
     case "$value" in supported|incompatible|unknown) ;; *)
@@ -90,10 +98,11 @@ printf 'package_id\t%s\n' "$package"
 printf 'launcher_label\t%s\n' "$launcher_label"
 printf 'min_sdk\t%s\n' "$min_sdk"
 printf 'packaging\t%s\n' "$packaging"
+printf 'artifact_kind\t%s\n' "$artifact_kind"
 printf 'requested_target\t%s\n' "$requested"
 printf 'target\tdevice\tabi\tobligation\tacceptance\n'
 for target in phone c67; do
-    if [ "$requested" = c67 ] && [ "$target" = phone ]; then continue; fi
+    if [ "$artifact_kind" = device-specific ] && [ "$requested" = c67 ] && [ "$target" = phone ]; then continue; fi
     row=$(awk -F '\t' -v t="$target" '$1==t {print $2 "\t" $3}' "$matrix")
     abi=$(printf '%s\n' "$row" | cut -f2)
     status=$(field "$abi")
