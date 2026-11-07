@@ -11,6 +11,7 @@ acceptance evidence, and workbench role separate.
 | `termux` | unknown | unknown | unassigned | Generic observation only; provisioning refuses |
 | `container` | explicitly selected disposable Debian/Ubuntu environment | host | host-specific | Build/workbench |
 | `cloud` | Debian/Ubuntu Linux; Hetzner is a concrete instance | host | host-specific | Build/workbench |
+| `sdf` | explicit NetBSD/amd64 SDF login | host | `NetBSD/amd64` | Unprivileged toolchain/workbench; sources under `~/code`, artifacts under `~/opt` |
 
 `hetzner` remains a selector alias for `cloud`; selecting it does not prove
 which host was reached. Architecture alone never identifies an Android model.
@@ -31,7 +32,10 @@ must agree. A host with no Android properties can select an Android profile for
 planning, but installation requires observed identity and primary ABI. An ABI
 override cannot contradict getprop. Known or generic Android consumers cannot
 be forced into host provisioning. Automatic cloud selection requires positive
-Debian/Ubuntu Linux evidence; container selection remains explicit.
+Debian/Ubuntu Linux evidence; container selection remains explicit. The SDF
+selector requires observed NetBSD/amd64 and must be selected explicitly;
+an arbitrary NetBSD host is never silently identified as SDF. The SDF path
+is documented at [sdf/README.md](sdf/README.md).
 
 Model identity is not physical-instance identity. Installer and inventory share
 a local per-installation `device_id` (or an explicit user alias), scoped to the
