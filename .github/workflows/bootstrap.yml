@@ -35,6 +35,9 @@ jobs:
           dash -n tests/runtime-binaries.sh
           dash -n tests/lua.sh
           dash -n tests/entrypoint.sh
+          dash -n device-state.sh
+          dash -n android/inspect-hardware.sh
+          dash -n tests/device-state.sh
           dash -n ci/repositories.sh
           dash -n tests/repository-identities.sh
       - name: Verify transferred repository identity and updates

@@ -104,6 +104,14 @@ Build stamps are keyed to repository commits. `catfood-update` fetches repositor
 
 ## Repository inventory
 
+`./catfood inspect` records current Android identity, package inventory,
+bounded hardware/service observations, resolved storage paths and mount options,
+free space, and installed runtime command digests. Discovery needs no Grease,
+ADB, Shizuku or build toolchain. Denied, missing, empty and timed-out queries
+remain explicit. It writes private Cat Food inventory/history only; it never
+repairs storage or accepts installed runtimes. See the
+[TAB_P10 recovery boundary](android/devices/svitoo-tab-p10.md).
+
 `tools.tsv` is both the authoritative current-workbench feed and the inventory from which Android coverage is checked. It contains the language/toolchain line, browser/publication tools, applications, and mathematical experiments. Grease is fed separately by `bootstrap.sh` because it supplies stage one, but it is still explicitly represented in Android delivery coverage.
 
 Repositories marked `recursive` have actual submodules and are initialized automatically. New workbench clones use shallow history, 12 commits by default; set `CATFOOD_DEPTH` to change that. Existing checkouts are fetched without rewriting their history.

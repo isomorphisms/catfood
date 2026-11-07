@@ -69,6 +69,13 @@ executable location, shared storage, or removable storage:
   establishes a working mount.
 - When these facts change, update this section rather than relying on chat
   history or another device's layout.
+- **Current recovery request, 2026-10-30:** the human reopened TAB_P10 hardware
+  and storage discovery. Run the existing read-only `catfood inspect` path;
+  retain permission failures and mount-namespace limits instead of inferring
+  physical card absence. No current tablet SD-card mount has yet been verified.
+  The human reports both MIRO phones are water-damaged; TAB_P10 is the active
+  physical development target. Preserve phone history without requesting new
+  phone acceptance. See `android/devices/svitoo-tab-p10.md`.
 
 ## Android delivery
 

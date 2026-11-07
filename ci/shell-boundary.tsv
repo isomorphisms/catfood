@@ -37,6 +37,7 @@ fdroid-deploy.ysh	grease	ysh	F-Droid publication command
 fdroid-check-deployed.ysh	grease	ysh	F-Droid publication status command
 tests/ib-handoff.sh	test	sh	Pre-Grease checkout registration, lookup, and bounded IB handoff fixtures
 device-state.sh	stage-zero	sh	Inventory is available before Grease delivery
+android/inspect-hardware.sh	stage-zero	sh	Read-only hardware and mount inventory is available before Grease delivery
 android/preserve-shizuku.sh	stage-zero	sh	Preserves exports before Android runtime mutation
 tests/device-state.sh	test	sh	Stage-zero inventory regression fixtures
 tests/shizuku-state.sh	test	sh	Stage-zero snapshot corruption and precedence fixtures
