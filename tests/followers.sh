@@ -4,6 +4,9 @@ set -eu
 [ "$#" -eq 1 ] || { echo 'usage: tests/followers.sh AICI_FOLLOWERS' >&2; exit 2; }
 verifier=$1
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
+# This only proves POSIX parsing; actual AZ execution needs the physical C67.
+dash -n "$root/followers/accept-az-c67.sh"
+sh -n "$root/followers/accept-az-c67.sh"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT HUP INT TERM
 if (
