@@ -19,6 +19,7 @@ mkdir -p "$fixture/followers/jobs" "$fixture/followers/receipts" \
     "$fixture/tests" "$fixture/android" "$fixture/.github/workflows"
 cp "$root/followers/manage.sh" "$root/followers/stale.sh" \
     "$root/followers/targets.tsv" "$root/followers/impact-rules.tsv" \
+    "$root/followers/host-cells.tsv" \
     "$fixture/followers/"
 
 cat > "$fixture/catfood" <<'EOF_CATFOOD'
@@ -98,6 +99,101 @@ done
     count=$(find followers/jobs -name '*.tsv' -type f | wc -l | tr -d ' ')
     [ "$count" -eq 6 ]
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh reconcile "$trigger" >/dev/null
+    sh followers/manage.sh host-matrix "$trigger" > "$tmp/host-matrix-a.tsv"
+    sh followers/manage.sh host-matrix "$trigger" > "$tmp/host-matrix-b.tsv"
+    cmp "$tmp/host-matrix-a.tsv" "$tmp/host-matrix-b.tsv"
+    awk -F '\t' 'NF != 21 {exit 1}' "$tmp/host-matrix-a.tsv"
+    grep '^sdf-icky-dmd[[:space:]]' "$tmp/host-matrix-a.tsv" >/dev/null
+    grep '^sdf-greased[[:space:]]' "$tmp/host-matrix-a.tsv" >/dev/null
+    grep '^void-current[[:space:]].*unknown.*unresolved' "$tmp/host-matrix-a.tsv" >/dev/null
+    grep "^catfood-$(printf '%s' "$trigger" | cut -c1-12)-github-x86_64[[:space:]]" \
+        "$tmp/host-matrix-a.tsv" >/dev/null
+
+    cp followers/host-cells.tsv "$tmp/host-cells-good.tsv"
+    awk -F '\t' -v OFS='\t' '$1=="sdf-greased" {$7="11"} {print}' \
+        "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+    if sh followers/manage.sh host-matrix >/dev/null 2>&1; then
+        echo 'NetBSD 11 evidence was reused for the SDF NetBSD 9.3 cell' >&2
+        exit 1
+    fi
+    awk -F '\t' -v OFS='\t' '$1=="sdf-greased" {$17="current"; $18="branch"; $19="eligible"; $20="accepted"} {print}' \
+        "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+    if sh followers/manage.sh host-matrix >/dev/null 2>&1; then
+        echo 'branch presence was accepted as host evidence' >&2
+        exit 1
+    fi
+    awk -F '\t' -v OFS='\t' '$1=="sdf-greased" {$12="different-cpu"} {print}' \
+        "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+    if sh followers/manage.sh host-matrix >/dev/null 2>&1; then
+        echo 'wrong CPU identity was reused for the SDF cell' >&2
+        exit 1
+    fi
+    awk -F '\t' -v OFS='\t' '$1=="sdf-greased" {$15="greased.tar"; $16="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; $17="until:2020-01-01T00:00:00Z"; $19="eligible"; $20="accepted"} {print}' \
+        "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+    if CATFOOD_HOST_CELL_NOW=2026-10-18T00:00:00Z \
+        sh followers/manage.sh host-matrix >/dev/null 2>&1; then
+        echo 'expired artifact availability was accepted' >&2
+        exit 1
+    fi
+    # These are synthetic metadata-reader controls, never live host evidence.
+    for bad_availability in \
+        until:2028-13-01T00:00:00Z until:2028-02-30T00:00:00Z \
+        until:2027-02-29T00:00:00Z until:2100-02-29T00:00:00Z \
+        until:2028-01-01T24:00:00Z \
+        until:2028-01-01T00:60:00Z until:2028-01-01T00:00:60Z \
+        until:zzzz-zz-zzTzz:zz:zzZ
+    do
+        awk -F '\t' -v OFS='\t' -v availability="$bad_availability" \
+            '$1=="sdf-greased" {$15="greased.tar"; $16="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; $17=availability; $19="eligible"; $20="accepted"} {print}' \
+            "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+        if CATFOOD_HOST_CELL_NOW=2026-10-18T00:00:00Z \
+            sh followers/manage.sh host-matrix > "$tmp/invalid-availability.log" 2>&1; then
+            printf 'invalid normalized host artifact availability was accepted: %s\n' "$bad_availability" >&2
+            exit 1
+        fi
+        grep -F 'invalid availability timestamp' "$tmp/invalid-availability.log" >/dev/null
+    done
+    awk -F '\t' -v OFS='\t' \
+        '$1=="sdf-greased" {$15="greased.tar"; $16="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; $17="until:2028-02-29T00:00:00Z"; $19="eligible"; $20="accepted"} {print}' \
+        "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+    CATFOOD_HOST_CELL_NOW=2026-10-18T00:00:00Z sh followers/manage.sh host-matrix >/dev/null
+    if CATFOOD_HOST_CELL_NOW=invalid-clock \
+        sh followers/manage.sh host-matrix > "$tmp/invalid-clock.log" 2>&1; then
+        echo 'invalid clock was accepted for host artifact availability' >&2
+        exit 1
+    fi
+    grep -F 'invalid host-cell clock' "$tmp/invalid-clock.log" >/dev/null
+    awk -F '\t' -v OFS='\t' '$1=="sdf-greased" {$17="current"; $19="revoked"; $20="accepted"} {print}' \
+        "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+    if sh followers/manage.sh host-matrix >/dev/null 2>&1; then
+        echo 'revoked qualification was reused as acceptance' >&2
+        exit 1
+    fi
+    awk -F '\t' -v OFS='\t' '$1=="sdf-greased" {$1="android-glibc"; $2="phone"; $3="no"; $4="runtime"; $5="fixture"; $6="Android"; $7="14"; $8="armv7"; $9="armeabi-v7a"; $10="glibc"; $11="termux-runtime"; $12="SC9863A"} {print}' \
+        "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+    if sh followers/manage.sh host-matrix >/dev/null 2>&1; then
+        echo 'Android target accepted a glibc host cell' >&2
+        exit 1
+    fi
+    awk -F '\t' '$1!="sdf-greased" {print}' \
+        "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+    if sh followers/manage.sh host-matrix >/dev/null 2>&1; then
+        echo 'removing a required SDF cell preserved a green denominator' >&2
+        exit 1
+    fi
+    awk -F '\t' -v OFS='\t' '$1=="sdf-greasecpp" {$19="eligible"} {print}' \
+        "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+    if sh followers/manage.sh host-matrix >/dev/null 2>&1; then
+        echo 'historical C++ Grease evidence became eligible' >&2
+        exit 1
+    fi
+    awk -F '\t' -v OFS='\t' '$1=="void-current" {$17="current"; $19="eligible"; $20="accepted"} {print}' \
+        "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+    if sh followers/manage.sh host-matrix >/dev/null 2>&1; then
+        echo 'unknown Void scope became an accepted requirement' >&2
+        exit 1
+    fi
+    cp "$tmp/host-cells-good.tsv" followers/host-cells.tsv
     # The read-only renderer must retain the canonical verifier's columns.
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh pending > "$tmp/verified-pending"
     AICI_FOLLOWERS= sh followers/manage.sh pending > "$tmp/read-only-pending"
@@ -125,8 +221,47 @@ evidence_url	https://example.invalid/actions/1
 recorded_at	2026-09-11T12:30:00-04:00
 note	fixture proving exact follower completion
 EOF_RECEIPT
+    cat > "$tmp/github-host-receipt.tsv" <<EOF_HOST_RECEIPT
+schema	catfood-host-receipt-v1
+job_id	$id
+repository	isomorphisms/catfood
+host_target	github-x86_64
+observed_os	Linux
+observed_release	Ubuntu-24.04
+observed_architecture	x86_64
+observed_abi	x86_64-linux-gnu
+observed_libc	glibc
+runtime_identity	github-hosted-runtime
+cpu_identity	fixture-x86-64-cpu
+observed_account	fixture-user
+observed_hostname	fixture-host
+storage_identity	fixture-device:/fixture
+source_revision	$trigger
+evidence_kind	runtime
+qualification_state	current
+observation_kind	live
+artifact_available_until	not-applicable
+EOF_HOST_RECEIPT
+    sed 's/^host_target\tgithub-x86_64$/host_target\thetzner-x86_64/' \
+        "$tmp/github-host-receipt.tsv" > "$tmp/wrong-target-host-receipt.tsv"
+    if AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
+        record "$id" "$tmp/github-receipt.tsv" \
+        "$tmp/wrong-target-host-receipt.tsv" >/dev/null 2>&1; then
+        echo 'GitHub evidence was reused for the Hetzner target' >&2
+        exit 1
+    fi
+    sed 's/^runtime_identity\tgithub-hosted-runtime$/runtime_identity\tpersistent-host-runtime/' \
+        "$tmp/github-host-receipt.tsv" > "$tmp/wrong-runtime-host-receipt.tsv"
+    if AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
+        record "$id" "$tmp/github-receipt.tsv" \
+        "$tmp/wrong-runtime-host-receipt.tsv" >/dev/null 2>&1; then
+        echo 'wrong host runtime identity was accepted' >&2
+        exit 1
+    fi
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
-        record "$id" "$tmp/github-receipt.tsv" >/dev/null
+        record "$id" "$tmp/github-receipt.tsv" \
+        "$tmp/github-host-receipt.tsv" >/dev/null
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh host-reconcile "$trigger" >/dev/null
     pending=$(AICI_FOLLOWERS="$verifier" sh followers/manage.sh pending "$trigger")
     if printf '%s\n' "$pending" | grep 'github-x86_64' >/dev/null; then
         echo 'completed GitHub follower remained pending' >&2
@@ -248,6 +383,7 @@ make_integration_fixture() {
         "$destination/tests" "$destination/android" "$destination/.github/workflows"
     cp "$root/followers/manage.sh" "$root/followers/stale.sh" \
         "$root/followers/targets.tsv" "$root/followers/impact-rules.tsv" \
+        "$root/followers/host-cells.tsv" \
         "$destination/followers/"
     cat > "$destination/catfood" <<'EOF_CATFOOD'
 #!/bin/sh

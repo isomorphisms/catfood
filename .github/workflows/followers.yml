@@ -269,6 +269,33 @@ jobs:
           printf 'required=yes\n' >> "$GITHUB_OUTPUT"
           artifact=$(awk -F '\t' '$1 == "artifact" {print $2}' "$job")
           artifact_sha256=$(awk -F '\t' '$1 == "artifact_sha256" {print $2}' "$job")
+          test "$artifact" = - || {
+            echo 'the runtime follower cannot claim an artifact without its exact availability window' >&2
+            exit 1
+          }
+          test "${GITHUB_ACTIONS:-}" = true
+          test "$(uname -s)" = Linux
+          test "$(uname -m)" = x86_64
+          . /etc/os-release
+          test "$ID" = ubuntu
+          test "$VERSION_ID" = 24.04
+          test "$(cc -dumpmachine)" = x86_64-linux-gnu
+          test "$(getconf GNU_LIBC_VERSION | awk '{print $1}')" = glibc
+          # Linux pads the field name with tabs before the colon. Match that
+          # real layout instead of requiring the colon to follow the name.
+          cpu_identity=$(awk -F ':' '
+            $1 ~ /^[[:space:]]*model name[[:space:]]*$/ {
+              sub(/^[^:]*:[[:space:]]*/, "", $0)
+              print
+              exit
+            }
+          ' /proc/cpuinfo)
+          test -n "$cpu_identity" || {
+            echo 'GitHub host receipt lacks an observed CPU identity' >&2
+            exit 1
+          }
+          storage_identity=$(df -P "$RUNNER_TEMP" | awk 'NR == 2 {print $1 ":" $6}')
+          test -n "$storage_identity"
           receipt="$RUNNER_TEMP/$job_id.tsv"
           cat > "$receipt" <<EOF_RECEIPT
           schema	aici-follower-receipt-v1
@@ -291,13 +318,40 @@ jobs:
           EOF_RECEIPT
           sed 's/^          //' "$receipt" > "$receipt.clean"
           mv "$receipt.clean" "$receipt"
+          host_receipt="$RUNNER_TEMP/$job_id-host.tsv"
+          cat > "$host_receipt" <<EOF_HOST_RECEIPT
+          schema	catfood-host-receipt-v1
+          job_id	$job_id
+          repository	isomorphisms/catfood
+          host_target	github-x86_64
+          observed_os	Linux
+          observed_release	Ubuntu-24.04
+          observed_architecture	x86_64
+          observed_abi	x86_64-linux-gnu
+          observed_libc	glibc
+          runtime_identity	github-hosted-runtime
+          cpu_identity	$cpu_identity
+          observed_account	$(id -un)
+          observed_hostname	$(hostname)
+          storage_identity	$storage_identity
+          source_revision	$trigger
+          evidence_kind	runtime
+          qualification_state	current
+          observation_kind	live
+          artifact_available_until	not-applicable
+          EOF_HOST_RECEIPT
+          sed 's/^          //' "$host_receipt" > "$host_receipt.clean"
+          mv "$host_receipt.clean" "$host_receipt"
           printf 'receipt=%s\n' "$receipt" >> "$GITHUB_OUTPUT"
+          printf 'host_receipt=%s\n' "$host_receipt" >> "$GITHUB_OUTPUT"
       - name: Publish exact GitHub follower receipt
         if: steps.github_follower.outputs.required == 'yes'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: github-x86_64-follower-receipt
-          path: ${{ steps.github_follower.outputs.receipt }}
+          path: |
+            ${{ steps.github_follower.outputs.receipt }}
+            ${{ steps.github_follower.outputs.host_receipt }}
           if-no-files-found: error
       - name: Publish resolved dependency provenance
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
