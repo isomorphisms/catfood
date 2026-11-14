@@ -106,7 +106,9 @@ Build stamps are keyed to repository commits. `catfood-update` fetches repositor
 
 `tools.tsv` is both the authoritative current-workbench feed and the inventory from which Android coverage is checked. It contains the language/toolchain line, browser/publication tools, applications, and mathematical experiments. Grease is fed separately by `bootstrap.sh` because it supplies stage one, but it is still explicitly represented in Android delivery coverage.
 
-Repositories marked `recursive` have actual submodules and are initialized automatically. New workbench clones use shallow history, 12 commits by default; set `CATFOOD_DEPTH` to change that. Existing checkouts are fetched without rewriting their history.
+The submodule policy has three states: `none` declares no submodules; `recursive` requires initialized references at their recorded commits; `skip` declares references but leaves them unpopulated. Ordinary ICK workbench acquisition uses `skip`, so it does not download GCC. New workbench clones use shallow history, 12 commits by default; set `CATFOOD_DEPTH` to change that. Existing checkouts are fetched without rewriting their history.
+
+For operation-bound acquisition, `catfood acquire TOOL COMMIT ABSOLUTE_DESTINATION workbench|producer` requires an explicit host workbench target and a full immutable commit. `workbench` consumes the inventory policy; `producer` turns a declared `skip` into exact recursive acquisition. It emits a canonical TSV material record and SHA-256, with no destination, timestamp or attempt fields. It never runs a compiler or producer. See [source acquisition](docs/source-closure.md) for the contract and evidence boundaries.
 
 `./check-manifest.sh --remote` validates workbench manifest structure and verifies that every named remote branch exists. `sh android/check.sh check` independently validates total Android inventory coverage and package metadata.
 

@@ -7,6 +7,7 @@ LC_ALL=$catfood_locale
 export LANG LC_ALL
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)
+. "$root/ci/repositories.sh"
 workspace=${CATFOOD_ROOT:-/opt}
 manifest=${CATFOOD_MANIFEST:-$root/tools.tsv}
 failures=0
@@ -22,7 +23,7 @@ fi
 PATH=$prefix/bin:$workspace/bin:$PATH
 export PATH
 
-CATFOOD_MANIFEST=$manifest sh "$root/check-manifest.sh" || failures=1
+CATFOOD_MANIFEST=$manifest sh "$root/check-manifest.sh"
 
 check_command() {
     if command -v "$1" >/dev/null 2>&1; then
@@ -149,6 +150,16 @@ while read -r name repository branch submodules || [ -n "${name:-}" ]; do
 
     checkout=$workspace/$name
     if [ -e "$checkout/.git" ]; then
+        if ! origin=$(git -C "$checkout" remote get-url origin 2>/dev/null); then
+            printf '%-22s missing repository origin\n' "$name" >&2
+            failures=1
+            continue
+        fi
+        if ! same_repository_url "$origin" "$repository"; then
+            printf '%-22s origin does not match inventory\n' "$name" >&2
+            failures=1
+            continue
+        fi
         printf '%-22s present\n' "$name"
 
         has_submodules=0
@@ -156,24 +167,29 @@ while read -r name repository branch submodules || [ -n "${name:-}" ]; do
             if ! git -C "$checkout" config -f .gitmodules --list >/dev/null 2>&1; then
                 printf '%-22s malformed .gitmodules\n' "$name" >&2
                 failures=1
+                continue
             elif git -C "$checkout" config -f .gitmodules \
                 --get-regexp '^submodule[.].*[.]path$' >/dev/null 2>&1; then
                 has_submodules=1
             fi
         fi
 
-        if [ "$has_submodules" -eq 1 ] && [ "$submodules" != recursive ]; then
+        if [ "$has_submodules" -eq 1 ] && [ "$submodules" = none ]; then
             printf '%-22s has untracked submodule policy\n' "$name" >&2
             failures=1
-        elif [ "$has_submodules" -eq 0 ] && [ "$submodules" = recursive ]; then
-            printf '%-22s marked recursive without .gitmodules\n' "$name" >&2
+        elif [ "$has_submodules" -eq 0 ] && [ "$submodules" != none ]; then
+            printf '%-22s marked %s without declared submodules\n' "$name" "$submodules" >&2
             failures=1
-        elif [ "$has_submodules" -eq 1 ]; then
-            submodule_status=$(git -C "$checkout" submodule status --recursive 2>/dev/null || true)
-            if printf '%s\n' "$submodule_status" | grep '^[+U-]' >/dev/null 2>&1; then
+        elif [ "$has_submodules" -eq 1 ] && [ "$submodules" = recursive ]; then
+            if ! submodule_status=$(git -C "$checkout" submodule status --recursive 2>/dev/null); then
+                printf '%-22s unable to verify submodule status\n' "$name" >&2
+                failures=1
+            elif [ -z "$submodule_status" ] || printf '%s\n' "$submodule_status" | grep '^[+U-]' >/dev/null 2>&1; then
                 printf '%-22s submodules are not at recorded commits\n' "$name" >&2
                 failures=1
             fi
+        elif [ "$has_submodules" -eq 1 ] && [ "$submodules" = skip ]; then
+            printf '%-22s reference submodules intentionally skipped\n' "$name"
         fi
     else
         printf '%-22s missing checkout\n' "$name" >&2

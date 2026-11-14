@@ -13,6 +13,9 @@ manifest=${3:-${CATFOOD_MANIFEST:-$root/tools.tsv}}
 links_only=${4:-${CATFOOD_LINKS_ONLY:-0}}
 failures=0
 
+# Validate every row before fetching, creating workspace paths, or linking.
+CATFOOD_MANIFEST=$manifest sh "$root/check-manifest.sh"
+
 feed_repository() {
     name=$1
     repository=$2
@@ -73,6 +76,29 @@ feed_repository() {
         fi
     fi
 
+    has_submodules=0
+    if test -f "$target/.gitmodules"; then
+        if ! git -C "$target" config -f .gitmodules --list >/dev/null 2>&1; then
+            printf '  malformed .gitmodules\n' >&2
+            failures=1
+            return 0
+        fi
+        if git -C "$target" config -f .gitmodules \
+            --get-regexp '^submodule[.].*[.]path$' >/dev/null 2>&1; then
+            has_submodules=1
+        fi
+    fi
+    if test "$has_submodules" -eq 1 && test "$submodules" = none; then
+        printf '  declared submodules require recursive or skip policy\n' >&2
+        failures=1
+        return 0
+    fi
+    if test "$has_submodules" -eq 0 && test "$submodules" != none; then
+        printf '  marked %s without declared submodules\n' "$submodules" >&2
+        failures=1
+        return 0
+    fi
+
     if test "$submodules" = recursive; then
         if ! git -C "$target" submodule sync --recursive || \
            ! git -C "$target" submodule update --init --recursive --depth "$history_depth"; then
@@ -80,6 +106,18 @@ feed_repository() {
             failures=1
             return 0
         fi
+        if ! submodule_status=$(git -C "$target" submodule status --recursive); then
+            printf '  unable to verify submodule status\n' >&2
+            failures=1
+            return 0
+        fi
+        if test -z "$submodule_status" || printf '%s\n' "$submodule_status" | grep '^[+U-]' >/dev/null 2>&1; then
+            printf '  submodules are not at recorded commits\n' >&2
+            failures=1
+            return 0
+        fi
+    elif test "$submodules" = skip; then
+        printf '  reference submodules intentionally skipped\n'
     fi
 }
 
