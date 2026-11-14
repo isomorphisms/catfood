@@ -109,16 +109,37 @@ source_closure_walk() (
     closure_tree_entries=$(source_closure_git -C "$closure_checkout" ls-tree -r HEAD) || return 1
     closure_links=$(printf '%s\n' "$closure_tree_entries" | awk '$1 == "160000" { print }')
     closure_keys=
+    closure_all_keys=
     if source_closure_git -C "$closure_checkout" cat-file -e HEAD:.gitmodules 2>/dev/null; then
         source_closure_git -C "$closure_checkout" config --blob HEAD:.gitmodules --list >/dev/null || return 1
         closure_keys=$(source_closure_git -C "$closure_checkout" config --blob HEAD:.gitmodules --name-only --get-regexp '^submodule[.].*[.]path$' || :)
+        closure_all_keys=$(source_closure_git -C "$closure_checkout" config --blob HEAD:.gitmodules --name-only --get-regexp '^submodule[.]' || :)
     fi
     if [ -z "$closure_keys" ]; then
         [ -z "$closure_links" ] || source_closure_error 'gitlink without declaration' || return 1
+        [ -z "$closure_all_keys" ] || source_closure_error 'orphan submodule declaration' || return 1
         [ "$closure_policy" = none ] || source_closure_error 'submodule policy requires declarations' || return 1
         return 0
     fi
     [ "$closure_policy" != none ] || source_closure_error 'none policy has declared submodules' || return 1
+    closure_groups='
+'
+    while IFS= read -r closure_key; do
+        closure_groups="$closure_groups${closure_key%.path}
+"
+    done <<EOF
+$closure_keys
+EOF
+    while IFS= read -r closure_key; do
+        case $closure_groups in
+            *"
+${closure_key%.*}
+"*) ;;
+            *) source_closure_error 'orphan submodule declaration'; return 1 ;;
+        esac
+    done <<EOF
+$closure_all_keys
+EOF
     closure_count=0
     closure_seen='
 '

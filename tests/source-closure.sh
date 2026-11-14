@@ -225,6 +225,20 @@ printf '[submodule "missing-path"]\n\turl = https://github.com/example/leaf.git\
 git -C "$work/leaf" add .gitmodules
 git -C "$work/leaf" commit -qm incomplete-leaf-declarations
 advance_leaf
-reject 'submodule policy requires declarations' acquire "$work/incomplete leaf" producer
+reject 'orphan submodule declaration' acquire "$work/incomplete leaf" producer
 test ! -s "$work/reject.out"
 printf 'PASS: malformed and incomplete nonempty leaf declarations still reject\n'
+
+# A dotted subsection is a distinct name, not a prefix-owned extension.
+: > "$work/leaf/.gitmodules"
+git -C "$work/leaf" add .gitmodules
+git -C "$work/leaf" commit -qm restore-leaf-declarations
+advance_leaf
+git -C "$work/ick" config -f .gitmodules submodule.gcc.orphan.url https://github.com/example/leaf.git
+git -C "$work/ick" add .gitmodules
+git -C "$work/ick" commit -qm orphan-prefix-collision
+commit=$(git -C "$work/ick" rev-parse HEAD)
+reject 'orphan submodule declaration' acquire "$work/orphan prefix" producer
+test ! -e "$work/orphan prefix/gcc/.git"
+test ! -s "$work/reject.out"
+printf 'PASS: prefix-collision orphan declarations reject before reference acquisition\n'
