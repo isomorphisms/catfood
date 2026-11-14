@@ -11,6 +11,7 @@ usage: ./catfood [--target]
        ./catfood help [tool]
        ./catfood where [tool]
        ./catfood register TOOL ROLE PATH
+       ./catfood acquire TOOL COMMIT ABSOLUTE_DESTINATION workbench|producer
        ./catfood plan-android-build APPLICATION_CONTRACT phone|c67 SOURCE_SHA
        ./catfood inspect|record|compare|packages|report
 
@@ -448,6 +449,12 @@ case ${1:-} in
             exit 2
         fi
         exec sh "$root/android/plan-build.sh" "$2" "$3" "$4"
+        ;;
+    acquire)
+        [ "$#" -eq 5 ] || { usage >&2; exit 2; }
+        . "$root/ci/source-closure.sh"
+        source_closure_acquire "$2" "$3" "$4" "$5"
+        exit $?
         ;;
     inspect|record|compare|packages|report)
         exec sh "$root/device-state.sh" "$@"

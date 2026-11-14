@@ -1,0 +1,11 @@
+commit	8a7aac0e42bc8af4550577bbc87e2a5a15eb9db7
+gitlink	gcc	https://github.com/gcc-mirror/gcc	6294f1d9e7536e5ffcde09d1528c918d63abfef5	skip
+material	ick/OVERLAY.sha256	28e79534c3b7c8d3386fa53b5583ad9c868b8eca3d747d0e8fcf7d1c6e6f1efc
+material	ick/PRUNE	1b628f598d9bf8c377d2f26d2e3ac180595473ba4b47aeef8e0eb59adf5988cd
+material	ick/SOURCE.lock	dca4ea2113895977543343a3f931b6bc695e1c7a6420ce898c5eabddb967d6e3
+material	ick/materialize.sh	6564eb37d649682c2e675451bcfe0331fc727fb7ee8d08fba783f02900f93c10
+repository	https://github.com/isomorphisms/ick
+schema	catfood-source-v1
+submodules	skip
+tree	3934d1cd578a8b4b87d588b8bdb63a9a826a517f
+sha256	4544b834ccecd132fd6cf7c76d6010b3a312f531e9c71ae05bdab47c0f00e78b
