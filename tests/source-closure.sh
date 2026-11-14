@@ -17,6 +17,9 @@ seed() {
     git -C "$1" commit -qm initial
 }
 seed "$work/leaf"
+: > "$work/leaf/.gitmodules"
+git -C "$work/leaf" add .gitmodules
+git -C "$work/leaf" commit -qm empty-leaf-declarations
 seed "$work/gcc"
 git -C "$work/gcc" -c protocol.file.allow=always submodule add -q "$work/leaf" nested
 git -C "$work/gcc" config -f .gitmodules submodule.nested.url https://github.com/example/leaf.git
@@ -181,3 +184,47 @@ if grep -F 'https://unapproved.invalid/leaf.git' "$work/git-arguments" >/dev/nul
 fi
 test ! -e "$work/bad nested/gcc/nested/.git"
 printf 'PASS: multivalued URL and unapproved nested transport reject before child acquisition\n'
+
+# Advance the real leaf and both committed parent gitlinks together. The leaf's
+# declaration content changes; its parent URL and immutable linkage remain valid.
+advance_leaf() {
+    leaf_commit=$(git -C "$work/leaf" rev-parse HEAD)
+    git -C "$work/gcc" config -f .gitmodules submodule.nested.url https://github.com/example/leaf.git
+    git -C "$work/gcc" add .gitmodules
+    # Commit the actual leaf identity without asking fixture setup to interpret
+    # the intentionally malformed child declarations before acquisition does.
+    git -C "$work/gcc" update-index --cacheinfo "160000,$leaf_commit,nested"
+    git -C "$work/gcc" commit -qm advance-leaf
+    gcc_commit=$(git -C "$work/gcc" rev-parse HEAD)
+    git -C "$work/ick/gcc" fetch -q origin "$gcc_commit"
+    git -C "$work/ick/gcc" checkout -q --detach "$gcc_commit"
+    printf 'gcc_repository=https://github.com/example/gcc.git\ngcc_commit=%s\n' "$gcc_commit" > "$work/ick/ick/SOURCE.lock"
+    git -C "$work/ick" add gcc ick/SOURCE.lock
+    git -C "$work/ick" commit -qm advance-leaf-pin
+    commit=$(git -C "$work/ick" rev-parse HEAD)
+}
+
+printf '# No nested references.\n' > "$work/leaf/.gitmodules"
+git -C "$work/leaf" add .gitmodules
+git -C "$work/leaf" commit -qm comment-only-leaf-declarations
+advance_leaf
+acquire "$work/comment-only leaf" producer > "$work/comment-only.tsv"
+test "$(git -C "$work/comment-only leaf/gcc/nested" rev-parse HEAD)" = "$leaf_commit"
+acquire "$work/comment-only leaf" producer > "$work/comment-only-repeat.tsv"
+cmp "$work/comment-only.tsv" "$work/comment-only-repeat.tsv"
+printf 'PASS: empty and comment-only leaf declarations retain exact recursive acquisition\n'
+
+printf '[submodule\n' > "$work/leaf/.gitmodules"
+git -C "$work/leaf" add .gitmodules
+git -C "$work/leaf" commit -qm malformed-leaf-declarations
+advance_leaf
+reject 'malformed submodule declarations' acquire "$work/malformed leaf" producer
+test ! -s "$work/reject.out"
+
+printf '[submodule "missing-path"]\n\turl = https://github.com/example/leaf.git\n' > "$work/leaf/.gitmodules"
+git -C "$work/leaf" add .gitmodules
+git -C "$work/leaf" commit -qm incomplete-leaf-declarations
+advance_leaf
+reject 'submodule policy requires declarations' acquire "$work/incomplete leaf" producer
+test ! -s "$work/reject.out"
+printf 'PASS: malformed and incomplete nonempty leaf declarations still reject\n'

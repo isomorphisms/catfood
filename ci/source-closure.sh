@@ -78,6 +78,27 @@ source_closure_checkout() (
     cmp -s "$closure_raw/expected" "$closure_raw/actual" || source_closure_error 'raw source bytes differ from commit' || return 1
 )
 
+# A child is a leaf when it has neither declarations nor gitlinks. An empty or
+# comment-only .gitmodules file does not turn that leaf into a recursive owner.
+source_closure_child_policy() (
+    closure_child_checkout=$1
+    closure_child_requested=$2
+    closure_child_entries=$(source_closure_git -C "$closure_child_checkout" ls-tree -r HEAD) || return 1
+    closure_child_links=$(printf '%s\n' "$closure_child_entries" | awk '$1 == "160000" { print }')
+    closure_child_declarations=
+    if source_closure_git -C "$closure_child_checkout" cat-file -e HEAD:.gitmodules 2>/dev/null; then
+        source_closure_git -C "$closure_child_checkout" config --blob HEAD:.gitmodules --list >/dev/null || source_closure_error 'malformed submodule declarations' || return 1
+        # Count incomplete submodule sections too; walk must reject those rather
+        # than treating a missing path as an empty leaf.
+        closure_child_declarations=$(source_closure_git -C "$closure_child_checkout" config --blob HEAD:.gitmodules --name-only --get-regexp '^submodule[.]' || :)
+    fi
+    if [ -n "$closure_child_links" ] || [ -n "$closure_child_declarations" ]; then
+        printf '%s\n' "$closure_child_requested"
+    else
+        printf 'none\n'
+    fi
+)
+
 # Walk the committed declarations, not caller-controlled submodule config.
 # Each recursive invocation has private variables; the output has no host paths.
 source_closure_walk() (
@@ -125,17 +146,12 @@ $closure_path
         printf 'gitlink\t%s%s\t%s\t%s\t%s\n' "$closure_prefix" "$closure_path" "$closure_url" "$closure_pin" "$closure_policy" >> "$closure_record"
         if [ "$closure_policy" = preflight ] && [ -e "$closure_checkout/$closure_path/.git" ]; then
             source_closure_checkout "$closure_checkout/$closure_path" "$closure_url" "$closure_pin" || return 1
-            closure_child_policy=none
-            if source_closure_git -C "$closure_checkout/$closure_path" cat-file -e HEAD:.gitmodules 2>/dev/null; then closure_child_policy=preflight; fi
+            closure_child_policy=$(source_closure_child_policy "$closure_checkout/$closure_path" preflight) || return 1
             source_closure_walk "$closure_checkout/$closure_path" "$closure_prefix$closure_path/" "$closure_child_policy" "$closure_record" || return 1
         fi
         if [ "$closure_policy" = recursive ]; then
             source_closure_checkout "$closure_checkout/$closure_path" "$closure_url" "$closure_pin" || return 1
-            # Leaf submodules legitimately have no declarations.
-            closure_child_policy=none
-            if source_closure_git -C "$closure_checkout/$closure_path" cat-file -e HEAD:.gitmodules 2>/dev/null; then
-                closure_child_policy=recursive
-            fi
+            closure_child_policy=$(source_closure_child_policy "$closure_checkout/$closure_path" recursive) || return 1
             source_closure_walk "$closure_checkout/$closure_path" "$closure_prefix$closure_path/" "$closure_child_policy" "$closure_record" || return 1
         fi
         closure_count=$((closure_count + 1))
@@ -158,7 +174,8 @@ source_closure_materialize() (
     closure_keys=$(source_closure_git -C "$closure_checkout" config --blob HEAD:.gitmodules --name-only --get-regexp '^submodule[.].*[.]path$') || return 1
     while IFS= read -r closure_key; do
         closure_path=$(source_closure_git -C "$closure_checkout" config --blob HEAD:.gitmodules --get "$closure_key") || return 1
-        if source_closure_git -C "$closure_checkout/$closure_path" cat-file -e HEAD:.gitmodules 2>/dev/null; then
+        closure_child_policy=$(source_closure_child_policy "$closure_checkout/$closure_path" recursive) || return 1
+        if [ "$closure_child_policy" = recursive ]; then
             source_closure_materialize "$closure_checkout/$closure_path" "$closure_preflight_file" || return 1
         fi
     done <<EOF
