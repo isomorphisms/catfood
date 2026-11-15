@@ -106,7 +106,7 @@ jobs:
             ${{ runner.temp }}/bundles/${{ env.BUNDLE_NAME }}.tar.gz
             ${{ runner.temp }}/bundles/${{ env.BUNDLE_NAME }}.tar.gz.sha256
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 90
 
   fresh-host-intervals:
     needs: package
@@ -192,4 +192,4 @@ jobs:
             ${{ runner.temp }}/idric-version.txt
             ${{ runner.temp }}/fresh-host-receipt.txt
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 90
