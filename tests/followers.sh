@@ -108,8 +108,27 @@ done
     grep '^void-current[[:space:]].*unknown.*unresolved' "$tmp/host-matrix-a.tsv" >/dev/null
     grep "^catfood-$(printf '%s' "$trigger" | cut -c1-12)-github-x86_64[[:space:]]" \
         "$tmp/host-matrix-a.tsv" >/dev/null
+    awk -F '\t' '$4=="follower" {
+        if ($19!="unknown" || $20!="pending") exit 1
+        count++
+    } END {if (count!=3) exit 1}' "$tmp/host-matrix-a.tsv"
 
     cp followers/host-cells.tsv "$tmp/host-cells-good.tsv"
+    # Preserve the original bad source/archive witness independently of its
+    # mutable display name. These pins are regression evidence, not a denylist.
+    awk -F '\t' '$1=="sdf-greasecpp" {
+        if ($13!="dilapidated-shed/grease" ||
+            $14!="60641ddd99844655c0788f790cd3a8a14c7166fd" ||
+            $16!="a7f5e35feebd1a222e2ae724bbbf4a2c1fe28c5683ac3aa6561ed770a9bb3136" ||
+            $19!="ineligible" || $20!="historical") exit 1
+        found=1
+    } END {if (!found) exit 1}' "$tmp/host-cells-good.tsv"
+    awk '/^#/ {header[++headers]=$0; next} {row[++rows]=$0}
+        END {for(i=1;i<=headers;i++) print header[i]; for(i=rows;i>=1;i--) print row[i]}' \
+        "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+    sh followers/manage.sh host-matrix "$trigger" > "$tmp/host-matrix-reordered.tsv"
+    cmp "$tmp/host-matrix-a.tsv" "$tmp/host-matrix-reordered.tsv"
+    cp "$tmp/host-cells-good.tsv" followers/host-cells.tsv
     awk -F '\t' -v OFS='\t' '$1=="sdf-greased" {$7="11"} {print}' \
         "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
     if sh followers/manage.sh host-matrix >/dev/null 2>&1; then
@@ -156,7 +175,14 @@ done
     awk -F '\t' -v OFS='\t' \
         '$1=="sdf-greased" {$15="greased.tar"; $16="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; $17="until:2028-02-29T00:00:00Z"; $19="eligible"; $20="accepted"} {print}' \
         "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
-    CATFOOD_HOST_CELL_NOW=2026-10-18T00:00:00Z sh followers/manage.sh host-matrix >/dev/null
+    # A valid calendar reaches the unavailable authority boundary; synthetic
+    # metadata can no longer create a passing accepted Grease runtime fixture.
+    if CATFOOD_HOST_CELL_NOW=2026-10-18T00:00:00Z \
+        sh followers/manage.sh host-matrix > "$tmp/valid-calendar.log" 2>&1; then
+        echo 'valid availability metadata manufactured runtime eligibility' >&2
+        exit 1
+    fi
+    grep -F 'independently qualified host runtime object is unavailable' "$tmp/valid-calendar.log" >/dev/null
     if CATFOOD_HOST_CELL_NOW=invalid-clock \
         sh followers/manage.sh host-matrix > "$tmp/invalid-clock.log" 2>&1; then
         echo 'invalid clock was accepted for host artifact availability' >&2
@@ -187,6 +213,40 @@ done
         echo 'historical C++ Grease evidence became eligible' >&2
         exit 1
     fi
+    for promotion in permanent-only accepted-only; do
+        awk -F '\t' -v OFS='\t' -v promotion="$promotion" '
+            $1=="sdf-greasecpp" {
+                if (promotion=="permanent-only") $17="permanent"
+                if (promotion=="accepted-only") {$17="current"; $20="accepted"}
+            }
+            {print}
+        ' "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+        if sh followers/manage.sh host-matrix > "$tmp/runtime-promotion-$promotion.log" 2>&1; then
+            printf 'standalone host runtime claim bypassed missing authority: %s\n' "$promotion" >&2
+            exit 1
+        fi
+        grep -F 'independently qualified host runtime object is unavailable' \
+            "$tmp/runtime-promotion-$promotion.log" >/dev/null
+    done
+    for bypass in renamed-implementation changed-source changed-artifact; do
+        awk -F '\t' -v OFS='\t' -v bypass="$bypass" '
+            $1=="sdf-greasecpp" {
+                $5="native-engine"; $17="permanent"; $19="eligible"; $20="accepted"
+                if (bypass=="changed-source") $14="1111111111111111111111111111111111111111"
+                if (bypass=="changed-artifact") {
+                    $15="native-engine.tar.gz"
+                    $16="bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                }
+            }
+            {print}
+        ' "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
+        if sh followers/manage.sh host-matrix > "$tmp/runtime-promotion-$bypass.log" 2>&1; then
+            printf 'host runtime promotion bypassed missing authority: %s\n' "$bypass" >&2
+            exit 1
+        fi
+        grep -F 'independently qualified host runtime object is unavailable' \
+            "$tmp/runtime-promotion-$bypass.log" >/dev/null
+    done
     awk -F '\t' -v OFS='\t' '$1=="void-current" {$17="current"; $19="eligible"; $20="accepted"} {print}' \
         "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
     if sh followers/manage.sh host-matrix >/dev/null 2>&1; then
@@ -262,6 +322,11 @@ EOF_HOST_RECEIPT
         record "$id" "$tmp/github-receipt.tsv" \
         "$tmp/github-host-receipt.tsv" >/dev/null
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh host-reconcile "$trigger" >/dev/null
+    sh followers/manage.sh host-matrix "$trigger" > "$tmp/host-matrix-recorded.tsv"
+    awk -F '\t' -v id="$id" '$1==id {
+        if ($4!="follower" || $19!="unknown" || $20!="accepted") exit 1
+        found=1
+    } END {if (!found) exit 1}' "$tmp/host-matrix-recorded.tsv"
     pending=$(AICI_FOLLOWERS="$verifier" sh followers/manage.sh pending "$trigger")
     if printf '%s\n' "$pending" | grep 'github-x86_64' >/dev/null; then
         echo 'completed GitHub follower remained pending' >&2

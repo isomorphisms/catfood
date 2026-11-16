@@ -137,8 +137,6 @@ host_cell_records_check() {
                 ;;
         esac
         if [ "$disposition" = accepted ]; then
-            [ "$eligibility" = eligible ] ||
-                fatal "host cell $cell accepted without eligible material"
             for material in "$host_os" "$host_release" "$architecture" "$abi" \
                 "$libc" "$runtime" "$cpu"
             do
@@ -173,6 +171,14 @@ host_cell_records_check() {
             http://*|https://*|followers/*) ;;
             *) fatal "host cell $cell has an uninspectable evidence reference" ;;
         esac
+        # These source records describe obligations, not independent runtime
+        # approval. No applicable qualified host-runtime object is released.
+        # Renaming an implementation or changing its source/artifact metadata
+        # cannot create that missing authority.
+        if [ "$eligibility" = eligible ] || [ "$disposition" = accepted ] || \
+            [ "$availability" = permanent ]; then
+            fatal "host cell $cell cannot promote runtime material: independently qualified host runtime object is unavailable"
+        fi
         : "$component" "$repository"
     done < "$host_cells"
 
@@ -363,7 +369,7 @@ host_matrix() {
                 evidence_ref=${host_receipt#"$root"/}
             fi
             line=$(target_line "$target")
-            printf '%s\t%s\t%s\tfollower\tcatfood\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\teligible\t%s\t%s\n' \
+            printf '%s\t%s\t%s\tfollower\tcatfood\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\tunknown\t%s\t%s\n' \
                 "$(record_value "$file" job_id)" "$target" "$(record_value "$file" required)" \
                 "$(printf '%s\n' "$line" | awk -F '\t' '{print $8}')" \
                 "$(printf '%s\n' "$line" | awk -F '\t' '{print $9}')" \

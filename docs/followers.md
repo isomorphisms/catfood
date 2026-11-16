@@ -65,6 +65,23 @@ deleting a maintained cell fails reconciliation rather than shrinking the
 matrix. `host-matrix [TRIGGER]` renders these retained records plus exact
 follower jobs for the trigger in this same stable 21-column form.
 
+The retained cell records describe source and evidence obligations; their
+implementation names, source pins, archive hashes and availability fields do
+not independently approve a managed runtime. No applicable independently
+qualified host-runtime object is currently released. The reader therefore
+refuses static `eligible`, `accepted` or `permanent` material claims, including
+each claim on its own and after an implementation, source or artifact is
+renamed. Valid calendar and target
+metadata cannot supply the missing approval. Existing pending, partial,
+ineligible, historical and conditional cells retain their recorded scope.
+
+A dynamically rendered follower row keeps its canonical follower disposition,
+including `accepted` when that exact role has matching evidence. Its material
+eligibility remains `unknown`: a follower result is not independent approval
+of a complete Grease implementation or permission to install its runtime.
+The Android producer release interface does not supply a host-runtime role;
+it cannot authorize a NetBSD/SDF archive by relabeling it.
+
 The retained SDF records deliberately separate four claims:
 
 - ICKY/GDC compiler-runtime qualification is blocked at exact source
