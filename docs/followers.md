@@ -12,6 +12,12 @@ Git integration can create a different commit identity for source state that alr
 
 Resolution is deliberately fail-closed. No matching exact trigger stays red. More than one matching trigger stays red. A merge or later commit that changes any non-control source file stays red. The resolver therefore does not manufacture a receipt or claim that the integration commit itself ran on a follower; it identifies the exact source commit whose already-declared follower work describes the same product state.
 
+Android's README, device notes, `android/device-instance-and-artifact-location.md`
+and `docs/observations/` record documentation or device observations rather than
+delivered source. Both source-state comparison and target-impact classification
+exclude those exact observation surfaces. Android install code, package metadata
+and payloads still create the artifact/device obligations declared below.
+
 `followers/targets.tsv` is the concrete maintained target registry. `termux-generic` remains a compatibility selector rather than a concrete independently accepted machine. If it becomes a maintained concrete environment, give it a real acceptance action and promote it in the registry rather than treating generic Termux selection as proof.
 
 `followers/impact-rules.tsv` maps changed paths to affected targets. Rules are first-match and conservative:

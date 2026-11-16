@@ -353,7 +353,8 @@ make_integration_fixture "$noimpact_fixture"
     git commit -qm base
 
     printf '%s\n' '# source change' >> provision.sh
-    git add provision.sh
+    printf '%s\n' '# original artifact change' >> android/install-example.sh
+    git add provision.sh android/install-example.sh
     git commit -qm source
     source_trigger=$(git rev-parse HEAD)
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
@@ -364,8 +365,9 @@ make_integration_fixture "$noimpact_fixture"
     mkdir -p android/devices docs/observations
     printf '%s\n' '# Android notes only' > android/README.md
     printf '%s\n' '# device profile only' > android/devices/fixture.md
+    printf '%s\n' '# observed handset and downloaded-file location only' > android/device-instance-and-artifact-location.md
     printf '%s\n' 'kind\tvalue' 'observation\tfixture' > docs/observations/fixture.tsv
-    git add android/README.md android/devices/fixture.md docs/observations/fixture.tsv
+    git add android/README.md android/devices/fixture.md android/device-instance-and-artifact-location.md docs/observations/fixture.tsv
     git commit -qm observation-evidence
     evidence_commit=$(git rev-parse HEAD)
 
@@ -383,6 +385,50 @@ make_integration_fixture "$noimpact_fixture"
         exit 1
     }
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh reconcile "$(sh followers/manage.sh latest)" >/dev/null
+
+    # Later portable source has six successors, while the unchanged artifact
+    # obligation remains pending at its own exact source. Observation prose
+    # must not turn it into a missing seventh successor at the portable head.
+    printf '%s\n' '# later portable source' >> provision.sh
+    git add provision.sh
+    git commit -qm portable-successor
+    portable_trigger=$(git rev-parse HEAD)
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
+        prepare "$portable_trigger" phone armv7 - noimpact 2 >/dev/null
+    [ "$(sh followers/manage.sh affected "$portable_trigger" | wc -l | tr -d ' ')" -eq 6 ]
+    [ "$(sh followers/manage.sh stale-target "$source_trigger" "$portable_trigger" github-x86_64-artifact)" = no ]
+    sh followers/manage.sh supersede-ancestors "$portable_trigger" >/dev/null
+    sh followers/stale.sh >/dev/null
+    old_artifact=followers/jobs/catfood-$(printf '%s' "$source_trigger" | cut -c1-12)-github-x86_64-artifact.tsv
+    awk -F '\t' -v source="$source_trigger" \
+        '$1=="state" {pending=$2=="pending"} $1=="trigger_commit" {exact=$2==source} END {exit !(pending && exact)}' "$old_artifact"
+
+    # A real install payload change still renews artifact validation. Refuse a
+    # missing same-target successor before changing any ancestor job, even if
+    # other valid supersessions were already planned.
+    printf '%s\n' '# genuine Android install payload change' >> android/install-example.sh
+    git add android/install-example.sh
+    git commit -qm artifact-successor
+    artifact_trigger=$(git rev-parse HEAD)
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
+        prepare "$artifact_trigger" phone armv7 - noimpact 3 >/dev/null
+    [ "$(sh followers/manage.sh stale-target "$source_trigger" "$artifact_trigger" github-x86_64-artifact)" = yes ]
+    artifact_successor=followers/jobs/catfood-$(printf '%s' "$artifact_trigger" | cut -c1-12)-github-x86_64-artifact.tsv
+    mv "$artifact_successor" "$tmp/artifact-successor.hold"
+    cp -R followers/jobs "$tmp/jobs-before-refusal"
+    if sh followers/manage.sh supersede-ancestors "$artifact_trigger" > "$tmp/missing-artifact.log" 2>&1; then
+        echo 'missing artifact successor was accepted' >&2
+        exit 1
+    fi
+    grep -F 'has no same-target successor' "$tmp/missing-artifact.log" >/dev/null
+    diff -r "$tmp/jobs-before-refusal" followers/jobs >/dev/null
+    mv "$tmp/artifact-successor.hold" "$artifact_successor"
+    sh followers/manage.sh supersede-ancestors "$artifact_trigger" >/dev/null
+    sh followers/stale.sh >/dev/null
+    expected_successor=$(basename "$artifact_successor" .tsv)
+    awk -F '\t' -v successor="$expected_successor" \
+        '$1=="state" {retired=$2=="superseded"} $1=="superseded_by" {exact=$2==successor} END {exit !(retired && exact)}' "$old_artifact"
+    awk -F '\t' '$1=="state" {exit $2!="pending"}' "$artifact_successor"
 )
 
 printf '%s\n' 'cat food follower inference self-test passes'
