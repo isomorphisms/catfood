@@ -12,6 +12,12 @@ Git integration can create a different commit identity for source state that alr
 
 Resolution is deliberately fail-closed. No matching exact trigger stays red. More than one matching trigger stays red. A merge or later commit that changes any non-control source file stays red. The resolver therefore does not manufacture a receipt or claim that the integration commit itself ran on a follower; it identifies the exact source commit whose already-declared follower work describes the same product state.
 
+Android's README, device notes, `android/device-instance-and-artifact-location.md`
+and `docs/observations/` record documentation or device observations rather than
+delivered source. Both source-state comparison and target-impact classification
+exclude those exact observation surfaces. Android install code, package metadata
+and payloads still create the artifact/device obligations declared below.
+
 `followers/targets.tsv` is the concrete maintained target registry. Its first
 seven columns preserve the original target contract. The host-scope columns add
 the exact OS, release, ABI, libc, runtime, CPU, maintenance status, and required

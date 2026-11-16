@@ -51,6 +51,7 @@ chmod 0755 "$fake_bin/getprop" "$fake_bin/curl"
 tools=$tmp/tools.tsv
 delivery=$tmp/delivery.tsv
 packages=$tmp/packages.tsv
+restrictions=$tmp/restrictions.tsv
 source_ref=1111111111111111111111111111111111111111
 package_ref=2222222222222222222222222222222222222222
 
@@ -66,6 +67,16 @@ cat > "$packages" <<EOF_PACKAGES
 # package	target	abi	mode	source	source_ref	package_ref	url	sha256	command	entrypoint	main_class	jni_library	jni_property	install_requires	termux_packages	runtime_requires	package_requires
 c67-fixture-arm64	arm64-v8a	arm64-v8a	archive	isomorphisms/fixture	$source_ref	$package_ref	https://example.invalid/c67-fixture.tar.gz	$digest	c67-fixture	bin/c67-fixture	-	-	-	curl,tar	-	-	-
 EOF_PACKAGES
+printf '%s\n' '# package devices reason evidence' > "$restrictions"
+export CATFOOD_ANDROID_RESTRICTIONS="$restrictions"
+approved=$tmp/approved-obligations.tsv
+CATFOOD_TOOLS="$tools" \
+CATFOOD_ANDROID_DELIVERY="$delivery" \
+CATFOOD_ANDROID_PACKAGES="$packages" \
+    sh "$root/android/obligations.sh" build "$approved"
+export CATFOOD_ANDROID_APPROVED_OBLIGATIONS="$approved"
+CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256=$(sha256sum "$approved" | awk '{print $1}')
+export CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256
 
 CATFOOD_TOOLS="$tools" \
 CATFOOD_ANDROID_DELIVERY="$delivery" \
@@ -124,13 +135,16 @@ PATH="$fake_bin:$PATH" CATFOOD_TEST_RELEASE="$release" \
     CATFOOD_ROOT="$deferred" CATFOOD_CACHE="$cache" \
     CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" \
     CATFOOD_ANDROID_PACKAGES="$packages" CATFOOD_ANDROID_DEFER_COMMANDS=1 \
-    sh "$root/android/install.sh" > "$tmp/deferred.out"
+    sh "$root/android/install.sh" > "$tmp/deferred.out" 2>&1 && {
+        printf '%s\n' 'deferred acquisition mislabeled an unexposed launcher as installed' >&2
+        exit 1
+    }
+grep -F 'installed launcher changed' "$tmp/deferred.out" >/dev/null
 test ! -L "$deferred/bin/c67-fixture"
 test "$(cat "$deferred/bin/c67-fixture")" = 'unrelated user command'
 test -f "$deferred/packages/c67-fixture-arm64/$package_ref/bin/c67-fixture"
-grep -Fqx "installation_evidence$(printf '\t')$deferred/packages/c67-fixture-arm64/$package_ref" \
-    "$deferred/receipts/c67-c67-fixture-arm64.tsv"
-printf '%s\n' 'Deferred command exposure preserves an unrelated command (synthetic)'
+test ! -f "$deferred/receipts/c67-c67-fixture-arm64.tsv"
+printf '%s\n' 'Deferred command exposure preserves an unrelated command without an installation claim (synthetic)'
 
 # Identical archive bytes reused for TAB_P10, with separate instance/target
 # records. Every "physical" result below is a synthetic validator fixture.
@@ -148,15 +162,10 @@ grep -Fqx "sha256$(printf '\t')$digest" "$tablet_receipt"
 grep -Fqx 'package_lane	arm64-v8a' "$receipt"
 grep -Fqx 'package_lane	arm64-v8a' "$tablet_receipt"
 
-promote_fixture() {
-    awk -F '\t' -v OFS='\t' '
-        $1 ~ /^(launch|runtime|physical_device)_result$/ {$2="PASS"}
-        $1 ~ /^(launch|runtime|physical_device)_evidence$/ {$2="synthetic-validator-fixture"}
-        {print}
-    ' "$1" > "$2"
-}
-promote_fixture "$receipt" "$tmp/c67-physical.tsv"
-promote_fixture "$tablet_receipt" "$tmp/tablet-physical.tsv"
+# Installation receipts remain byte/currentness evidence. Synthetic execution
+# cannot promote launch, runtime, or physical-device cells.
+cp "$receipt" "$tmp/c67-physical.tsv"
+cp "$tablet_receipt" "$tmp/tablet-physical.tsv"
 sh "$root/android/check.sh" receipt "$tmp/c67-physical.tsv" c67 synthetic-c67 >/dev/null
 sh "$root/android/check.sh" receipt "$tmp/tablet-physical.tsv" tablet synthetic-tablet >/dev/null
 reject_receipt() {
@@ -188,11 +197,12 @@ grep -Fqx 'physical_device_result	NOT_VERIFIED' "$tablet_receipt"
 printf '%s\n' 'Shared ARM64 bytes retain independent C67/tablet acceptance identities (synthetic)'
 
 # A valid ABI is insufficient for a package with a device-specific contract.
-restrictions=$tmp/restrictions.tsv
 printf 'c67-fixture-arm64\ttablet\tMali-only-fixture\tsynthetic\n' > "$restrictions"
-export CATFOOD_ANDROID_RESTRICTIONS="$restrictions"
+sh "$root/android/obligations.sh" build "$approved"
+CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256=$(sha256sum "$approved" | awk '{print $1}')
+export CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256
 reject_receipt 'restricted to another device' "$tmp/c67-physical.tsv"
-sh "$root/android/check.sh" receipt "$tmp/tablet-physical.tsv" tablet synthetic-tablet >/dev/null
+reject_receipt 'approved package obligation changed' "$tmp/tablet-physical.tsv" tablet synthetic-tablet
 sh "$root/android/check.sh" gaps c67 | grep -F 'gap:package-not-compatible-with-device' >/dev/null
 if sh "$root/android/check.sh" ready c67 >"$tmp/restricted-ready.out" 2>&1; then exit 1; fi
 PATH="$fake_bin:$PATH" CATFOOD_TEST_RELEASE="$release" CATFOOD_TARGET=c67 \
@@ -200,12 +210,13 @@ PATH="$fake_bin:$PATH" CATFOOD_TEST_RELEASE="$release" CATFOOD_TARGET=c67 \
     sh "$root/android/install.sh" >"$tmp/restricted-install.out"
 test ! -e "$tmp/restricted-workspace/bin/c67-fixture"
 grep -F 'not compatible with device target c67' "$tmp/restricted-install.out" >/dev/null
-printf '%s\n' 'Device-specific package restriction passes positive and negative controls'
+printf '%s\n' 'Device-specific restriction revokes stale approvals and blocks the excluded target'
 
 # Producer policy must not silently demote A1 or treat native ARM32 on C67 as A1.
 policy_root=$tmp/policy
 mkdir -p "$policy_root/android"
-cp "$root/android/check.sh" "$root/android/target.sh" "$root/android/application-targets.tsv" \
+cp "$root/android/check.sh" "$root/android/content.sh" "$root/android/obligations.sh" \
+    "$root/android/target.sh" "$root/android/application-targets.tsv" \
     "$root/android/conversation-targets.tsv" "$root/android/package-restrictions.tsv" "$policy_root/android/"
 sed 's/primary/paired/' "$root/android/application-targets.tsv" > "$policy_root/android/application-targets.tsv"
 if sh "$policy_root/android/check.sh" check >"$tmp/policy.out" 2>&1; then exit 1; fi

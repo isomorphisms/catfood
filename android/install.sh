@@ -3,9 +3,13 @@ set -eu
 
 root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd)
 . "$root/android/target.sh"
+. "$root/android/content.sh"
 packages=${CATFOOD_ANDROID_PACKAGES:-"$root/android/packages.tsv"}
 delivery=${CATFOOD_ANDROID_DELIVERY:-"$root/android/delivery.tsv"}
+restrictions=${CATFOOD_ANDROID_RESTRICTIONS:-"$root/android/package-restrictions.tsv"}
 tools=${CATFOOD_TOOLS:-"$root/tools.tsv"}
+approved_obligations=${CATFOOD_ANDROID_APPROVED_OBLIGATIONS:-}
+approved_obligations_sha256=${CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256:-}
 target=${CATFOOD_TARGET:-}
 workspace=${CATFOOD_ROOT:-"$HOME/opt"}
 cache=${CATFOOD_CACHE:-"${XDG_CACHE_HOME:-$HOME/.cache}/catfood"}
@@ -20,8 +24,17 @@ device_id=$(catfood_android_device_id)
 device_class=$(catfood_android_class "$target")
 legacy_lane=$(catfood_android_legacy_lane "$delivery_target")
 
-CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" \
+CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" CATFOOD_ANDROID_RESTRICTIONS="$restrictions" \
     sh "$root/android/check.sh" check >/dev/null
+[ -n "$approved_obligations" ] && [ -n "$approved_obligations_sha256" ] || {
+    printf '%s\n' 'independently approved Android obligations are unavailable; no package effects' >&2
+    exit 3
+}
+CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" CATFOOD_ANDROID_RESTRICTIONS="$restrictions" \
+    sh "$root/android/obligations.sh" verify "$approved_obligations" "$approved_obligations_sha256" >/dev/null || {
+        printf '%s\n' 'Android obligations did not match independent approval; no package effects' >&2
+        exit 3
+    }
 
 abi=$(catfood_android_getprop ro.product.cpu.abi)
 if [ "$abi" != "$expected_abi" ]; then
@@ -32,11 +45,35 @@ fi
 device_product=$(catfood_android_getprop ro.product.device || :)
 device_model=$(catfood_android_getprop ro.product.model || :)
 device_fingerprint=$(catfood_android_getprop ro.build.fingerprint || :)
+[ -n "$device_fingerprint" ] && [ "$device_fingerprint" != - ] || {
+    printf '%s\n' 'installation requires a nonempty firmware fingerprint; no package effects' >&2
+    exit 2
+}
 [ -n "$device_product" ] || device_product=-
 [ -n "$device_model" ] || device_model=-
-[ -n "$device_fingerprint" ] || device_fingerprint=-
+
+# Validate every current generation before package management, acquisition,
+# cleanup, or replacement.  A corrupt generation remains intact as evidence.
+for existing_receipt in "$workspace/receipts/$target-"*.tsv; do
+    [ -f "$existing_receipt" ] || continue
+    if [ "$(cf_field "$existing_receipt" schema)" = catfood-android-evidence-v4 ] &&
+       [ "$(cf_field "$existing_receipt" target)" = "$target" ] &&
+       [ "$(cf_field "$existing_receipt" device_id)" = "$device_id" ]; then
+        sh "$root/android/check.sh" authorize "$existing_receipt" "$target" "$device_id" installation >/dev/null || {
+            printf '%s\n' 'installed content or approved obligation failed revalidation; no package effects' >&2
+            exit 3
+        }
+    fi
+done
 
 mkdir -p "$workspace/bin" "$workspace/downloads" "$workspace/packages" "$workspace/receipts" "$cache"
+lock=$workspace/.android-install.lock
+mkdir "$lock" 2>/dev/null || {
+    printf '%s\n' 'Android installation is busy or interrupted; lock retained' >&2
+    exit 4
+}
+validation_work=$(mktemp -d "$workspace/receipts/.validation.XXXXXXXX")
+trap 'rm -rf "$validation_work"; rmdir "$lock"' EXIT HUP INT TERM
 PATH="$workspace/bin:$PATH"
 export PATH
 tab=$(printf '\t')
@@ -161,7 +198,7 @@ check_package_requirements() {
         receipt="$workspace/receipts/$target-$required.tsv"
         [ -f "$receipt" ] &&
         CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" \
-            sh "$root/android/check.sh" receipt "$receipt" "$target" "$device_id" >/dev/null 2>&1 &&
+            sh "$root/android/check.sh" authorize "$receipt" "$target" "$device_id" installation >/dev/null 2>&1 &&
         grep -Fqx "package_ref${tab}$expected_ref" "$receipt" 2>/dev/null &&
         grep -Fqx "installation_result${tab}PASS" "$receipt" 2>/dev/null || {
             printf '%s requires package %s at %s before installation\n' "$package" "$required" "$expected_ref" >&2
@@ -273,7 +310,7 @@ EOF_ROW
     current=0
     if [ -d "$package_dir" ] && [ -f "$receipt" ] &&
        CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" \
-           sh "$root/android/check.sh" receipt "$receipt" "$target" "$device_id" >/dev/null 2>&1 &&
+           sh "$root/android/check.sh" authorize "$receipt" "$target" "$device_id" installation >/dev/null 2>&1 &&
        grep -Fqx "installation_result${tab}PASS" "$receipt" 2>/dev/null; then
         current=1
         while IFS="$tab" read -r command entrypoint; do
@@ -291,7 +328,12 @@ EOF_ROW
     fi
 
     if [ "$current" -eq 0 ]; then
-        rm -f "$receipt"
+        if [ -f "$receipt" ]; then
+            historical=$workspace/receipts/history
+            mkdir -p "$historical"
+            historical_receipt=$historical/$target-$package-$(cf_hash "$receipt").tsv
+            [ -f "$historical_receipt" ] || cp "$receipt" "$historical_receipt"
+        fi
         download="$workspace/downloads/$package-$sha256"
         if [ ! -f "$download" ] || ! verify_sha256 "$sha256" "$download" >/dev/null 2>&1; then
             temporary_download="$download.tmp.$$"
@@ -307,13 +349,16 @@ EOF_ROW
         staging="$workspace/packages/.$package.staging.$$"
         rm -rf "$staging"
         mkdir -p "$staging"
-        case "$mode" in
-            archive|dex-jni) tar -xzof "$download" -C "$staging" ;;
-            file)
-                mkdir -p "$staging/$(dirname -- "$first_entrypoint")"
-                cp "$download" "$staging/$first_entrypoint"
-                ;;
-        esac
+        cf_extract "$download" "$mode" "$first_entrypoint" "$staging" || {
+            printf '%s\n' 'package archive rejected before installation' >&2
+            rm -rf "$staging" "$staging.names" "$staging.types" "$entries_file"
+            exit 3
+        }
+        [ "$(cf_hash "$download")" = "$sha256" ] || {
+            printf '%s\n' 'download changed during extraction' >&2
+            rm -rf "$staging" "$entries_file"
+            exit 3
+        }
 
         while IFS="$tab" read -r command entrypoint; do
             [ -f "$staging/$entrypoint" ] || {
@@ -358,8 +403,22 @@ EOF_ROW
         fi
 
         mkdir -p "$(dirname -- "$package_dir")"
-        rm -rf "$package_dir"
-        mv "$staging" "$package_dir"
+        if [ -e "$package_dir" ]; then
+            cf_tree "$staging" "$validation_work/staging.tsv"
+            cf_tree "$package_dir" "$validation_work/existing.tsv" || {
+                printf '%s\n' 'existing generation is not a valid package tree; preserved without replacement' >&2
+                rm -rf "$staging" "$entries_file"
+                exit 3
+            }
+            if ! cmp -s "$validation_work/staging.tsv" "$validation_work/existing.tsv"; then
+                printf '%s\n' 'existing immutable generation conflicts with approved package bytes; preserved without replacement' >&2
+                rm -rf "$staging" "$entries_file"
+                exit 3
+            fi
+            rm -rf "$staging"
+        else
+            mv "$staging" "$package_dir"
+        fi
     else
         printf '%-24s current %s\n' "$package" "$package_ref"
     fi
@@ -385,15 +444,7 @@ EOF_ROW
                     exit 127
                 }
                 temporary_wrapper="$destination.tmp.$$"
-                cat > "$temporary_wrapper" <<EOF_WRAPPER
-#!/bin/sh
-# catfood android dex-jni wrapper
-set -eu
-root=\$(CDPATH='' cd -- "\$(dirname -- "\$0")/.." && pwd)
-package_dir="\$root/packages/$package/$package_ref"
-app_process=\${CATFOOD_APP_PROCESS:-/system/bin/app_process}
-exec env CLASSPATH="\$package_dir/$entrypoint" "\$app_process" "-D$jni_property=\$package_dir/$jni_library" /system/bin "$main_class" "\$@"
-EOF_WRAPPER
+                cf_wrapper "$package" "$package_ref" "$entrypoint" "$jni_property" "$jni_library" "$main_class" > "$temporary_wrapper"
                 chmod +x "$temporary_wrapper"
                 mv "$temporary_wrapper" "$destination"
                 ;;
@@ -404,7 +455,7 @@ EOF_WRAPPER
 
     if [ "$current" -eq 0 ]; then
         {
-            printf 'schema\tcatfood-android-evidence-v2\n'
+            printf 'schema\tcatfood-android-evidence-v4\n'
             printf 'package\t%s\n' "$package"
             printf 'target\t%s\n' "$target"
             printf 'package_lane\t%s\n' "$delivery_target"
@@ -440,9 +491,33 @@ EOF_WRAPPER
             printf 'emulator_evidence\t-\n'
             printf 'physical_device_result\tNOT_VERIFIED\n'
             printf 'physical_device_evidence\t-\n'
+            printf 'executor_path\t%s\n' "$(if [ "$mode" = dex-jni ]; then printf '%s' "${CATFOOD_APP_PROCESS:-/system/bin/app_process}"; else printf '%s' -; fi)"
         } > "$receipt.tmp.$$"
+        cf_tree "$package_dir" "$validation_work/content.tsv"
+        awk -F '\t' -v p="$package" '$1==p {print $10}' "$packages" > "$validation_work/commands"
+        while IFS= read -r installed_command; do
+            printf '%s\t%s\n' "$installed_command" "$(cf_hash "$workspace/bin/$installed_command")"
+        done < "$validation_work/commands" > "$validation_work/launchers.tsv"
+        cf_dependencies "$receipt.tmp.$$" "$workspace" > "$validation_work/dependencies.tsv"
+        package_obligation_sha256=$(sh "$root/android/obligations.sh" package-sha "$approved_obligations" "$package")
+        {
+            printf 'content_sha256\t%s\n' "$(cf_hash "$validation_work/content.tsv")"
+            printf 'launcher_sha256\t%s\n' "$(cf_hash "$validation_work/launchers.tsv")"
+            printf 'dependency_sha256\t%s\n' "$(cf_hash "$validation_work/dependencies.tsv")"
+            printf 'profile_sha256\t%s\n' "$(cf_profile_hash "$validation_work/profile")"
+            printf 'installation_procedure_sha256\t%s\n' "$(cf_procedure_hash)"
+            printf 'approved_material_sha256\t%s\n' "$approved_obligations_sha256"
+            printf 'package_obligation_sha256\t%s\n' "$package_obligation_sha256"
+            printf 'evidence_scope\t%s\n' "$(if [ -n "${CATFOOD_GETPROP:-}${CATFOOD_APP_PROCESS:-}" ] || [ ! -x /system/bin/getprop ]; then printf synthetic; else printf physical-observation; fi)"
+        } >> "$receipt.tmp.$$"
         CATFOOD_TOOLS="$tools" CATFOOD_ANDROID_DELIVERY="$delivery" CATFOOD_ANDROID_PACKAGES="$packages" \
             sh "$root/android/check.sh" receipt "$receipt.tmp.$$" "$target" "$device_id" >/dev/null
+        cf_observe_receipt "$receipt.tmp.$$" || {
+            printf '%s\n' 'device changed during installation; candidate receipt preserved as failed attempt' >&2
+            mkdir -p "$workspace/receipts/failed"
+            cp "$receipt.tmp.$$" "$workspace/receipts/failed/$target-$package-$(cf_hash "$receipt.tmp.$$").tsv"
+            exit 3
+        }
         mv "$receipt.tmp.$$" "$receipt"
     fi
 done

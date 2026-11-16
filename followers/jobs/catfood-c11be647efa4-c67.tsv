@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-c11be647efa4-c67
+repository	isomorphisms/catfood
+branch	build-campaign/p02-local-filter-boundary
+pr	163
+trigger_commit	c11be647efa4de761aa663614f5cadbb20dac6fd
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	c67
+follower_arch	aarch64
+required	yes
+action	follower target for Cat Food commit c11be647efa4de761aa663614f5cadbb20dac6fd on c67; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	physical-device
+acceptance_action	./catfood && sh android/check.sh gaps c67
+state	superseded
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	catfood-ddd91362d02c-c67
+follow_policy	exact

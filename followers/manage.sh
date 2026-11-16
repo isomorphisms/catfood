@@ -501,7 +501,7 @@ stale_target() {
 
 control_path() {
     case $1 in
-        followers/*|AGENTS.md|docs/followers.md|tests/followers.sh|.github/workflows/followers.yml|android/README.md|android/devices/*|docs/observations/*)
+        followers/*|AGENTS.md|docs/followers.md|tests/followers.sh|.github/workflows/followers.yml|android/README.md|android/device-instance-and-artifact-location.md|android/devices/*|docs/observations/*)
             return 0
             ;;
         *)
@@ -572,6 +572,7 @@ same_source_state() {
         ':(exclude)tests/followers.sh' \
         ':(exclude).github/workflows/followers.yml' \
         ':(exclude)android/README.md' \
+        ':(exclude)android/device-instance-and-artifact-location.md' \
         ':(exclude)android/devices/**' \
         ':(exclude)docs/observations/**' >/dev/null
 }
