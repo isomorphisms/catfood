@@ -149,11 +149,12 @@ done
     fi
     awk -F '\t' -v OFS='\t' '$1=="sdf-greased" {$15="greased.tar"; $16="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; $17="until:2020-01-01T00:00:00Z"; $19="eligible"; $20="accepted"} {print}' \
         "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
-    if CATFOOD_HOST_CELL_NOW=2026-10-18T00:00:00Z \
-        sh followers/manage.sh host-matrix >/dev/null 2>&1; then
+    if CATFOOD_HOST_CELL_NOW=1900-01-01T00:00:00Z \
+        sh followers/manage.sh host-matrix > "$tmp/expired-static-artifact.log" 2>&1; then
         echo 'expired artifact availability was accepted' >&2
         exit 1
     fi
+    grep -F 'accepted an expired artifact' "$tmp/expired-static-artifact.log" >/dev/null
     # These are synthetic metadata-reader controls, never live host evidence.
     for bad_availability in \
         until:2028-13-01T00:00:00Z until:2028-02-30T00:00:00Z \
@@ -165,30 +166,29 @@ done
         awk -F '\t' -v OFS='\t' -v availability="$bad_availability" \
             '$1=="sdf-greased" {$15="greased.tar"; $16="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; $17=availability; $19="eligible"; $20="accepted"} {print}' \
             "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
-        if CATFOOD_HOST_CELL_NOW=2026-10-18T00:00:00Z \
-            sh followers/manage.sh host-matrix > "$tmp/invalid-availability.log" 2>&1; then
+        if sh followers/manage.sh host-matrix > "$tmp/invalid-availability.log" 2>&1; then
             printf 'invalid normalized host artifact availability was accepted: %s\n' "$bad_availability" >&2
             exit 1
         fi
         grep -F 'invalid availability timestamp' "$tmp/invalid-availability.log" >/dev/null
     done
     awk -F '\t' -v OFS='\t' \
-        '$1=="sdf-greased" {$15="greased.tar"; $16="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; $17="until:2028-02-29T00:00:00Z"; $19="eligible"; $20="accepted"} {print}' \
+        '$1=="sdf-greased" {$15="greased.tar"; $16="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"; $17="until:9996-02-29T00:00:00Z"; $19="eligible"; $20="accepted"} {print}' \
         "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
     # A valid calendar reaches the unavailable authority boundary; synthetic
     # metadata can no longer create a passing accepted Grease runtime fixture.
-    if CATFOOD_HOST_CELL_NOW=2026-10-18T00:00:00Z \
+    if CATFOOD_HOST_CELL_NOW=9999-01-01T00:00:00Z \
         sh followers/manage.sh host-matrix > "$tmp/valid-calendar.log" 2>&1; then
         echo 'valid availability metadata manufactured runtime eligibility' >&2
         exit 1
     fi
     grep -F 'independently qualified host runtime object is unavailable' "$tmp/valid-calendar.log" >/dev/null
     if CATFOOD_HOST_CELL_NOW=invalid-clock \
-        sh followers/manage.sh host-matrix > "$tmp/invalid-clock.log" 2>&1; then
-        echo 'invalid clock was accepted for host artifact availability' >&2
+        sh followers/manage.sh host-matrix > "$tmp/ignored-clock.log" 2>&1; then
+        echo 'caller clock metadata manufactured runtime eligibility' >&2
         exit 1
     fi
-    grep -F 'invalid host-cell clock' "$tmp/invalid-clock.log" >/dev/null
+    grep -F 'independently qualified host runtime object is unavailable' "$tmp/ignored-clock.log" >/dev/null
     awk -F '\t' -v OFS='\t' '$1=="sdf-greased" {$17="current"; $19="revoked"; $20="accepted"} {print}' \
         "$tmp/host-cells-good.tsv" > followers/host-cells.tsv
     if sh followers/manage.sh host-matrix >/dev/null 2>&1; then
@@ -318,10 +318,123 @@ EOF_HOST_RECEIPT
         echo 'wrong host runtime identity was accepted' >&2
         exit 1
     fi
+    cp -R followers/jobs "$tmp/jobs-before-host-record-refusal"
+    cp -R followers/receipts "$tmp/receipts-before-host-record-refusal"
+    for duplicate_key in source_revision observation_kind schema job_id \
+        repository host_target evidence_kind qualification_state identical-source malformed-source
+    do
+        cp "$tmp/github-host-receipt.tsv" "$tmp/duplicate-host-receipt.tsv"
+        case $duplicate_key in
+            identical-source)
+                printf 'source_revision\t%s\n' "$trigger" >> "$tmp/duplicate-host-receipt.tsv" ;;
+            malformed-source)
+                awk -F '\t' -v OFS='\t' '$1=="source_revision" {$3="extra-value"} {print}' \
+                    "$tmp/github-host-receipt.tsv" > "$tmp/duplicate-host-receipt.tsv" ;;
+            *) printf '%s\tconflicting-value\n' "$duplicate_key" >> "$tmp/duplicate-host-receipt.tsv" ;;
+        esac
+        if AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
+            record "$id" "$tmp/github-receipt.tsv" \
+            "$tmp/duplicate-host-receipt.tsv" > "$tmp/duplicate-host-record.log" 2>&1; then
+            if AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
+                host-reconcile "$trigger" > "$tmp/duplicate-host-reconcile.log" 2>&1; then
+                printf 'duplicate host field was admitted and accepted by reconciliation: %s\n' "$duplicate_key" >&2
+            fi
+            printf 'duplicate host field was admitted: %s\n' "$duplicate_key" >&2
+            exit 1
+        fi
+        diff -r "$tmp/jobs-before-host-record-refusal" followers/jobs >/dev/null
+        diff -r "$tmp/receipts-before-host-record-refusal" followers/receipts >/dev/null
+        [ ! -e followers/host-receipts ] || {
+            echo 'rejected host receipt created canonical host material' >&2
+            exit 1
+        }
+    done
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
         record "$id" "$tmp/github-receipt.tsv" \
         "$tmp/github-host-receipt.tsv" >/dev/null
     AICI_FOLLOWERS="$verifier" sh followers/manage.sh host-reconcile "$trigger" >/dev/null
+    cp -R followers/jobs "$tmp/jobs-before-host-reconcile-refusal"
+    cp -R followers/receipts "$tmp/receipts-before-host-reconcile-refusal"
+    for duplicate_key in source_revision observation_kind schema job_id \
+        repository host_target evidence_kind qualification_state identical-source malformed-source
+    do
+        cp "$tmp/github-host-receipt.tsv" "followers/host-receipts/$id.tsv"
+        case $duplicate_key in
+            identical-source)
+                printf 'source_revision\t%s\n' "$trigger" >> "followers/host-receipts/$id.tsv" ;;
+            malformed-source)
+                awk -F '\t' -v OFS='\t' '$1=="source_revision" {$3="extra-value"} {print}' \
+                    "$tmp/github-host-receipt.tsv" > "followers/host-receipts/$id.tsv" ;;
+            *) printf '%s\tconflicting-value\n' "$duplicate_key" >> "followers/host-receipts/$id.tsv" ;;
+        esac
+        cp "followers/host-receipts/$id.tsv" "$tmp/host-receipt-before-reconcile.tsv"
+        if AICI_FOLLOWERS="$verifier" sh followers/manage.sh \
+            host-reconcile "$trigger" > "$tmp/duplicate-host-reconcile.log" 2>&1; then
+            printf 'host reconciliation accepted a duplicate field: %s\n' "$duplicate_key" >&2
+            exit 1
+        fi
+        diff -r "$tmp/jobs-before-host-reconcile-refusal" followers/jobs >/dev/null
+        diff -r "$tmp/receipts-before-host-reconcile-refusal" followers/receipts >/dev/null
+        cmp "$tmp/host-receipt-before-reconcile.tsv" "followers/host-receipts/$id.tsv"
+    done
+    cp "$tmp/github-host-receipt.tsv" "followers/host-receipts/$id.tsv"
+    AICI_FOLLOWERS="$verifier" sh followers/manage.sh host-reconcile "$trigger" >/dev/null
+    # A named artifact has a real acquisition deadline. A caller-supplied past
+    # clock must not revive it during admission or accepted-state reconciliation.
+    cp "followers/jobs/$id.tsv" "$tmp/original-host-job.tsv"
+    cp "followers/receipts/$id.tsv" "$tmp/original-host-receipt.tsv"
+    cp "followers/host-receipts/$id.tsv" "$tmp/original-host-sidecar.tsv"
+    awk -F '\t' -v OFS='\t' '
+        $1=="artifact" {$2="fixture-host-runtime.tar.gz"}
+        $1=="artifact_sha256" {$2="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+        {print}
+    ' "$tmp/original-host-job.tsv" > "followers/jobs/$id.tsv"
+    awk -F '\t' -v OFS='\t' '
+        $1=="artifact" {$2="fixture-host-runtime.tar.gz"}
+        $1=="artifact_sha256" {$2="aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+        {print}
+    ' "$tmp/github-receipt.tsv" > "$tmp/artifact-receipt.tsv"
+    sed 's/^artifact_available_until.*/artifact_available_until\t2000-01-01T00:00:00Z/' \
+        "$tmp/github-host-receipt.tsv" > "$tmp/expired-host-artifact.tsv"
+    cp -R followers/jobs "$tmp/jobs-before-expired-host-record"
+    cp -R followers/receipts "$tmp/receipts-before-expired-host-record"
+    cp -R followers/host-receipts "$tmp/host-receipts-before-expired-host-record"
+    if CATFOOD_HOST_CELL_NOW=1900-01-01T00:00:00Z AICI_FOLLOWERS="$verifier" \
+        sh followers/manage.sh record "$id" "$tmp/artifact-receipt.tsv" \
+        "$tmp/expired-host-artifact.tsv" > "$tmp/expired-host-record.log" 2>&1; then
+        if CATFOOD_HOST_CELL_NOW=1900-01-01T00:00:00Z AICI_FOLLOWERS="$verifier" \
+            sh followers/manage.sh host-reconcile "$trigger" > "$tmp/expired-host-reconcile.log" 2>&1; then
+            echo 'caller clock admitted an expired artifact and accepted host reconciliation' >&2
+        fi
+        echo 'caller clock admitted an expired host artifact receipt' >&2
+        exit 1
+    fi
+    grep -F 'artifact availability expired' "$tmp/expired-host-record.log" >/dev/null
+    diff -r "$tmp/jobs-before-expired-host-record" followers/jobs >/dev/null
+    diff -r "$tmp/receipts-before-expired-host-record" followers/receipts >/dev/null
+    diff -r "$tmp/host-receipts-before-expired-host-record" followers/host-receipts >/dev/null
+    sed 's/^artifact_available_until.*/artifact_available_until\t9996-02-29T00:00:00Z/' \
+        "$tmp/github-host-receipt.tsv" > "$tmp/future-host-artifact.tsv"
+    CATFOOD_HOST_CELL_NOW=9999-01-01T00:00:00Z AICI_FOLLOWERS="$verifier" \
+        sh followers/manage.sh record "$id" "$tmp/artifact-receipt.tsv" \
+        "$tmp/future-host-artifact.tsv" >/dev/null
+    CATFOOD_HOST_CELL_NOW=9999-01-01T00:00:00Z AICI_FOLLOWERS="$verifier" \
+        sh followers/manage.sh host-reconcile "$trigger" >/dev/null
+    cp -R followers/jobs "$tmp/jobs-before-expired-host-reconcile"
+    cp -R followers/receipts "$tmp/receipts-before-expired-host-reconcile"
+    cp "$tmp/expired-host-artifact.tsv" "followers/host-receipts/$id.tsv"
+    if CATFOOD_HOST_CELL_NOW=1900-01-01T00:00:00Z AICI_FOLLOWERS="$verifier" \
+        sh followers/manage.sh host-reconcile "$trigger" > "$tmp/expired-host-reconcile.log" 2>&1; then
+        echo 'caller clock revived an expired accepted host artifact' >&2
+        exit 1
+    fi
+    grep -F 'artifact availability expired' "$tmp/expired-host-reconcile.log" >/dev/null
+    diff -r "$tmp/jobs-before-expired-host-reconcile" followers/jobs >/dev/null
+    diff -r "$tmp/receipts-before-expired-host-reconcile" followers/receipts >/dev/null
+    cmp "$tmp/expired-host-artifact.tsv" "followers/host-receipts/$id.tsv"
+    cp "$tmp/original-host-job.tsv" "followers/jobs/$id.tsv"
+    cp "$tmp/original-host-receipt.tsv" "followers/receipts/$id.tsv"
+    cp "$tmp/original-host-sidecar.tsv" "followers/host-receipts/$id.tsv"
     sh followers/manage.sh host-matrix "$trigger" > "$tmp/host-matrix-recorded.tsv"
     awk -F '\t' -v id="$id" '$1==id {
         if ($4!="follower" || $19!="unknown" || $20!="accepted") exit 1

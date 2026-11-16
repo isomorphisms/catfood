@@ -98,6 +98,15 @@ object. Source-only D receipts and a candidate-selected verifier cannot fill
 that missing owner interface. The reader retains the unresolved obligation
 until such an applicable interface and genuine qualification exist.
 
+Each requested host-sidecar key must occur once, with exactly two tab-separated
+columns. A duplicate, malformed or failed record read
+emits no usable value, so an equality comparison cannot admit the first value
+after the reader has already failed. Receipt admission and reconciliation use
+the real current UTC clock for acquisition deadlines. Caller-supplied
+`CATFOOD_HOST_CELL_NOW` is ignored; it cannot revive an expired artifact or turn
+a historical replay into current acceptance. These checks still establish only
+the canonical follower's own evidence role, not managed-runtime eligibility.
+
 The retained SDF records deliberately separate four claims:
 
 - ICKY/GDC compiler-runtime qualification is blocked at exact source

@@ -67,3 +67,28 @@ provenance recorded in [`c11be647efa4.md`](c11be647efa4.md), binary SHA-256
 `d9fa1b5498c926a280ec9e7705d51a2d8b1fa548ed1352b192d37315eee4a866`.
 That older compiler evidence is not relabelled as the maintained workflow's
 selected ICK qualification. Fresh final-head hosted results remain separate.
+
+## Receipt-reader follow-up
+
+The later control-only repair closes two admission defects reproduced at
+head `27de4d806fb87d53bf2b3f9482316ef4fad9a9f6`. A host sidecar with a valid
+first `source_revision` followed by a conflicting duplicate was admitted by
+`record` and then accepted by `host-reconcile`. Separately, a caller clock of
+`1900-01-01T00:00:00Z` admitted and reconciled a named artifact that expired at
+`2000-01-01T00:00:00Z`, despite the real current clock being in 2026.
+
+The shared record reader now emits no value on duplicate, malformed matched
+fields or read failure, and both deadline checks use the actual current UTC
+clock. The expanded complete follower corpus passes conflicting and identical
+duplicates, malformed matched fields and past-clock attacks through both real
+owner paths. Rejected admission leaves the job, canonical receipt and host
+sidecar bytes unchanged; rejected reconciliation leaves its input unchanged.
+Valid named-artifact admission and reconciliation still pass with a stable
+future deadline, even when the caller supplies a later clock.
+
+These changes affect only the existing follower reader, its fixtures and
+boundary documentation. The delivered non-control source still resolves to
+`5ae4aebf2cfe172c6806932ff5144ce43a5edea2`; no duplicate target obligations,
+production qualification or accepted runtime receipt is created. The revised
+head requires its own fresh hosted source qualification rather than relying on
+the earlier head's green checks.

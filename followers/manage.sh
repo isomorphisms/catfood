@@ -34,7 +34,20 @@ valid_utc_timestamp() {
 
 record_value() {
     file=$1 key=$2
-    awk -F '\t' -v key="$key" '$1 == key { if (seen++) exit 2; value=$2 } END { if (!seen) exit 1; print value }' "$file"
+    # Equality substitutions cannot retain a reader's exit status. Failed reads
+    # must therefore emit no value, including AWK errors that still run END.
+    record_result=$(awk -F '\t' -v key="$key" '
+        $1 == key {
+            if (NF != 2 || seen++) { invalid=1; exit 2 }
+            value=$2
+        }
+        END {
+            if (invalid) exit 2
+            if (!seen) exit 1
+            print value
+        }
+    ' "$file") || return $?
+    printf '%s\n' "$record_result"
 }
 
 scope_matches() {
@@ -157,7 +170,7 @@ host_cell_records_check() {
                     expiry=${availability#until:}
                     valid_utc_timestamp "$expiry" ||
                         fatal "host cell $cell has invalid availability timestamp $expiry"
-                    now=${CATFOOD_HOST_CELL_NOW:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}
+                    now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
                     valid_utc_timestamp "$now" || fatal "invalid host-cell clock $now"
                     [ "$expiry" \> "$now" ] ||
                         fatal "host cell $cell accepted an expired artifact"
@@ -296,7 +309,7 @@ validate_host_receipt() {
             *)
                 valid_utc_timestamp "$availability" ||
                     fatal "$host_receipt has invalid artifact availability $availability"
-                now=${CATFOOD_HOST_CELL_NOW:-$(date -u +%Y-%m-%dT%H:%M:%SZ)}
+                now=$(date -u +%Y-%m-%dT%H:%M:%SZ)
                 valid_utc_timestamp "$now" || fatal "invalid host-cell clock $now"
                 [ "$availability" \> "$now" ] ||
                     fatal "$host_receipt artifact availability expired at $availability"
