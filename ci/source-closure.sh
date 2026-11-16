@@ -43,14 +43,38 @@ source_closure_checkout() (
     if printf '%s\n' "$closure_index" | grep '^[a-zS]' >/dev/null; then
         source_closure_error 'index hides tracked content'; return 1
     fi
-    closure_status=$(source_closure_git -C "$closure_physical" status --porcelain --untracked-files=all) || return 1
+    closure_raw=$(mktemp -d)
+    trap 'rm -rf "$closure_raw"' EXIT HUP INT TERM
+    # Status normally runs clean/process drivers. Inspect source without running
+    # checkout-local commands, including drivers supplied by included config.
+    # Read NUL-separated names first so a control byte cannot split a key and
+    # leave its original driver enabled when we append command-line overrides.
+    if source_closure_git -C "$closure_physical" config --null --name-only --get-regexp '^filter[.].*[.](clean|smudge|process)$' > "$closure_raw/filter-keys"; then
+        :
+    else
+        closure_config_status=$?
+        [ "$closure_config_status" -eq 1 ] || return 1
+    fi
+    closure_unsafe_keys=$(LC_ALL=C tr -d '\000[:print:]' < "$closure_raw/filter-keys" | wc -c)
+    [ "$closure_unsafe_keys" -eq 0 ] || source_closure_error 'unsupported filter configuration key' || return 1
+    tr '\000' '\n' < "$closure_raw/filter-keys" > "$closure_raw/filter-lines"
+    set -- -C "$closure_physical"
+    while IFS= read -r closure_filter_key; do
+        # Git accepts '=' in a subsection name, but -c splits the first '=';
+        # such a key cannot be disabled by this command-line representation.
+        case $closure_filter_key in
+            *=*) source_closure_error 'unsupported filter configuration key'; return 1 ;;
+        esac
+        set -- "$@" -c "$closure_filter_key=" -c "${closure_filter_key%.*}.required=false"
+    done < "$closure_raw/filter-lines"
+    # Each consumed child is checked by the recursive walker with its own safe
+    # status invocation. Parent status must not run a child's filter first.
+    closure_status=$(source_closure_git "$@" status --porcelain --untracked-files=all --ignore-submodules=dirty) || return 1
     [ -z "$closure_status" ] || source_closure_error 'partial or changed checkout' || return 1
     closure_sparse=$(source_closure_git -C "$closure_physical" config --bool core.sparseCheckout || :)
     [ "$closure_sparse" != true ] || source_closure_error 'sparse checkout is incomplete' || return 1
-    # Status applies clean filters and line-ending normalization. Compare raw
-    # working bytes to committed blobs as well, batching ordinary files.
-    closure_raw=$(mktemp -d)
-    trap 'rm -rf "$closure_raw"' EXIT HUP INT TERM
+    # Status still applies line-ending normalization. Compare raw working bytes
+    # to committed blobs as well, batching ordinary files.
     source_closure_git -C "$closure_physical" -c core.quotePath=false ls-tree -r HEAD > "$closure_raw/tree" || return 1
     : > "$closure_raw/paths"
     : > "$closure_raw/expected"
