@@ -27,10 +27,13 @@ jobs:
           dash -n install-binaries.sh
           dash -n install-lua.sh
           dash -n android/check.sh
+          dash -n android/content.sh
+          dash -n android/obligations.sh
           dash -n android/install.sh
           dash -n android/bootstrap-crawlspace.sh
           dash -n android/install-crawlspace-bootstrap.sh
           dash -n tests/android-delivery.sh
+          dash -n tests/android-obligations.sh
           dash -n tests/android-crawlspace.sh
           dash -n tests/runtime-binaries.sh
           dash -n tests/lua.sh
@@ -48,6 +51,9 @@ jobs:
       - name: Exercise Android delivery contracts
         shell: sh
         run: sh tests/android-delivery.sh
+      - name: Exercise approved Android obligation graph
+        shell: sh
+        run: sh tests/android-obligations.sh
       - name: Verify exact published Reddit archives without launching Android
         shell: sh
         run: sh tests/android-reddit-artifact.sh

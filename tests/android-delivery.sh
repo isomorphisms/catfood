@@ -41,13 +41,14 @@ fake_bin=$tmp/bin
 backend_log=$tmp/backend.log
 app_log=$tmp/app.log
 pkg_log=$tmp/pkg.log
-mkdir -p "$fixture" "$bundle/lib" "$fake_bin"
+mkdir -p "$fixture" "$bundle/lib" "$bundle/data" "$fake_bin"
 cp "$root/tests/android-properties.sh" "$fake_bin/getprop"
 chmod +x "$fake_bin/getprop"
 export CATFOOD_DEVICE_ID=synthetic-a1
 export CATFOOD_GETPROP="$fake_bin/getprop"
 printf '%s\n' 'direct-dex-fixture' > "$bundle/classes.dex"
 printf '%s\n' 'jni-fixture' > "$bundle/lib/libapp.so"
+printf '%s\n' 'non-entry-fixture' > "$bundle/data/dependency"
 cat > "$bundle/catfood-package.tsv" <<EOF_RECEIPT
 target	phone
 abi	armeabi-v7a
@@ -107,6 +108,15 @@ cat > "$fake_bin/app_process" <<'EOF_APP_PROCESS'
 #!/bin/sh
 printf 'CLASSPATH=%s\n' "${CLASSPATH:-}" >> "$CATFOOD_APP_LOG"
 printf 'ARGS=%s\n' "$*" >> "$CATFOOD_APP_LOG"
+case $* in
+    *org.isomorphisms.reddit.RedditCli*url*)
+        printf '%s\n' 'https://www.reddit.com/search/?q=computer%20science%20degree%20regret'
+        ;;
+    *org.isomorphisms.reddit.RedditCli*search*)
+        printf '%s\n' 'reddit: missing REDDIT_ACCESS_TOKEN' >&2
+        exit 2
+        ;;
+esac
 exit 0
 EOF_APP_PROCESS
 chmod 0755 "$fake_bin/curl" "$fake_bin/pkg" "$fake_bin/lua5.5" "$fake_bin/luac5.5" "$fake_bin/idris-arm-backend" "$fake_bin/app_process"
@@ -123,6 +133,7 @@ fi
 fixture_tools=$tmp/tools.tsv
 fixture_delivery=$tmp/delivery.tsv
 fixture_packages=$tmp/packages.tsv
+fixture_restrictions=$tmp/restrictions.tsv
 cat > "$fixture_tools" <<'EOF_TOOLS'
 app https://github.com/isomorphisms/app.git main none
 idris-arm-backend https://github.com/isomorphisms/idris-arm-backend.git main none
@@ -137,11 +148,45 @@ cat > "$fixture_packages" <<EOF_PACKAGES
 # package	target	abi	mode	source	source_ref	package_ref	url	sha256	command	entrypoint	main_class	jni_library	jni_property	install_requires	termux_packages	runtime_requires	package_requires
 app-phone	armeabi-v7a	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	app	classes.dex	org.isomorphisms.app.Main	lib/libapp.so	app.library	curl,sha256sum,tar	curl,catfood-runtime	-	-
 EOF_PACKAGES
+printf '%s\n' '# package devices reason evidence' > "$fixture_restrictions"
+export CATFOOD_ANDROID_RESTRICTIONS="$fixture_restrictions"
+fixture_approved=$tmp/fixture-approved.tsv
+CATFOOD_TOOLS="$fixture_tools" CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
+CATFOOD_ANDROID_PACKAGES="$fixture_packages" \
+    sh "$root/android/obligations.sh" build "$fixture_approved"
+fixture_approved_sha=$(sha256sum "$fixture_approved" | awk '{print $1}')
+export CATFOOD_ANDROID_APPROVED_OBLIGATIONS="$fixture_approved"
+export CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256="$fixture_approved_sha"
 
 CATFOOD_TOOLS="$fixture_tools" \
 CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
 CATFOOD_ANDROID_PACKAGES="$fixture_packages" \
     sh "$root/android/check.sh" ready phone >/dev/null
+
+# Candidate self-consistency is not approval. Missing external material stops
+# before the workspace, package manager, or acquisition path is touched.
+no_approval_workspace=$tmp/no-approval-workspace
+if (
+    unset CATFOOD_ANDROID_APPROVED_OBLIGATIONS CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256
+    PATH="$fake_bin:$PATH" \
+    CATFOOD_TEST_RELEASE="$fixture" \
+    CATFOOD_PKG_LOG="$pkg_log" \
+    CATFOOD_DEVICE_ABI=armeabi-v7a \
+    CATFOOD_TARGET=phone \
+    CATFOOD_ROOT="$no_approval_workspace" \
+    CATFOOD_CACHE="$tmp/no-approval-cache" \
+    CATFOOD_TOOLS="$fixture_tools" \
+    CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
+    CATFOOD_ANDROID_PACKAGES="$fixture_packages" \
+        sh "$root/android/install.sh" >"$tmp/no-approval.out" 2>&1
+); then
+    printf '%s\n' 'candidate manifests authorized themselves without independent material' >&2
+    exit 1
+fi
+grep -F 'independently approved Android obligations are unavailable; no package effects' \
+    "$tmp/no-approval.out" >/dev/null
+test ! -e "$no_approval_workspace"
+test ! -s "$pkg_log"
 
 # One inventory entry may expose several independently packaged commands.
 suite_delivery=$tmp/suite-delivery.tsv
@@ -240,6 +285,63 @@ CATFOOD_TOOLS="$fixture_tools" \
 CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
 CATFOOD_ANDROID_PACKAGES="$fixture_packages" \
     sh "$root/android/check.sh" receipt "$workspace/receipts/phone-app-phone.tsv" >/dev/null
+
+receipt_before_retry=$(sha256sum "$workspace/receipts/phone-app-phone.tsv" | awk '{print $1}')
+PATH="$fake_bin:$PATH" \
+CATFOOD_TEST_RELEASE="$fixture" \
+CATFOOD_BACKEND_LOG="$backend_log" \
+CATFOOD_APP_LOG="$app_log" \
+CATFOOD_PKG_LOG="$pkg_log" \
+CATFOOD_APP_PROCESS="$fake_bin/app_process" \
+CATFOOD_DEVICE_ABI=armeabi-v7a \
+CATFOOD_TARGET=phone \
+CATFOOD_ROOT="$workspace" \
+CATFOOD_CACHE="$cache" \
+CATFOOD_TOOLS="$fixture_tools" \
+CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
+CATFOOD_ANDROID_PACKAGES="$fixture_packages" \
+    sh "$root/android/install.sh" >"$tmp/current-retry.out"
+grep "^app-phone[[:space:]]*current $package_ref$" "$tmp/current-retry.out" >/dev/null
+test "$(sha256sum "$workspace/receipts/phone-app-phone.tsv" | awk '{print $1}')" = "$receipt_before_retry"
+
+# A package generation is an immutable tree, not merely an entrypoint. A
+# changed non-entry dependency must stop the next attempt before package
+# management or acquisition, without deleting either the changed bytes or the
+# independently retained receipt.
+installed_dependency="$workspace/packages/app-phone/$package_ref/data/dependency"
+receipt_before=$(sha256sum "$workspace/receipts/phone-app-phone.tsv" | awk '{print $1}')
+pkg_before=$(sha256sum "$pkg_log" | awk '{print $1}')
+chmod u+w "$installed_dependency"
+printf '%s\n' 'mutated-non-entry-fixture' > "$installed_dependency"
+chmod 0444 "$installed_dependency"
+if PATH="$fake_bin:$PATH" \
+   CATFOOD_TEST_RELEASE="$fixture" \
+   CATFOOD_BACKEND_LOG="$backend_log" \
+   CATFOOD_APP_LOG="$app_log" \
+   CATFOOD_PKG_LOG="$pkg_log" \
+   CATFOOD_APP_PROCESS="$fake_bin/app_process" \
+   CATFOOD_DEVICE_ABI=armeabi-v7a \
+   CATFOOD_TARGET=phone \
+   CATFOOD_ROOT="$workspace" \
+   CATFOOD_CACHE="$cache" \
+   CATFOOD_TOOLS="$fixture_tools" \
+   CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
+   CATFOOD_ANDROID_PACKAGES="$fixture_packages" \
+       sh "$root/android/install.sh" >"$tmp/non-entry-mutation.out" 2>&1; then
+    printf '%s\n' 'mutated installed non-entry dependency unexpectedly remained current' >&2
+    exit 1
+fi
+grep -F 'installed content or approved obligation failed revalidation; no package effects' \
+    "$tmp/non-entry-mutation.out" >/dev/null
+grep -Fx 'mutated-non-entry-fixture' "$installed_dependency" >/dev/null
+test "$(sha256sum "$workspace/receipts/phone-app-phone.tsv" | awk '{print $1}')" = "$receipt_before"
+test "$(sha256sum "$pkg_log" | awk '{print $1}')" = "$pkg_before"
+
+# Restore the fixture bytes for the independent receipt-validation mutations
+# below. This is test teardown, not installer repair.
+chmod u+w "$installed_dependency"
+printf '%s\n' 'non-entry-fixture' > "$installed_dependency"
+chmod 0444 "$installed_dependency"
 
 assert_receipt_rejected() {
     name=$1
@@ -357,6 +459,13 @@ cat > "$reddit_packages" <<EOF_REDDIT_PACKAGES
 # package	target	abi	mode	source	source_ref	package_ref	url	sha256	command	entrypoint	main_class	jni_library	jni_property	install_requires	termux_packages	runtime_requires	package_requires
 reddit-phone	armeabi-v7a	armeabi-v7a	dex-jni	isomorphisms/app	$source_ref	$package_ref	https://example.invalid/app-phone.tar.gz	$digest	reddit	classes.dex	org.isomorphisms.reddit.RedditCli	lib/libapp.so	reddit.library	curl,sha256sum,tar	-	-	-
 EOF_REDDIT_PACKAGES
+reddit_approved=$tmp/reddit-approved.tsv
+CATFOOD_TOOLS="$reddit_tools" CATFOOD_ANDROID_DELIVERY="$reddit_delivery" \
+CATFOOD_ANDROID_PACKAGES="$reddit_packages" \
+    sh "$root/android/obligations.sh" build "$reddit_approved"
+export CATFOOD_ANDROID_APPROVED_OBLIGATIONS="$reddit_approved"
+export CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256
+CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256=$(sha256sum "$reddit_approved" | awk '{print $1}')
 
 reddit_workspace=$tmp/reddit-workspace
 mkdir -p "$reddit_workspace"
@@ -372,38 +481,10 @@ CATFOOD_ANDROID_DELIVERY="$reddit_delivery" \
 CATFOOD_ANDROID_PACKAGES="$reddit_packages" \
     sh "$root/android/install.sh" >/dev/null
 
-cat > "$reddit_workspace/bin/reddit" <<'EOF_REDDIT'
-#!/bin/sh
-case ${1:-} in
-    url)
-        printf '%s\n' 'https://www.reddit.com/search/?q=computer%20science%20degree%20regret'
-        ;;
-    search)
-        printf '%s\n' 'reddit: missing REDDIT_ACCESS_TOKEN' >&2
-        exit 2
-        ;;
-    *)
-        exit 64
-        ;;
-esac
-EOF_REDDIT
-chmod 0755 "$reddit_workspace/bin/reddit"
-
-cat > "$fake_bin/getprop" <<'EOF_GETPROP'
-#!/bin/sh
-case ${1:-} in
-    ro.product.cpu.abi) printf '%s\n' armeabi-v7a ;;
-    ro.build.version.sdk) printf '%s\n' 34 ;;
-    ro.product.model) printf '%s\n' 'MIRO A1' ;;
-    ro.build.fingerprint) printf '%s\n' fixture/fingerprint ;;
-    *) exit 0 ;;
-esac
-EOF_GETPROP
-chmod 0755 "$fake_bin/getprop"
-
 CATFOOD_TARGET=phone \
 CATFOOD_ROOT="$reddit_workspace" \
 CATFOOD_GETPROP="$fake_bin/getprop" \
+CATFOOD_APP_PROCESS="$fake_bin/app_process" \
 CATFOOD_REDDIT_EVIDENCE="$tmp/reddit-evidence" \
 CATFOOD_TOOLS="$reddit_tools" \
 CATFOOD_ANDROID_DELIVERY="$reddit_delivery" \
@@ -412,10 +493,16 @@ CATFOOD_ANDROID_PACKAGES="$reddit_packages" \
 
 reddit_physical_receipt="$tmp/reddit-evidence/phone-reddit-physical.tsv"
 test -f "$reddit_physical_receipt"
-grep -F 'launch_result	PASS' "$reddit_physical_receipt" >/dev/null
-grep -F 'runtime_result	PASS' "$reddit_physical_receipt" >/dev/null
-grep -F 'physical_device_result	PASS' "$reddit_physical_receipt" >/dev/null
+grep -F 'launch_result	NOT_VERIFIED' "$reddit_physical_receipt" >/dev/null
+grep -F 'runtime_result	NOT_VERIFIED' "$reddit_physical_receipt" >/dev/null
+grep -F 'physical_device_result	NOT_VERIFIED' "$reddit_physical_receipt" >/dev/null
 grep -F 'emulator_result	NOT_VERIFIED' "$reddit_physical_receipt" >/dev/null
+test -f "$tmp/reddit-evidence/execution.tsv"
+grep -F 'schema	catfood-execution-observation-v1' "$tmp/reddit-evidence/execution.tsv" >/dev/null
+grep -F 'scope	synthetic' "$tmp/reddit-evidence/execution.tsv" >/dev/null
+grep -F 'launch_observation	PASS' "$tmp/reddit-evidence/execution.tsv" >/dev/null
+grep -F 'runtime_observation	PASS' "$tmp/reddit-evidence/execution.tsv" >/dev/null
+grep -F 'acceptance_authorization	NOT_VERIFIED' "$tmp/reddit-evidence/execution.tsv" >/dev/null
 CATFOOD_TOOLS="$reddit_tools" \
 CATFOOD_ANDROID_DELIVERY="$reddit_delivery" \
 CATFOOD_ANDROID_PACKAGES="$reddit_packages" \
@@ -461,6 +548,8 @@ binary_manifest=$tmp/runtime-binaries.tsv
 } > "$binary_manifest"
 
 provision_workspace=$tmp/provision-workspace
+export CATFOOD_ANDROID_APPROVED_OBLIGATIONS="$fixture_approved"
+export CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256="$fixture_approved_sha"
 PATH="$fake_bin:$PATH" \
 CATFOOD_TEST_RELEASE="$fixture" \
 CATFOOD_BACKEND_LOG="$backend_log" \
@@ -514,6 +603,13 @@ if CATFOOD_TOOLS="$fixture_tools" \
     exit 1
 fi
 : > "$backend_log"
+missing_approved=$tmp/missing-approved.tsv
+CATFOOD_TOOLS="$fixture_tools" CATFOOD_ANDROID_DELIVERY="$missing_delivery" \
+CATFOOD_ANDROID_PACKAGES="$empty_packages" \
+    sh "$root/android/obligations.sh" build "$missing_approved"
+export CATFOOD_ANDROID_APPROVED_OBLIGATIONS="$missing_approved"
+export CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256
+CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256=$(sha256sum "$missing_approved" | awk '{print $1}')
 PATH="$fake_bin:$PATH" \
 CATFOOD_BACKEND_LOG="$backend_log" \
 CATFOOD_DEVICE_ABI=armeabi-v7a \
@@ -532,6 +628,13 @@ test ! -s "$backend_log"
 bad_packages=$tmp/bad-packages.tsv
 sed "s/$digest/0000000000000000000000000000000000000000000000000000000000000000/" \
     "$fixture_packages" > "$bad_packages"
+bad_approved=$tmp/bad-approved.tsv
+CATFOOD_TOOLS="$fixture_tools" CATFOOD_ANDROID_DELIVERY="$fixture_delivery" \
+CATFOOD_ANDROID_PACKAGES="$bad_packages" \
+    sh "$root/android/obligations.sh" build "$bad_approved"
+export CATFOOD_ANDROID_APPROVED_OBLIGATIONS="$bad_approved"
+export CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256
+CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256=$(sha256sum "$bad_approved" | awk '{print $1}')
 if PATH="$fake_bin:$PATH" \
    CATFOOD_TEST_RELEASE="$fixture" \
    CATFOOD_PKG_LOG="$pkg_log" \

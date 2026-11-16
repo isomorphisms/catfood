@@ -31,6 +31,18 @@ EOF_DELIVERY
     awk -F '\t' '$1 == "reddit-phone" || $1 == "reddit-tablet" { print }' "$root/android/packages.tsv"
 } > "$packages"
 
+restrictions="$tmp/restrictions.tsv"
+printf '%s\n' '# package devices reason evidence' > "$restrictions"
+export CATFOOD_ANDROID_RESTRICTIONS="$restrictions"
+approved="$tmp/approved-obligations.tsv"
+CATFOOD_TOOLS="$tools" \
+CATFOOD_ANDROID_DELIVERY="$delivery" \
+CATFOOD_ANDROID_PACKAGES="$packages" \
+    sh "$root/android/obligations.sh" build "$approved"
+export CATFOOD_ANDROID_APPROVED_OBLIGATIONS="$approved"
+CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256=$(sha256sum "$approved" | awk '{print $1}')
+export CATFOOD_ANDROID_APPROVED_OBLIGATIONS_SHA256
+
 test "$(awk -F '\t' '$1 == "reddit-phone" { count++ } END { print count+0 }' "$packages")" -eq 1
 test "$(awk -F '\t' '$1 == "reddit-tablet" { count++ } END { print count+0 }' "$packages")" -eq 1
 

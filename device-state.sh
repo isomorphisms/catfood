@@ -98,9 +98,16 @@ validate_inventory() {
             next
         }
         $1 == "meta" {
+            if (meta_seen[$2]++) { print FILENAME ": duplicate inventory identity: " $2 > "/dev/stderr"; failed=1 }
             if ($2 == "device_id") { device_id = $3; device_id_count++ }
             if ($2 == "observed_at") { observed_at = $3; observed_at_count++ }
             if ($2 == "target") { target = $3; target_count++ }
+        }
+        $1 != "meta" && seen[$1 SUBSEP $2 SUBSEP $3]++ {
+            print FILENAME ": duplicate inventory row" > "/dev/stderr"; failed=1
+        }
+        $1 == "catfood_package" && package_seen[$2]++ {
+            print FILENAME ": ambiguous package inventory" > "/dev/stderr"; failed=1
         }
         END {
             if (device_id_count != 1 || device_id !~ /^[[:alnum:]_.-]+$/) {
@@ -331,8 +338,6 @@ compare_inventory() {
                 if (item in actual) {
                     if (actual[item] != expected_ref[item])
                         emit("different", item, actual[item], expected_ref[item], actual_evidence[item])
-                    else if (actual_evidence[item] == "receipt:PASS")
-                        emit("current", item, actual[item], expected_ref[item], actual_evidence[item])
                     else
                         emit("unconfirmed", item, actual[item], expected_ref[item], actual_evidence[item])
                 } else if (tree[item SUBSEP expected_ref[item]]) {
