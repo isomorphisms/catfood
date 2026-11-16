@@ -244,7 +244,9 @@ def timestamp_key(value ∈ str) → int:
 
 def validate_identity(metadata ∈ dict[str, str], canonical ∈ str, expected_target ∈ str, expected_abi ∈ str, instance ∈ str, aliases ∈ dict[str, str], label ∈ str) → None:
     observed_instance ∈ str ← metadata.get("device_id", "")
-    if observed_instance != "" and observed_instance != instance:
+    if is_unknown(observed_instance):
+        stop("PROFILE_MISSING:physical instance")
+    if observed_instance != instance:
         stop("PROFILE_CONFLICT:physical instance")
     observed_target ∈ str ← metadata.get("target", "")
     if observed_target != "" and observed_target != "-" and observed_target != expected_target:

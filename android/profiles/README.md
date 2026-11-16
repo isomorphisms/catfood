@@ -43,6 +43,10 @@ Current inventory accepts the emitted `fingerprint` field. The historical
 `build_fingerprint` spelling is normalized for old callers; simultaneous
 different values are a conflict. Inventory and observation files are supplied
 evidence, not physical acquisition or attestation.
+Each supplied inventory or observation file must name the same `device_id` as
+the requested instance. Missing, empty and unknown IDs cannot turn a caller's
+declared instance into an inventory observation. Static lookup without supplied
+mutable observations remains available.
 
 ## Pre-command diagnostic request
 

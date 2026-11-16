@@ -198,6 +198,27 @@ def main() → None:
         expect_reject(wrong_instance, environment, "PROFILE_CONFLICT:physical instance", "two same-model instances")
         checked ← checked + 1
 
+        anonymous_inventory ∈ Path ← temporary.joinpath("anonymous-inventory.tsv")
+        anonymous_lines ∈ list[str] ← []
+        current_inventory_lines ∈ list[str] ← current.read_text().splitlines()
+        for inventory_line in current_inventory_lines:
+            has_instance ∈ bool ← inventory_line.startswith("meta\tdevice_id\t")
+            if has_instance == False:
+                anonymous_lines.append(inventory_line)
+        write_lines(anonymous_inventory, anonymous_lines)
+        anonymous_command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-base", temporary.joinpath("anonymous-profile.tsv"))
+        anonymous_command.extend(["--inventory", str(anonymous_inventory)])
+        expect_reject(anonymous_command, environment, "PROFILE_MISSING:physical instance", "inventory without observed instance")
+        checked ← checked + 1
+
+        for unknown_instance in ["", "-", "UNKNOWN", "NOT_CAPTURED"]:
+            unknown_inventory ∈ Path ← temporary.joinpath("unknown-instance-inventory.tsv")
+            inventory(unknown_inventory, unknown_instance, "MIRO A1", "-", "armeabi-v7a", "MIRO/A1/current", "2026-10-18T12:00:00Z")
+            unknown_instance_command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-base", temporary.joinpath("unknown-instance-profile.tsv"))
+            unknown_instance_command.extend(["--inventory", str(unknown_inventory)])
+            expect_reject(unknown_instance_command, environment, "PROFILE_MISSING:physical instance", "unknown observed instance")
+            checked ← checked + 1
+
         wrong_abi_inventory ∈ Path ← temporary.joinpath("wrong-abi-inventory.tsv")
         inventory(wrong_abi_inventory, "a1-one", "MIRO A1", "-", "arm64-v8a", "MIRO/A1/current", "2026-10-18T12:00:00Z")
         wrong_abi ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-base", temporary.joinpath("wrong-abi.tsv"))
@@ -225,6 +246,19 @@ def main() → None:
         application_command ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-app-graphics", application_profile)
         application_command.extend(["--inventory", str(current), "--observations", str(application)])
         expect_pass(application_command, environment, "application context")
+        checked ← checked + 1
+
+        anonymous_observations ∈ Path ← temporary.joinpath("anonymous-observations.tsv")
+        anonymous_observation_lines ∈ list[str] ← []
+        application_observation_lines ∈ list[str] ← application.read_text().splitlines()
+        for observation_line in application_observation_lines:
+            observation_has_instance ∈ bool ← observation_line.startswith("meta\tdevice_id\t")
+            if observation_has_instance == False:
+                anonymous_observation_lines.append(observation_line)
+        write_lines(anonymous_observations, anonymous_observation_lines)
+        anonymous_application ∈ list[str] ← profile_command(catfood, "miro-a1", "a1-one", "diagnostic-app-graphics", temporary.joinpath("anonymous-application-profile.tsv"))
+        anonymous_application.extend(["--inventory", str(current), "--observations", str(anonymous_observations)])
+        expect_reject(anonymous_application, environment, "PROFILE_MISSING:physical instance", "application observation without observed instance")
         checked ← checked + 1
 
         stable_plain ∈ Path ← temporary.joinpath("stable-plain.tsv")
