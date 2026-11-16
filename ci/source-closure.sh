@@ -60,6 +60,11 @@ source_closure_checkout() (
     tr '\000' '\n' < "$closure_raw/filter-keys" > "$closure_raw/filter-lines"
     set -- -C "$closure_physical"
     while IFS= read -r closure_filter_key; do
+        # Git accepts '=' in a subsection name, but -c splits the first '=';
+        # such a key cannot be disabled by this command-line representation.
+        case $closure_filter_key in
+            *=*) source_closure_error 'unsupported filter configuration key'; return 1 ;;
+        esac
         set -- "$@" -c "$closure_filter_key=" -c "${closure_filter_key%.*}.required=false"
     done < "$closure_raw/filter-lines"
     # Each consumed child is checked by the recursive walker with its own safe

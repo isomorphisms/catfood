@@ -21,6 +21,11 @@ printf 'source filter=probe\n' > "$work/filtered/.gitattributes"
 git -C "$work/filtered" add .gitattributes
 git -C "$work/filtered" commit -qm filtered-source
 filtered_commit=$(git -C "$work/filtered" rev-parse HEAD)
+seed "$work/equal-filter"
+printf 'source filter=probe=split\n' > "$work/equal-filter/.gitattributes"
+git -C "$work/equal-filter" add .gitattributes
+git -C "$work/equal-filter" commit -qm equals-filter-source
+equal_filter_commit=$(git -C "$work/equal-filter" rev-parse HEAD)
 seed "$work/leaf"
 printf 'source filter=probe\n' > "$work/leaf/.gitattributes"
 : > "$work/leaf/.gitmodules"
@@ -58,6 +63,7 @@ exec "$fixture_git" -c protocol.file.allow=always \
     -c "url.file://$fixture_root/ick.insteadOf=https://github.com/example/ick.git" \
     -c "url.file://$fixture_root/gcc.insteadOf=https://github.com/example/gcc.git" \
     -c "url.file://$fixture_root/filtered.insteadOf=https://github.com/example/filtered.git" \
+    -c "url.file://$fixture_root/equal-filter.insteadOf=https://github.com/example/equal-filter.git" \
     -c "url.file://$fixture_root/leaf.insteadOf=https://github.com/example/leaf.git" "$@"
 EOF
 chmod +x "$work/bin/git"
@@ -70,6 +76,7 @@ CATFOOD_CHECKOUTS=$work/state/checkouts.tsv
 export CATFOOD_MANIFEST CATFOOD_CHECKOUTS
 printf 'ick\thttps://github.com/example/ick.git\tmain\tskip\n' > "$CATFOOD_MANIFEST"
 printf 'filtered\thttps://github.com/example/filtered.git\tmain\tnone\n' >> "$CATFOOD_MANIFEST"
+printf 'equal-filter\thttps://github.com/example/equal-filter.git\tmain\tnone\n' >> "$CATFOOD_MANIFEST"
 cd "$work/unrelated"
 
 acquire() {
@@ -120,6 +127,27 @@ test ! -s "$work/reject.out"
 test ! -e "$work/process-effect"
 git -C "$work/filtered checkout" config --unset "$unsafe_filter_key"
 printf 'PASS: control-byte filter keys reject before callbacks or material output\n'
+
+# Git config accepts '=' inside a subsection name, while `git -c KEY=VALUE`
+# splits its first '='. An apparently successful override would leave this
+# included clean driver active. Exercise the actual acquisition boundary.
+sh "$root/catfood" acquire equal-filter "$equal_filter_commit" "$work/equal checkout" workbench > "$work/equal.tsv"
+equal_filter_command="printf invoked >> '$work/equal-filter-effect'; cat"
+git config -f "$work/equal filter config" 'filter.probe=split.clean' "$equal_filter_command"
+git -C "$work/equal checkout" config include.path "$work/equal filter config"
+git -C "$work/equal checkout" config 'filter.probe=split.required' true
+equal_blob=$(git -C "$work/equal checkout" rev-parse HEAD:source)
+git -C "$work/equal checkout" update-index --cacheinfo "100644,$equal_blob,source"
+if sh "$root/catfood" acquire equal-filter "$equal_filter_commit" "$work/equal checkout" workbench > "$work/equal-reject.out" 2> "$work/equal-reject.err"; then
+    test -e "$work/equal-filter-effect" || { printf 'FAIL: unsupported equals filter key was accepted\n' >&2; exit 1; }
+    printf 'FAIL: source inspection accepted an equals filter key and executed its callback\n' >&2
+    exit 1
+fi
+grep -F 'unsupported filter configuration key' "$work/equal-reject.err" >/dev/null
+test ! -s "$work/equal-reject.out"
+test ! -e "$work/equal-filter-effect"
+test "$(git -C "$work/equal checkout" config --get 'filter.probe=split.clean')" = "$equal_filter_command"
+printf 'PASS: equals-bearing filter key rejects before status, callbacks or material output; local config is preserved\n'
 
 acquire "$work/skipped source" > "$work/skip.tsv"
 test ! -e "$work/skipped source/gcc/.git"
