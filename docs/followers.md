@@ -88,6 +88,16 @@ of a complete Grease implementation or permission to install its runtime.
 The Android producer release interface does not supply a host-runtime role;
 it cannot authorize a NetBSD/SDF archive by relabeling it.
 
+Reopening these promotions requires an independently issued owner qualification
+binding the exact source and artifact to its build tools, static, dynamic and
+transitive runtime closure, behavioral controls and applicable host scope. The
+existing [Android stage-role interface at `33e8f4ac`](https://github.com/isomorphisms/ai-ci/blob/33e8f4ac6cc0bab79ad13455e7ce419aef675218/android-producer/stage-role-v1.md)
+consumes a qualified runtime disposition for Android APK roles; it does not
+derive a no-C++ qualification or define a qualified Linux/SDF host-runtime
+object. Source-only D receipts and a candidate-selected verifier cannot fill
+that missing owner interface. The reader retains the unresolved obligation
+until such an applicable interface and genuine qualification exist.
+
 The retained SDF records deliberately separate four claims:
 
 - ICKY/GDC compiler-runtime qualification is blocked at exact source
