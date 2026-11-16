@@ -16,11 +16,19 @@ seed() {
     git -C "$1" add source
     git -C "$1" commit -qm initial
 }
+seed "$work/filtered"
+printf 'source filter=probe\n' > "$work/filtered/.gitattributes"
+git -C "$work/filtered" add .gitattributes
+git -C "$work/filtered" commit -qm filtered-source
+filtered_commit=$(git -C "$work/filtered" rev-parse HEAD)
 seed "$work/leaf"
+printf 'source filter=probe\n' > "$work/leaf/.gitattributes"
 : > "$work/leaf/.gitmodules"
-git -C "$work/leaf" add .gitmodules
+git -C "$work/leaf" add .gitmodules .gitattributes
 git -C "$work/leaf" commit -qm empty-leaf-declarations
 seed "$work/gcc"
+printf 'source filter=probe\n' > "$work/gcc/.gitattributes"
+git -C "$work/gcc" add .gitattributes
 git -C "$work/gcc" -c protocol.file.allow=always submodule add -q "$work/leaf" nested
 git -C "$work/gcc" config -f .gitmodules submodule.nested.url https://github.com/example/leaf.git
 git -C "$work/gcc" add .gitmodules nested
@@ -49,6 +57,7 @@ printf '%s\n' "$@" >> "$fixture_root/git-arguments"
 exec "$fixture_git" -c protocol.file.allow=always \
     -c "url.file://$fixture_root/ick.insteadOf=https://github.com/example/ick.git" \
     -c "url.file://$fixture_root/gcc.insteadOf=https://github.com/example/gcc.git" \
+    -c "url.file://$fixture_root/filtered.insteadOf=https://github.com/example/filtered.git" \
     -c "url.file://$fixture_root/leaf.insteadOf=https://github.com/example/leaf.git" "$@"
 EOF
 chmod +x "$work/bin/git"
@@ -60,6 +69,7 @@ CATFOOD_MANIFEST=$work/tools.tsv
 CATFOOD_CHECKOUTS=$work/state/checkouts.tsv
 export CATFOOD_MANIFEST CATFOOD_CHECKOUTS
 printf 'ick\thttps://github.com/example/ick.git\tmain\tskip\n' > "$CATFOOD_MANIFEST"
+printf 'filtered\thttps://github.com/example/filtered.git\tmain\tnone\n' >> "$CATFOOD_MANIFEST"
 cd "$work/unrelated"
 
 acquire() {
@@ -74,6 +84,42 @@ reject() {
     fi
     grep -F "$diagnostic" "$work/reject.err" >/dev/null || { cat "$work/reject.err" >&2; exit 1; }
 }
+
+# Source inspection must not execute an installed clean driver, even when its
+# output would leave the committed source unchanged. Zero the index stat entry
+# so Git must inspect the working file rather than trusting its cached stat.
+sh "$root/catfood" acquire filtered "$filtered_commit" "$work/filtered checkout" workbench > "$work/filtered.tsv"
+git -C "$work/filtered checkout" config filter.probe.clean "printf invoked >> '$work/filter-effect'; cat"
+git -C "$work/filtered checkout" config filter.probe.required true
+filtered_blob=$(git -C "$work/filtered checkout" rev-parse HEAD:source)
+git -C "$work/filtered checkout" update-index --cacheinfo "100644,$filtered_blob,source"
+sh "$root/catfood" acquire filtered "$filtered_commit" "$work/filtered checkout" workbench > "$work/filtered-repeat.tsv"
+test ! -e "$work/filter-effect" || { printf 'FAIL: source inspection executed a clean filter\n' >&2; exit 1; }
+cmp "$work/filtered.tsv" "$work/filtered-repeat.tsv"
+printf 'PASS: configured clean filter cannot execute during source inspection\n'
+
+# Includes and process drivers use the same execution boundary. Keep benign
+# local identity settings valid while suppressing callbacks for inspection.
+git -C "$work/filtered checkout" config --unset filter.probe.clean
+git config -f "$work/filter config" filter.probe.process "printf invoked >> '$work/process-effect'; exit 1"
+git -C "$work/filtered checkout" config include.path "$work/filter config"
+git -C "$work/filtered checkout" config user.name 'Local fixture identity'
+git -C "$work/filtered checkout" update-index --cacheinfo "100644,$filtered_blob,source"
+git -C "$work/filtered checkout" config core.fsmonitor "printf invoked >> '$work/fsmonitor-effect'"
+sh "$root/catfood" acquire filtered "$filtered_commit" "$work/filtered checkout" workbench > "$work/filtered-included.tsv"
+test ! -e "$work/process-effect" || { printf 'FAIL: source inspection executed an included process filter\n' >&2; exit 1; }
+test ! -e "$work/fsmonitor-effect" || { printf 'FAIL: source inspection executed a filesystem monitor\n' >&2; exit 1; }
+cmp "$work/filtered.tsv" "$work/filtered-included.tsv"
+test "$(git -C "$work/filtered checkout" config user.name)" = 'Local fixture identity'
+printf 'PASS: included process filter and filesystem-monitor callbacks stay inert; benign config is preserved\n'
+
+unsafe_filter_key=$(printf 'filter.probe\tsplit.clean')
+git -C "$work/filtered checkout" config "$unsafe_filter_key" cat
+reject 'unsupported filter configuration key' sh "$root/catfood" acquire filtered "$filtered_commit" "$work/filtered checkout" workbench
+test ! -s "$work/reject.out"
+test ! -e "$work/process-effect"
+git -C "$work/filtered checkout" config --unset "$unsafe_filter_key"
+printf 'PASS: control-byte filter keys reject before callbacks or material output\n'
 
 acquire "$work/skipped source" > "$work/skip.tsv"
 test ! -e "$work/skipped source/gcc/.git"
@@ -93,6 +139,32 @@ grep 'gitlink[[:space:]]gcc/nested' "$work/producer.tsv" >/dev/null
 acquire "$work/producer source" producer > "$work/producer-repeat.tsv"
 cmp "$work/producer.tsv" "$work/producer-repeat.tsv"
 printf 'PASS: producer obtains exact GCC and nested reference\n'
+
+# Parent status must not inspect a child's content through its local drivers.
+# The recursive walker still checks every consumed child's raw bytes itself.
+for child in "$work/producer source/gcc" "$work/producer source/gcc/nested"; do
+    git -C "$child" config filter.probe.clean "printf invoked >> '$work/child-filter-effect'; cat"
+    git -C "$child" config filter.probe.required true
+    child_blob=$(git -C "$child" rev-parse HEAD:source)
+    git -C "$child" update-index --cacheinfo "100644,$child_blob,source"
+done
+acquire "$work/producer source" producer > "$work/producer-filtered.tsv"
+test ! -e "$work/child-filter-effect" || { printf 'FAIL: parent inspection executed a child filter\n' >&2; exit 1; }
+cmp "$work/producer.tsv" "$work/producer-filtered.tsv"
+printf 'changed nested bytes\n' > "$work/producer source/gcc/nested/source"
+reject 'partial or changed checkout' acquire "$work/producer source" producer
+test ! -e "$work/child-filter-effect"
+printf 'fixture\n' > "$work/producer source/gcc/nested/source"
+acquire "$work/producer source" producer > "$work/producer-restored.tsv"
+cmp "$work/producer.tsv" "$work/producer-restored.tsv"
+printf 'PASS: recursive inspection suppresses child callbacks and still rejects changed nested source\n'
+
+git -C "$work/producer source" update-index --cacheinfo "160000,$filtered_commit,gcc"
+reject 'partial or changed checkout' acquire "$work/producer source" producer
+git -C "$work/producer source" update-index --cacheinfo "160000,$gcc_commit,gcc"
+acquire "$work/producer source" producer > "$work/producer-index-restored.tsv"
+cmp "$work/producer.tsv" "$work/producer-index-restored.tsv"
+printf 'PASS: staged gitlink changes remain rejecting when child status is delegated\n'
 
 acquire "$work/custom update" > "$work/custom-skip.tsv"
 git -C "$work/custom update" config submodule.gcc.update "!touch '$work/unwanted-effect'"
