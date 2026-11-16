@@ -106,7 +106,9 @@ Build stamps are keyed to repository commits. `catfood-update` fetches repositor
 
 `tools.tsv` is both the authoritative current-workbench feed and the inventory from which Android coverage is checked. It contains the language/toolchain line, browser/publication tools, applications, and mathematical experiments. Grease is fed separately by `bootstrap.sh` because it supplies stage one, but it is still explicitly represented in Android delivery coverage.
 
-Repositories marked `recursive` have actual submodules and are initialized automatically. New workbench clones use shallow history, 12 commits by default; set `CATFOOD_DEPTH` to change that. Existing checkouts are fetched without rewriting their history.
+The submodule policy has three states: `none` declares no submodules; `recursive` requires initialized references at their recorded commits; `skip` declares references but leaves them unpopulated. Ordinary ICK workbench acquisition uses `skip`, so it does not download GCC. New workbench clones use shallow history, 12 commits by default; set `CATFOOD_DEPTH` to change that. Existing checkouts are fetched without rewriting their history.
+
+For operation-bound acquisition, `catfood acquire TOOL COMMIT ABSOLUTE_DESTINATION workbench|producer` requires an explicit host workbench target and a full immutable commit. `workbench` consumes the inventory policy; `producer` turns a declared `skip` into exact recursive acquisition. It emits a canonical TSV material record and SHA-256, with no destination, timestamp or attempt fields. It never runs a compiler or producer. See [source acquisition](docs/source-closure.md) for the contract and evidence boundaries.
 
 `./check-manifest.sh --remote` validates workbench manifest structure and verifies that every named remote branch exists. `sh android/check.sh check` independently validates total Android inventory coverage and package metadata.
 
@@ -135,6 +137,16 @@ The `idric-cli` checkout also supplies `amazon-jobs` when its Idriç host execut
 Workbenches keep stable command names under `$CATFOOD_ROOT/bin`. Current host names include `lua`, `luac`, `R`, `Rscript`, `grease`, `edric`, `idris2`, `fieldmouse`, `icu`, `ib-smoke`, `ithon`, `osh`, `ysh`, `az`, `abe`, `gopeed`, `gdl`, `go_down_load`, `fdroid-deploy`, `fdroid-check-deployed`, `jq`, and `mlr` when their targets are present. `aa` is installed when the fed `az` checkout contains `bin/aa`. Management commands are `catfood-update`, `catfood-doctor`, and `catfood-import-config`.
 
 `gdl` and `go_down_load` are aliases of the `gopeed` REST client. It accepts a direct URL or one URL on standard input, so `aa resolve MD5 | gdl` hands a resolved Anna's Archive member URL to Gopeed without making Gopeed part of AA's HTTP transport.
+
+The `nhtsa-vin` command is registered from the existing `idric-cli`
+repository and linked to `$CATFOOD_ROOT/bin/nhtsa-vin` **only when the Idriç
+executable has actually been built**. It decodes NHTSA vPIC responses through
+ICU's typed response API. The command's build and fixtures live in
+[`idric-cli/checkpoints/nhtsa`](https://github.com/dilapidated-shed/idric-cli/tree/cli/checkpoints/nhtsa).
+Cat Food doctor reports `NOT_BUILT` when no host executable exists; this
+status does not mean a successful install or live provider check. The existing
+`idric-cli` Android delivery row remains `gap:android-package-missing`
+for both A1 ARM32 and C67 ARM64.
 
 Android product commands come only from successfully installed runtime packages. After the delivered Grease package makes YSH available, the Cat Food control plane itself also installs its small `gopeed` REST client and the `gdl` / `go_down_load` aliases from the checked-out Cat Food version. It also installs pinned csvkit 2.2.0 into `~/opt/packages/csvkit` from binary Python wheels only and exposes the upstream `csv*`, `in2csv`, and `sql2csv` commands under `~/opt/bin`; the Termux Python/pip prerequisites are installed without recommended compiler packages. These helpers are convenience software, not Android product-delivery evidence. `android/delivery.tsv` therefore continues to describe only the maintained product inventory and its explicit gaps.
 

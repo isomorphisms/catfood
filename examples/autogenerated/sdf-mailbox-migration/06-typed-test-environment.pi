@@ -1,0 +1,118 @@
+"""Offline checked fixtures; never an SDF-live receipt."""
+import os
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+from unittest import TestCase
+from unittest.mock import patch
+from builtins import RuntimeError
+
+ROOT ∈ object ← Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from probes import sdf_mailbox_host
+
+def clean_environment(root ∈ object) → dict[str, str]:
+    environment ∈ dict[str, str] ← dict(os.environ)
+    environment["PATH"] = str(root) + ":" + environment["PATH"]
+    for name in ["PREFIX", "TERMUX_VERSION", "CATFOOD_TARGET", "CATFOOD_GETPROP"]:
+        environment.pop(name, None)
+    return environment
+
+def subject(root ∈ object) → None:
+    root.joinpath("ci").mkdir()
+    root.joinpath("android").mkdir()
+    for path in ["ci/repositories.sh", "repository-aliases.tsv", "android/target.sh", "catfood"]:
+        root.joinpath(path).write_text(ROOT.joinpath(path).read_text())
+
+def fake_uname(root ∈ object, system ∈ str) → None:
+    # The existing documented stage-zero POSIX entrypoint is the test subject.
+    # This fixed uname fixture is its narrow OS-command boundary, not Grease.
+    fake ∈ object ← root.joinpath("uname")
+    fake.write_text('#!/bin/sh\nprintf "%s\\n" "' + system + '"\n')
+    fake.chmod(0o700)
+
+class HostTests(TestCase):
+    def test_old_negative_cloud_default_rejected(self ∈ HostTests) → None:
+        with tempfile.TemporaryDirectory() as directory:
+            root ∈ object ← Path(directory)
+            fake_uname(root, "NetBSD")
+            environment ∈ dict[str, str] ← clean_environment(root)
+            oracle ∈ str ← ROOT.joinpath("android/target.sh").read_text()
+            start ∈ int ← oracle.index("catfood_detect_target() {")
+            end ∈ int ← oracle.index("\ncatfood_android_verify_device_target()", start)
+            mutant ∈ str ← oracle[:start] + 'catfood_detect_target() { printf "cloud\\n"; }\n' + oracle[end:]
+            root.joinpath("good.sh").write_text(oracle)
+            root.joinpath("bad.sh").write_text(mutant)
+            # Exercise the actual detection function independently of the
+            # second workbench guard, which also rejects this historical bug.
+            invocation ∈ str ← '. "$1"; catfood_detect_target'
+            bad ∈ object ← subprocess.run(["sh", "-c", invocation, "fixture", str(root.joinpath("bad.sh"))], env=environment, capture_output=True, text=True)
+            good ∈ object ← subprocess.run(["sh", "-c", invocation, "fixture", str(root.joinpath("good.sh"))], env=environment, capture_output=True, text=True)
+            self.assertEqual(bad.returncode, 0, bad.stderr)
+            self.assertEqual(bad.stdout.strip(), "cloud")
+            self.assertNotEqual(good.returncode, 0)
+            self.assertNotIn("cloud", good.stdout)
+
+    def test_probe_non_mutating_and_netbsd_required(self ∈ HostTests) → None:
+        with tempfile.TemporaryDirectory() as directory:
+            source ∈ object ← Path(directory).joinpath("source")
+            archive ∈ object ← Path(directory).joinpath("archive")
+            source.write_bytes(b"private mail\xff")
+            before ∈ object ← source.stat()
+            lines ∈ list[str] ← sdf_mailbox_host.probe(str(source), str(archive))
+            self.assertEqual(source.stat(), before)
+            self.assertFalse(archive.exists())
+            self.assertIn("delivery-lock\tUNKNOWN", lines)
+            self.assertIn("mailbox-mutation\tnone", lines)
+            with patch.object(sdf_mailbox_host.os, "uname", return_value=os.uname_result(("Linux", "fixture", "1", "1", "x86"))):
+                with self.assertRaises(RuntimeError):
+                    sdf_mailbox_host.probe(str(source), str(archive), True)
+            with patch.object(sdf_mailbox_host.os, "uname", return_value=os.uname_result(("NetBSD", "fixture.sdf.org", "11", "1", "amd64"))):
+                sdf_mailbox_host.probe(str(source), str(archive), True)
+            with self.assertRaises(RuntimeError):
+                sdf_mailbox_host.probe("source", str(archive))
+
+    def test_actual_entrypoint_platform_and_overrides(self ∈ HostTests) → None:
+        with tempfile.TemporaryDirectory() as directory:
+            root ∈ object ← Path(directory)
+            environment ∈ dict[str, str] ← clean_environment(root)
+            for system in ["NetBSD", "Darwin", "unknown"]:
+                fake_uname(root, system)
+                result ∈ object ← subprocess.run(["sh", str(ROOT.joinpath("catfood")), "--target"], env=environment, capture_output=True, text=True)
+                self.assertNotEqual(result.returncode, 0, result.stderr)
+                self.assertNotIn("cloud", result.stdout)
+            fake_uname(root, "NetBSD")
+            for target in ["cloud", "container", "hetzner"]:
+                environment["CATFOOD_TARGET"] = target
+                result ∈ object ← subprocess.run(["sh", str(ROOT.joinpath("catfood")), "--target"], env=environment, capture_output=True, text=True)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("workbench target requires observed Debian/Ubuntu Linux host", result.stderr)
+            # Preserve the complete current identity/ABI and contradiction
+            # fixtures instead of treating an ARM architecture as a device.
+            current ∈ object ← subprocess.run(["sh", str(ROOT.joinpath("tests/targets.sh"))], cwd=ROOT, capture_output=True, text=True)
+            self.assertEqual(current.returncode, 0, current.stdout + current.stderr)
+
+    def test_positive_distribution_and_unknown_linux(self ∈ HostTests) → None:
+        with tempfile.TemporaryDirectory() as directory:
+            root ∈ object ← Path(directory)
+            subject(root)
+            fake_uname(root, "Linux")
+            environment ∈ dict[str, str] ← clean_environment(root)
+            release ∈ object ← root.joinpath("os-release")
+            oracle ∈ str ← ROOT.joinpath("android/target.sh").read_text()
+            oracle ∈ str ← oracle.replace("/etc/os-release", str(release))
+            root.joinpath("android/target.sh").write_text(oracle)
+            cases ∈ dict[str, bool] ← {"ID=debian\n": True, 'ID="ubuntu"\n': True,
+                "ID=fedora\n": False, "ID_LIKE=debian\n": False,
+                "ID=debianish\n": False, "": False}
+            for text in cases:
+                release.write_text(text)
+                result ∈ object ← subprocess.run(["sh", str(root.joinpath("catfood")), "--target"], env=environment, capture_output=True, text=True)
+                status ∈ int ← result.returncode
+                self.assertEqual(status == 0, cases[text], result.stderr)
+                if cases[text]:
+                    self.assertEqual(result.stdout.strip(), "cloud")
+
+unittest.main(verbosity=2)

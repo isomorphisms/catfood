@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-935e3821f002-github-x86_64
+repository	isomorphisms/catfood
+branch	acceptance/c67-grease-transfer-20261009
+pr	https://github.com/isomorphisms/catfood/pull/129
+trigger_commit	935e3821f0021c5295d4ccc12119490ade60d972
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	github-x86_64
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit 935e3821f0021c5295d4ccc12119490ade60d972 on github-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh github
+state	superseded
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	github-only
+superseded_by	catfood-53f6f45b8413-github-x86_64
+follow_policy	exact

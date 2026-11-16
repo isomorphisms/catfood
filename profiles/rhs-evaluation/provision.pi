@@ -13,9 +13,9 @@ from builtins import ValueError, globals
 ICK ∈ str ← "e3c2a40b4edafc4d9caca55d1f7c094e6aab9589"
 ITHON ∈ str ← "d6e83969f82512e920fb17b44326cb54f31d015c"
 GREASE_SOURCE ∈ str ← "8bad10b21e0fe7fc93e851d705dc9b63dbf9d8fd"
-GREASE_ARTIFACT ∈ int ← 11727693085
+GREASE_ARTIFACT ∈ int ← 12192502970
 GREASE_RUN ∈ int ← 38206821183
-GREASE_ARCHIVE ∈ str ← "20c526c8bae5dc32a7b3d01a39eca5bdb7ee4c63fe540f34a07af7ba8b0d0039"
+GREASE_ARCHIVE ∈ str ← "295329ec3bb419d90364fcb5937eafe4306b03f68b7aaa63089dadde8082ffb5"
 GREASE_EXECUTABLE ∈ str ← "7e31cd05b7a9d8fb2a4a9e003a7f3fcb0159138506d17f0fb28da8cbe22aa85c"
 
 def verify_owner(artifact ∈ dict[str, object], owner_run ∈ dict[str, object], inherited ∈ str, now ∈ str) → None:

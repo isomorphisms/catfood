@@ -1,0 +1,21 @@
+"""Read-only host evidence command, executed by the checked Ithon frontend."""
+import argparse
+import sys
+from builtins import OSError, RuntimeError
+from sdf_mailbox_host import probe
+
+parser ∈ object ← argparse.ArgumentParser(description="Read-only mailbox host metadata; no mailbox content read or mutation")
+parser.add_argument("--source", required=True)
+parser.add_argument("--destination", required=True)
+parser.add_argument("--require-netbsd", action="store_true")
+arguments ∈ object ← parser.parse_args()
+source_argument ∈ str ← arguments.source
+destination_argument ∈ str ← arguments.destination
+netbsd_argument ∈ bool ← arguments.require_netbsd
+try:
+    lines ∈ list[str] ← probe(source_argument, destination_argument, netbsd_argument)
+    for line in lines:
+        print(line)
+except (OSError, RuntimeError) as error:
+    print("REFUSED: " + str(error), file=sys.stderr)
+    sys.exit(1)
