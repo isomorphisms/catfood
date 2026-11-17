@@ -30,6 +30,7 @@ az https://github.com/Ashtray-Archer/az.git main none
 ib https://github.com/dilapidated-shed/ib.git main recursive
 internetarchive https://github.com/dilapidated-shed/internetarchive.git master none
 bookreader https://github.com/dilapidated-shed/bookreader.git master none
+sms-book-reader https://github.com/isomorphisms/sms-book-reader.git feature/go-mock-reader none
 harvest-images-from-pdf https://github.com/dilapidated-shed/harvest-images-from-pdf.git main none
 ddg https://github.com/dilapidated-shed/ddg.git develop recursive
 chawan https://github.com/dilapidated-shed/chawan.git master recursive
