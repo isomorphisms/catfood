@@ -57,7 +57,21 @@ fi
 if [ "${1:-}" = -C ] && [ "${3:-}" = submodule ]; then
     printf '%s\n' "${4:-}" >> "${0%/*}/submodule-calls"
     if [ "${4:-}" = status ] && [ -f "${0%/*}/fail-submodule-status" ]; then
+        # Nonzero Git status must win even when stdout looks completely valid.
+        "$CATFOOD_TEST_GIT" -c protocol.file.allow=always "$@"
         exit 9
+    fi
+    if [ "${4:-}" = status ] && [ -f "${0%/*}/empty-submodule-status" ]; then
+        exit 0
+    fi
+    if [ "${4:-}" = status ] && [ -f "${0%/*}/drift-submodule-status" ]; then
+        # Real Git must report + for a submodule at a different commit.
+        "$CATFOOD_TEST_GIT" -C "$2/reference" -c user.name=Fixture \
+            -c user.email=fixture@example.invalid commit -q --allow-empty -m drift
+    fi
+    if [ "${4:-}" = status ] && [ -f "${0%/*}/missing-submodule-material" ]; then
+        # Force real Git to report - after update, rather than faking a line.
+        rm -rf "$2/reference"
     fi
     exec "$CATFOOD_TEST_GIT" -c protocol.file.allow=always "$@"
 fi
@@ -171,6 +185,38 @@ if "$stage_one" "$root/update-tools.ysh" "$workspace" 1 "$CATFOOD_MANIFEST" 0 > 
 fi
 grep -F 'unable to verify submodule status' "$work/status-failure-feed.log" >/dev/null
 rm "$work/bin/fail-submodule-status"
+
+# Status zero with no output must not be treated as an empty valid inventory.
+touch "$work/bin/empty-submodule-status"
+if "$stage_one" "$root/update-tools.ysh" "$workspace" 1 "$CATFOOD_MANIFEST" 0 > "$work/status-empty-feed.log" 2>&1; then
+    echo 'empty submodule status was accepted' >&2
+    exit 1
+fi
+grep -F 'submodules are not at recorded commits' "$work/status-empty-feed.log" >/dev/null
+rm "$work/bin/empty-submodule-status"
+
+# Tamper with an initialized submodule after update; Git itself must report +.
+touch "$work/bin/drift-submodule-status"
+if "$stage_one" "$root/update-tools.ysh" "$workspace" 1 "$CATFOOD_MANIFEST" 0 > "$work/status-drift-feed.log" 2>&1; then
+    echo 'divergent submodule commit was accepted' >&2
+    exit 1
+fi
+"$CATFOOD_TEST_GIT" -C "$workspace/ib" submodule status --recursive | grep '^+' >/dev/null
+grep -F 'submodules are not at recorded commits' "$work/status-drift-feed.log" >/dev/null
+rm "$work/bin/drift-submodule-status"
+"$CATFOOD_TEST_GIT" -c protocol.file.allow=always -C "$workspace/ib" submodule update --init --recursive --depth 1 >/dev/null
+
+# Material removed after update must produce a real Git - marker and fail.
+touch "$work/bin/missing-submodule-material"
+if "$stage_one" "$root/update-tools.ysh" "$workspace" 1 "$CATFOOD_MANIFEST" 0 > "$work/status-missing-feed.log" 2>&1; then
+    echo 'missing submodule material was accepted' >&2
+    exit 1
+fi
+"$CATFOOD_TEST_GIT" -C "$workspace/ib" submodule status --recursive | grep '^-' >/dev/null
+grep -F 'submodules are not at recorded commits' "$work/status-missing-feed.log" >/dev/null
+rm "$work/bin/missing-submodule-material"
+"$CATFOOD_TEST_GIT" -c protocol.file.allow=always -C "$workspace/ib" submodule update --init --recursive --depth 1 >/dev/null
+"$stage_one" "$root/update-tools.ysh" "$workspace" 1 "$CATFOOD_MANIFEST" 0 > "$work/status-recovered-feed.log" 2>&1
 
 git -C "$workspace/ib" remote set-url origin https://github.com/unrelated/ib.git
 if sh "$root/doctor.sh" > "$work/origin-doctor.log" 2>&1; then :; fi
