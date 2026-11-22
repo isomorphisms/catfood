@@ -40,7 +40,8 @@ concurrency:
 
 jobs:
   transferred-checkouts:
-    runs-on: ubuntu-latest
+    # The inherited Grease bootstrap still builds its vendored Python 2.
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       CATFOOD_JOBS: '2'
