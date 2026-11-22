@@ -1,0 +1,114 @@
+set -eu -o pipefail
+umask 077
+setglobal ENV.GIT_NO_REPLACE_OBJECTS = '1'
+
+var catfood = $1
+var repository = $2
+var source_sha = $3
+var target = $4
+var aici = $5
+var destination = $6
+
+proc fail(status) {
+    printf 'status\t%s\n' "$status" >&2
+    exit 2
+}
+
+try { printf '%s\n' "$repository" | awk 'END { exit !(NR == 1 && $0 ~ /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/) }' }
+if (_error.code !== 0) { fail INVALID_REPOSITORY }
+try { printf '%s\n' "$source_sha" | awk 'END { exit !(NR == 1 && length($0) == 40 && $0 ~ /^[0-9a-f]+$/) }' }
+if (_error.code !== 0) { fail INVALID_SOURCE_SHA }
+case "$target" in phone|c67) ;; *) fail INVALID_TARGET ;; esac
+
+# Scope the selection to the reviewed Cat Food revision, even in a dirty checkout.
+var catfood_sha = $(git -C "$catfood" rev-parse HEAD)
+var index = $(git -C "$catfood" show "$catfood_sha:android/apk-delivery.tsv")
+var matrix = $(git -C "$catfood" show "$catfood_sha:android/application-targets.tsv")
+var abi = $(printf '%s\n' "$matrix" | awk -F '\t' -v target="$target" '
+    $1 == target { count++; abi = $3 }
+    END { if (count != 1 || abi == "") exit 2; print abi }
+')
+
+var row = $(printf '%s\n' "$index" | awk -F '\t' -v repository="$repository" -v source="$source_sha" -v target="$target" '
+    $1 == repository && $2 == source && $3 == target { count++; row = $0 }
+    END { if (count == 1) print row; else if (count) print "AMBIGUOUS_DELIVERY" }
+')
+case "$row" in
+    '') fail MISSING_DELIVERY ;;
+    AMBIGUOUS_DELIVERY) fail AMBIGUOUS_DELIVERY ;;
+esac
+
+try {
+    printf '%s\n' "$row" | awk -F '\t' '
+        NF != 10 || $4 !~ /^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z][A-Za-z0-9_]*)+$/ ||
+        $5 !~ /^[1-9][0-9]*$/ || $6 !~ /^[0-9a-f]+$/ || length($6) != 40 ||
+        $7 !~ /^[0-9a-f]+$/ || length($7) != 40 ||
+        $8 !~ /^[0-9a-f]+$/ || length($8) != 64 || $9 !~ /^[1-9][0-9]*$/ { exit 2 }
+    '
+}
+if (_error.code !== 0) { fail INVALID_DELIVERY_RECORD }
+
+var package = $(printf '%s\n' "$row" | cut -f4)
+var version = $(printf '%s\n' "$row" | cut -f5)
+var producer_sha = $(printf '%s\n' "$row" | cut -f6)
+var verifier_sha = $(printf '%s\n' "$row" | cut -f7)
+var expected_hash = $(printf '%s\n' "$row" | cut -f8)
+var expected_bytes = $(printf '%s\n' "$row" | cut -f9)
+var url = $(printf '%s\n' "$row" | cut -f10)
+try {
+    printf '%s\n' "$url" | grep -qxE 'https://github\.com/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/releases/download/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\.apk'
+}
+if (_error.code !== 0) { fail INVALID_DELIVERY_URL }
+var url_repository = $(printf '%s\n' "$url" | cut -d / -f4,5)
+test "$url_repository" = "$repository" || fail INVALID_DELIVERY_URL
+
+var here = $(realpath -e -- "$destination")
+test -d "$here" || fail INVALID_OUTPUT_DIRECTORY
+var scratch = $(mktemp -d "$here/.catfood-apk.XXXXXXXX")
+trap --add EXIT { rm -rf -- "$scratch" }
+trap --add INT { exit 130 }
+trap --add HUP TERM { exit 143 }
+
+var origin = $(git -C "$aici" remote get-url origin)
+case "$origin" in
+    https://github.com/isomorphisms/ai-ci.git|https://github.com/isomorphisms/ai-ci) ;;
+    *) fail INVALID_VERIFIER_REPOSITORY ;;
+esac
+mkdir "$scratch/android-signing"
+for name in check-delivery.grease identities.tsv; do
+    git -C "$aici" show "$verifier_sha:android-signing/$name" > "$scratch/android-signing/$name" || fail VERIFIER_NOT_AVAILABLE
+done
+
+var filename = $(printf '%s\n' "$url" | awk -F '/' '{print $NF}')
+var candidate = "$scratch/.download.apk"
+curl -q --proto '=https' --proto-redir '=https' --fail --silent --show-error --location --retry 2 --output "$candidate" -- "$url" || fail APK_UNRETRIEVABLE
+var actual_hash = $(sha256sum "$candidate" | cut -d ' ' -f1)
+var actual_bytes = $(wc -c < "$candidate" | tr -d '[:space:]')
+test "$actual_hash" = "$expected_hash" || fail APK_DIGEST_MISMATCH
+test "$actual_bytes" = "$expected_bytes" || fail APK_LENGTH_MISMATCH
+chmod 0400 "$candidate"
+
+var verified = "$scratch/verified.tsv"
+grease "$scratch/android-signing/check-delivery.grease" "$candidate" "$package" "$abi" "$target" > "$verified" || fail APK_VERIFICATION_FAILED
+awk -F '\t' -v pkg="$package" -v version="$version" -v abi="$abi" -v target="$target" -v digest="$expected_hash" -v size="$expected_bytes" '
+    NF != 2 || seen[$1]++ { exit 2 }
+    { value[$1] = $2 }
+    END {
+        if (value["schema"] != "aici-android-release-delivery-v1" ||
+            value["result"] != "PASS" || value["package"] != pkg || value["version_code"] != version ||
+            value["abi"] != abi || value["target"] != target || value["signing_lane"] != "release" ||
+            value["apk_sha256"] != digest || value["apk_bytes"] != size ||
+            value["signer_cert_sha256"] !~ /^[0-9a-f]+$/ || length(value["signer_cert_sha256"]) != 64) exit 2
+    }
+' "$verified" || fail APK_RECEIPT_MISMATCH
+
+# Only the per-invocation private path is eligible. Callers consume it on success.
+var final_hash = $(sha256sum "$candidate" | cut -d ' ' -f1)
+test "$final_hash" = "$expected_hash" || fail APK_DIGEST_MISMATCH
+var apk = "$scratch/$filename"
+mv -- "$candidate" "$apk"
+rm -rf -- "$scratch/android-signing"
+trap --remove EXIT HUP INT TERM
+printf 'apk_path\t%s\ncatfood_sha\t%s\nrepository\t%s\nsource_sha\t%s\nproducer_sha\t%s\nverifier_sha\t%s\n' \
+    "$apk" "$catfood_sha" "$repository" "$source_sha" "$producer_sha" "$verifier_sha"
+cat "$verified"

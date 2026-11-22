@@ -15,6 +15,8 @@ android/ensure-grease.sh	stage-zero	sh	Establish verified native Grease before a
 android/ensure-transfer-support.sh	stage-zero	sh	Acquire explicitly declared commodity Termux runtimes before Grease
 android/verify-grease-package.sh	stage-zero	sh	Verify pinned native payload before installation or execution
 android/record-c67-runtime.sh	stage-zero	sh	Records the exact delivered runtime probe
+android/acquire-apk.grease	grease	grease	Checks downloaded APK bytes on a release delivery workbench
+tests/android-apk-acquisition.grease	test	grease	Exercises reviewed index selection and handoff of the exact downloaded APK
 tests/c67-delivery.sh	test	sh	Stage-zero shared-artifact and device-bound receipt probes
 tests/android-properties.sh	test	sh	Synthetic Android properties for bootstrap tests only
 tests/target-mutations.sh	test	sh	Known-bad classification and receipt mutants

@@ -10,6 +10,11 @@ on:
       - ci/repositories.sh
       - repository-aliases.tsv
       - tests/repository-identities.sh
+      - catfood
+      - android/acquire-apk.grease
+      - android/apk-delivery.tsv
+      - android/application-targets.tsv
+      - tests/android-apk-acquisition.grease
       - .github/workflows/grease-stage-one-fixtures.yml
   pull_request:
     paths:
@@ -19,6 +24,11 @@ on:
       - ci/repositories.sh
       - repository-aliases.tsv
       - tests/repository-identities.sh
+      - catfood
+      - android/acquire-apk.grease
+      - android/apk-delivery.tsv
+      - android/application-targets.tsv
+      - tests/android-apk-acquisition.grease
       - .github/workflows/grease-stage-one-fixtures.yml
 
 permissions:
@@ -65,3 +75,9 @@ jobs:
       - name: Exercise positive transfers and hostile origins with Grease
         shell: sh
         run: sh tests/repository-identities.sh
+      - name: Exercise APK delivery selection and byte verification
+        shell: sh
+        run: |
+          PATH="$(dirname "$CATFOOD_TEST_STAGE_ONE"):$PATH"
+          export PATH
+          "$CATFOOD_TEST_STAGE_ONE" tests/android-apk-acquisition.grease
