@@ -73,12 +73,12 @@ jobs:
         run: |
           observed=$("$CATFOOD_TEST_STAGE_ONE" -c 'false ∨ echo canonical-grease')
           test "$observed" = canonical-grease
-      - name: Exercise positive transfers and hostile origins with Grease
-        shell: sh
-        run: sh tests/repository-identities.sh
       - name: Exercise APK delivery selection and byte verification
         shell: sh
         run: |
           PATH="$(dirname "$CATFOOD_TEST_STAGE_ONE"):$PATH"
           export PATH
           "$CATFOOD_TEST_STAGE_ONE" tests/android-apk-acquisition.grease
+      - name: Exercise positive transfers and hostile origins with Grease
+        shell: sh
+        run: sh tests/repository-identities.sh
