@@ -57,6 +57,30 @@ Device profiles identify model facts; ABI lanes identify artifacts. Neither esta
   API 34, arm64-v8a with 32-bit compatibility, MT6765/Cortex-A53, PowerVR
   GE8320, 720x1600 at 60/90 Hz, and retained peripheral observations.
 
+## Installable APK acquisition
+
+On a workbench, use `catfood acquire-android-apk REPOSITORY SOURCE_SHA TARGET
+AICI_CHECKOUT OUTPUT_DIRECTORY` for a named-device APK handoff. `TARGET` is
+`phone` or `c67`, and `SOURCE_SHA` is the exact requested source revision.
+The workbench supplies Grease, a pinned ICK-built AICI signing verifier and the
+Android SDK build-tools at the paths configured for AICI's delivery check.
+
+`apk-delivery.tsv` records reviewed producer outputs. Add a row after verifying
+the producer workflow revision and its receipt for the exact APK published as a
+direct release asset. The approved row binds the source revision, package ID,
+version, verifier revision, APK digest, byte count and asset URL. The table starts
+empty. Each repository, source revision and target combination has at most one
+row. A row from an unreviewed producer or Cat Food branch grants no authority.
+
+The resolver reads the committed Cat Food index and target matrix. It extracts
+the signing check and identities from the recorded AICI revision, downloads to
+a private per-call directory, rehashes the bytes and runs the AICI release-lane
+check. Only a successful call prints `apk_path` and the bound receipt. Use those
+bytes for handoff and verify the digest again at the attachment boundary.
+`MISSING_DELIVERY` means the exact requested producer output is needed. The
+consumer can send that status to the build coordinator. A file from an earlier
+call has no bearing on the result of a later request.
+
 ## Evidence boundaries
 
 A current version 4 package receipt records device target, class, instance ID,

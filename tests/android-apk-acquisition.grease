@@ -1,0 +1,107 @@
+set -eu
+var root = $(pwd)
+var work = $(mktemp -d)
+trap --add EXIT { rm -rf -- "$work" }
+var catfood = "$work/catfood"
+var aici = "$work/aici"
+var repo = 'isomorphismes/algebraic-variety-explorer-mobile'
+var source = '1111111111111111111111111111111111111111'
+var old_source = '2222222222222222222222222222222222222222'
+var producer = '3333333333333333333333333333333333333333'
+var package = 'org.algebraicvarietyexplorer'
+var url = "https://github.com/$repo/releases/download/candidate/AVE-C67.apk"
+
+mkdir -p "$catfood/android" "$aici/android-signing" "$work/bin" "$work/delivery"
+cp "$root/catfood" "$root/repository-aliases.tsv" "$catfood/"
+mkdir "$catfood/ci"
+cp "$root/ci/repositories.sh" "$catfood/ci/"
+cp "$root/android/acquire-apk.grease" "$root/android/application-targets.tsv" "$root/android/target.sh" "$catfood/android/"
+git -C "$aici" init -q
+git -C "$aici" remote add origin https://github.com/isomorphisms/ai-ci.git
+cat > "$aici/android-signing/check-delivery.grease" <<'VERIFIER'
+set -eu
+test "$2" = org.algebraicvarietyexplorer
+test "$3" = arm64-v8a
+test "$4" = c67
+test "$(cat "$1")" = release-fixture
+var hash = $(sha256sum "$1" | cut -d ' ' -f1)
+var bytes = $(wc -c < "$1" | tr -d '[:space:]')
+printf 'schema\taici-android-release-delivery-v1\nresult\tPASS\npackage\t%s\nversion_code\t7\nabi\t%s\ntarget\t%s\nsigning_lane\trelease\nsigner_cert_sha256\t%s\napk_sha256\t%s\napk_bytes\t%s\n' \
+    "$2" "$3" "$4" 7777777777777777777777777777777777777777777777777777777777777777 "$hash" "$bytes"
+VERIFIER
+printf '# fixture registry\n' > "$aici/android-signing/identities.tsv"
+git -C "$aici" add android-signing
+git -C "$aici" -c user.name=fixture -c user.email=fixture@example.invalid commit -qm verifier
+var verifier = $(git -C "$aici" rev-parse HEAD)
+printf 'exit 99\n' > "$aici/android-signing/check-delivery.grease"
+
+cat > "$work/bin/curl" <<'FETCH'
+#!/usr/bin/env grease
+set -eu
+while test "$1" != --output; do shift; done
+var fixture = ENV.CATFOOD_APK_FIXTURE
+cp "$fixture" "$2"
+FETCH
+chmod 0700 "$work/bin/curl"
+var original_path = ENV.PATH
+setglobal ENV.PATH = "$work/bin:$original_path"
+var served = "$work/served.apk"
+setglobal ENV.CATFOOD_APK_FIXTURE = served
+printf 'release-fixture\n' > "$served"
+var digest = $(sha256sum "$served" | cut -d ' ' -f1)
+var size = $(wc -c < "$served" | tr -d '[:space:]')
+var index = "$catfood/android/apk-delivery.tsv"
+cp "$root/android/apk-delivery.tsv" "$index"
+
+commit_index() {
+    git -C "$catfood" add android/apk-delivery.tsv android/application-targets.tsv
+    git -C "$catfood" -c user.name=fixture -c user.email=fixture@example.invalid commit -qm fixture
+}
+
+expect_failure() {
+    var status = $1
+    var requested = $2
+    if sh "$catfood/catfood" acquire-android-apk "$repo" "$requested" c67 "$aici" "$work/delivery" > "$work/result" 2> "$work/error"; then
+        printf 'unexpected acquisition success: %s\n' "$status" >&2
+        exit 1
+    fi
+    test ! -s "$work/result"
+    var expected = $(printf 'status\t%s' "$status")
+    if ! grep -Fx "$expected" "$work/error" >/dev/null; then
+        printf 'expected acquisition status: %s\n' "$status" >&2
+        cat "$work/error" >&2
+        exit 1
+    fi
+}
+
+git -C "$catfood" init -q
+commit_index
+expect_failure MISSING_DELIVERY "$source"
+printf '%s\t%s\tc67\t%s\t7\t%s\t%s\t%s\t%s\t%s\n' \
+    "$repo" "$source" "$package" "$producer" "$verifier" "$digest" "$size" "$url" > "$work/row"
+cat "$work/row" >> "$index"
+expect_failure MISSING_DELIVERY "$source"
+commit_index
+expect_failure MISSING_DELIVERY "$old_source"
+
+sh "$catfood/catfood" acquire-android-apk "$repo" "$source" c67 "$aici" "$work/delivery" > "$work/result"
+var selected = $(awk -F '\t' '$1 == "apk_path" { print $2 }' "$work/result")
+test "$(sha256sum "$selected" | cut -d ' ' -f1)" = "$digest"
+grep -Fx "$(printf 'signing_lane\trelease')" "$work/result" >/dev/null
+
+printf 'replacement-bytes\n' > "$served"
+expect_failure APK_DIGEST_MISMATCH "$source"
+test "$(find "$work/delivery" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d '[:space:]')" = 1
+
+var replacement_digest = $(sha256sum "$served" | cut -d ' ' -f1)
+var replacement_size = $(wc -c < "$served" | tr -d '[:space:]')
+cp "$root/android/apk-delivery.tsv" "$index"
+printf '%s\t%s\tc67\t%s\t7\t%s\t%s\t%s\t%s\t%s\n' \
+    "$repo" "$source" "$package" "$producer" "$verifier" "$replacement_digest" "$replacement_size" "$url" >> "$index"
+commit_index
+expect_failure APK_VERIFICATION_FAILED "$source"
+
+cat "$work/row" >> "$index"
+commit_index
+expect_failure AMBIGUOUS_DELIVERY "$source"
+printf 'PASS APK acquisition: committed row, pinned verifier, exact bytes, wrong bytes, signer refusal, stale and duplicate requests\n'
