@@ -67,7 +67,7 @@ expect_failure() {
     fi
     test ! -s "$work/result"
     var expected = $(printf 'status\t%s' "$status")
-    if ! rg -Fx "$expected" "$work/error" >/dev/null; then
+    if ! grep -Fx "$expected" "$work/error" >/dev/null; then
         printf 'expected acquisition status: %s\n' "$status" >&2
         cat "$work/error" >&2
         exit 1
@@ -87,7 +87,7 @@ expect_failure MISSING_DELIVERY "$old_source"
 sh "$catfood/catfood" acquire-android-apk "$repo" "$source" c67 "$aici" "$work/delivery" > "$work/result"
 var selected = $(awk -F '\t' '$1 == "apk_path" { print $2 }' "$work/result")
 test "$(sha256sum "$selected" | cut -d ' ' -f1)" = "$digest"
-rg -Fx "$(printf 'signing_lane\trelease')" "$work/result" >/dev/null
+grep -Fx "$(printf 'signing_lane\trelease')" "$work/result" >/dev/null
 
 printf 'replacement-bytes\n' > "$served"
 expect_failure APK_DIGEST_MISMATCH "$source"
