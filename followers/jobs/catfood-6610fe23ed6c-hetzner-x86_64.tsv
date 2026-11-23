@@ -1,0 +1,25 @@
+schema	aici-follower-job-v1
+job_id	catfood-6610fe23ed6c-hetzner-x86_64
+repository	isomorphisms/catfood
+branch	fix/strict-errexit-submodule-status-20261118
+pr	164
+trigger_commit	6610fe23ed6c71258c53d9b7ee68048d09a4f7b1
+leader_platform	container-x86_64
+leader_arch	x86_64
+leader_evidence	-
+artifact	-
+artifact_sha256	-
+follower_platform	hetzner-x86_64
+follower_arch	x86_64
+required	yes
+action	follower target for Cat Food commit 6610fe23ed6c71258c53d9b7ee68048d09a4f7b1 on hetzner-x86_64; fetch that exact commit, run the named acceptance action, and record a receipt.
+acceptance_kind	runtime
+acceptance_action	sh followers/accept-x86.sh cloud
+state	pending
+last_attempt_commit	-
+blocker	-
+evidence	-
+depends_on	-
+reason	shared-portable
+superseded_by	-
+follow_policy	exact
